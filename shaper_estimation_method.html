@@ -86,7 +86,7 @@
   <div class="cap">step-response velocity at the peak, near <span id="fdet" style="color:var(--text-primary)">50</span> Hz <span style="color:var(--text-muted)">(the metric is this curve's minimum)</span></div>
   <div class="chart"><canvas id="c2"></canvas></div>
   <div class="row" style="margin-top:.5rem;">
-    <div class="ctl"><div class="lbl"><span>detail frequency (Hz)</span><span class="val" id="o-fq">50</span></div><input type="range" id="fq" min="20" max="120" step="1" value="50"></div>
+    <div class="ctl"><div class="lbl"><span>detail frequency (Hz)</span><span class="val" id="o-fq">62</span></div><input type="range" id="fq" min="20" max="120" step="1" value="62"></div>
   </div>
 
   <div class="note" id="note"></div>
@@ -188,7 +188,7 @@
     document.getElementById('cards').innerHTML=
       card('residual @ '+fq+'Hz — analytic (accurate)',(rnq*100).toFixed(2)+'%')+
       card('residual @ '+fq+'Hz — finite-diff (n_t)',(roq*100).toFixed(2)+'%')+
-      card('finite-diff error @ '+fq+'Hz (est − accurate)',(errq>=0?'+':'')+(errq*100).toFixed(2)+'%'+(errq<0?' (under-reports)':(errq>0?' (over-reports)':'')),Math.abs(errq)>0.02?RED:null)+
+      card('finite-diff error @ '+fq+'Hz (est − accurate)',(errq>=0?'+':'')+(errq*100).toFixed(2)+'%'+(Math.abs(errq)>=0.0001?(errq<0?' (under-reports)':' (over-reports)'):''),Math.abs(errq)>0.02?RED:null)+
       card('worst estimation error across band',(maxErr*100).toFixed(2)+'%',maxErr>0.05?RED:null);
   }
 
