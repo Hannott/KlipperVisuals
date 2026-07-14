@@ -68,6 +68,9 @@
   <div class="cap">residual vibration vs frequency <span style="color:var(--text-muted)">(dashed verticals mark the two measured peaks; lower = better)</span></div>
   <div class="chart"><canvas id="c1"></canvas></div>
 
+  <div class="cap" style="margin-top:1.5rem;">notch depth vs the shaper's assumed damping <span style="color:var(--text-muted)">(true ζ fixed by the slider, marked; the notch is deepest only when assumed = true)</span></div>
+  <div class="chart" style="height:250px;"><canvas id="c2"></canvas></div>
+
   <div class="cards" id="cards"></div>
   <div class="note" id="note"></div>
 
@@ -123,6 +126,17 @@
     Object.assign(ln(muted,[4,4],1),{label:'peak 1'}),
     Object.assign(ln(muted,[4,4],1),{label:'peak 2'})]},options:opts});
 
+  var opts2={responsive:true,maintainAspectRatio:false,animation:false,interaction:{mode:'index',intersect:false},
+    plugins:{legend:{display:true,position:'top',align:'start',labels:{color:muted,usePointStyle:true,pointStyle:'line',boxWidth:26,padding:12,font:{size:12}}},
+      tooltip:{callbacks:{title:function(it){return 'assumed ζ = '+(Math.round(it[0].parsed.x*1000)/1000);},
+        label:function(it){return it.dataset.label+': '+(Math.round(it.parsed.y*1000)/10)+'%';}}}},
+    scales:{x:{type:'linear',min:0.01,max:0.2,grid:{display:false},ticks:{color:muted},title:{display:true,text:"shaper's assumed damping ratio ζ",color:muted}},
+      y:{min:0,grid:{color:grid},ticks:{color:muted,callback:function(v){return Math.round(v*100)+'%';}},title:{display:true,text:'residual at peak',color:muted}}}};
+  var c2=new Chart(document.getElementById('c2'),{type:'line',data:{datasets:[
+    Object.assign(ln(BLUE),{label:'residual @ peak 1'}),
+    Object.assign(ln(AMBER,[6,4]),{label:'residual @ peak 2'}),
+    Object.assign(ln(muted,[4,4],1),{label:'true ζ'})]},options:opts2});
+
   function card(k,val,color){return '<div class="card"><div class="k">'+k+'</div><div class="v"'+(color?' style="color:'+color+'"':'')+'>'+val+'</div></div>';}
   function pct(x){return (Math.round(x*1000)/10).toFixed(1)+'%';}
 
@@ -148,15 +162,30 @@
     c1.data.datasets[4].label='peak 2 ('+p2.toFixed(0)+' Hz)';
     c1.update();
 
+    // mismatch chart: design the two-mode shaper at a swept "assumed" zeta,
+    // evaluate residual at each peak against the true zeta (the slider).
+    var za0=0.01, za1=0.20, n2=140, dP1=[],dP2=[], ymax=0;
+    for(var k=0;k<=n2;k++){var za=za0+(za1-za0)*k/n2;
+      var tw=convolve(fn(p1,za),fn(p2,za));
+      var r1=residual(tw,p1,z), r2=residual(tw,p2,z);
+      dP1.push({x:za,y:r1}); dP2.push({x:za,y:r2});
+      if(r1>ymax)ymax=r1; if(r2>ymax)ymax=r2;}
+    c2.data.datasets[0].data=dP1; c2.data.datasets[1].data=dP2;
+    c2.data.datasets[2].data=[{x:z,y:0},{x:z,y:ymax*1.02}];
+    c2.data.datasets[2].label='true ζ ('+z.toFixed(3)+')';
+    c2.update();
+
+    var two01=convolve(fn(p1,0.1),fn(p2,0.1));   // designed at the 0.1 default
     document.getElementById('cards').innerHTML=
       card('two-mode — V@P1 / V@P2', pct(residual(two,p1,z))+' / '+pct(residual(two,p2,z)), BLUE)+
       card('single-mode — V@P1 / V@P2', pct(residual(single,p1,z))+' / '+pct(residual(single,p2,z)), AMBER)+
       card('broadband — V@P1 / V@P2', pct(residual(bb,p1,z))+' / '+pct(residual(bb,p2,z)), TEAL)+
-      card('duration — two-mode / broadband', (dur(two)*1000).toFixed(1)+' / '+(dur(bb)*1000).toFixed(1)+' ms');
+      card('duration — two-mode / broadband', (dur(two)*1000).toFixed(1)+' / '+(dur(bb)*1000).toFixed(1)+' ms')+
+      card('if ζ assumed 0.1 (default) — V@P1 / V@P2', pct(residual(two01,p1,z))+' / '+pct(residual(two01,p2,z)), residual(two01,p1,z)>0.03||residual(two01,p2,z)>0.03?'var(--amber)':null);
 
     document.getElementById('note').innerHTML=
-      'The <strong>single-mode</strong> shaper notches peak&nbsp;1 but lets peak&nbsp;2 through. The <strong>broadband smoother</strong> covers both but with shallower suppression and a longer window. The <strong>two-mode</strong> shaper puts a deep notch at each peak. '+
-      'With base '+current+', two-mode drives both peaks to '+pct(residual(two,p1,z))+' / '+pct(residual(two,p2,z))+' at '+(dur(two)*1000).toFixed(1)+'&nbsp;ms — pick ZV/MZV for the shortest deep notches, EI for wider (drift-tolerant) notches at a longer window.';
+      'The <strong>single-mode</strong> shaper notches peak&nbsp;1 but lets peak&nbsp;2 through; the <strong>broadband smoother</strong> covers both, shallower and longer; the <strong>two-mode</strong> shaper puts a deep notch at each peak (with base '+current+', '+pct(residual(two,p1,z))+' / '+pct(residual(two,p2,z))+' at '+(dur(two)*1000).toFixed(1)+'&nbsp;ms). '+
+      'The lower chart shows why damping matters: a notch reaches zero <em>only</em> when the shaper&rsquo;s assumed ζ matches the mode&rsquo;s true ζ — away from it the notch fills in, sharply for ZV/MZV and more gently for EI. Both curves bottom at the same assumed ζ here because both modes share one true ζ; if the two modes are damped differently, no single assumed ζ can zero both, which is what a per-peak ζ estimate would fix. The last card shows the cost of skipping the measurement and using the 0.1 default.';
   }
 
   var tc=document.getElementById('types');
