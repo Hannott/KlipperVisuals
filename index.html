@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>KlipperVisuals — interactive visualizations of Klipper/Kalico internals</title>
+<style>
+  :root{
+    --text-primary:#0b0b0b; --text-secondary:#52514e; --text-muted:#898781;
+    --surface-0:#f4f3ee; --surface-1:#faf9f5; --surface-2:#ffffff;
+    --border:rgba(11,11,11,.12); --radius:10px; --blue:#2a78d6;
+    --font-sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --font-mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  }
+  @media (prefers-color-scheme:dark){
+    :root{
+      --text-primary:#f2f1ea; --text-secondary:#c3c2b7; --text-muted:#898781;
+      --surface-0:#191918; --surface-1:#1f1f1e; --surface-2:#262625;
+      --border:rgba(255,255,255,.14); --blue:#4f97e8;
+    }
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--surface-0);color:var(--text-primary);font-family:var(--font-sans);line-height:1.6;}
+  .wrap{max-width:780px;margin:0 auto;padding:2.5rem 1.25rem 4rem;}
+  h1{font-size:24px;font-weight:500;margin:0 0 .25rem;}
+  .sub{color:var(--text-secondary);font-size:15px;margin:0 0 2rem;}
+  a{color:var(--blue);text-decoration:none;}
+  a:hover{text-decoration:underline;}
+  .card{display:block;background:var(--surface-2);border:.5px solid var(--border);border-radius:var(--radius);
+        padding:1.1rem 1.25rem;margin-bottom:1rem;text-decoration:none;color:inherit;transition:border-color .15s;}
+  .card:hover{border-color:var(--blue);text-decoration:none;}
+  .card h2{font-size:17px;font-weight:500;margin:0 0 .25rem;}
+  .card p{margin:0;color:var(--text-secondary);font-size:14px;}
+  .tag{display:inline-block;font-size:12px;padding:2px 8px;border-radius:6px;margin-left:8px;vertical-align:middle;
+       background:rgba(42,120,214,.12);color:var(--blue);}
+  code{font-family:var(--font-mono);font-size:.9em;}
+  .note{margin-top:2rem;padding:1rem 1.25rem;background:var(--surface-1);border:.5px solid var(--border);
+        border-radius:var(--radius);font-size:13.5px;color:var(--text-secondary);}
+  .foot{margin-top:2.5rem;font-size:13px;color:var(--text-muted);border-top:.5px solid var(--border);padding-top:1rem;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>KlipperVisuals</h1>
+  <p class="sub">Interactive visualizations of motion-control internals in Klipper / Kalico — pressure advance, input shaping, and resonance compensation.</p>
+
+  <a class="card" href="nonlinear_pa_explorer.html">
+    <h2>Nonlinear pressure advance explorer<span class="tag">tanh vs recipr</span></h2>
+    <p>Compare the two nonlinear pressure-advance models. Adjust ADVANCE, OFFSET, VELOCITY and a test move to see advance-vs-velocity, extruder flow rate, and acceleration demand, with the firmware's parabolic extruder smoother and a time-offset control.</p>
+  </a>
+
+  <div class="note">
+    <strong>Note on provenance.</strong> These pages model the nonlinear pressure-advance implementation from a custom <code>bleeding-edge-v2</code> branch (<code>ADVANCE</code>/<code>OFFSET</code>/<code>VELOCITY</code> + <code>tanh</code>/<code>recipr</code> models), which is not part of upstream Kalico or Klipper. Comparison tools for branch-vs-upstream differences in input shaping and resonance compensation are in progress.
+  </div>
+
+  <p class="foot">Math and kernels reproduced from <code>klippy/chelper/kin_extruder.c</code>, <code>klippy/extras/extruder_smoother.py</code>, and <code>klippy/extras/shaper_defs.py</code>. Charts rendered with Chart.js (CDN). Source: <a href="https://github.com/Hannott/KlipperVisuals">Hannott/KlipperVisuals</a>.</p>
+</div>
+</body>
+</html>
