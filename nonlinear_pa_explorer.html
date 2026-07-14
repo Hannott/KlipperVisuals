@@ -115,7 +115,7 @@
   function mkOpts(yLabel,xLinear){
     return {responsive:true,maintainAspectRatio:false,animation:false,
       interaction:{mode:'index',intersect:false},
-      plugins:{legend:{display:true,position:'top',align:'start',labels:{color:muted,boxWidth:18,boxHeight:2,padding:12,font:{size:12}}},tooltip:{callbacks:{
+      plugins:{legend:{display:true,position:'top',align:'start',labels:{color:muted,usePointStyle:true,pointStyle:'line',boxWidth:26,padding:12,font:{size:12}}},tooltip:{callbacks:{
         title:function(it){return xLinear?'v = '+Math.round(it[0].parsed.x)+' mm/s':'t = '+it[0].label+' ms';},
         label:function(it){return it.dataset.label+': '+Math.round(it.parsed.y*1000)/1000;}
       }}},

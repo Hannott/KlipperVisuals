@@ -157,7 +157,7 @@
   function baseOpts(yLabel,xLabel,ymax){
     return {responsive:true,maintainAspectRatio:false,animation:false,
       interaction:{mode:'index',intersect:false},
-      plugins:{legend:{display:true,position:'top',align:'start',labels:{color:muted,boxWidth:18,boxHeight:2,padding:12,font:{size:12}}},tooltip:{callbacks:{
+      plugins:{legend:{display:true,position:'top',align:'start',labels:{color:muted,usePointStyle:true,pointStyle:'line',boxWidth:26,padding:12,font:{size:12}}},tooltip:{callbacks:{
         title:function(it){return (Math.round(it[0].parsed.x*1000)/1000)+'';},
         label:function(it){return it.dataset.label+': '+(Math.round(it.parsed.y*1000)/1000);}}}},
       scales:{x:{type:'linear',grid:{display:false},ticks:{color:muted},title:{display:true,text:xLabel,color:muted}},
