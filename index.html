@@ -54,8 +54,13 @@
     <p>Residual-vibration curves for every input shaper (ZV, MZV, ZVD, EI, 2hump/3hump EI), reproduced from <code>shaper_defs.py</code>. Overlays your branch against upstream for the <code>3hump_ei</code> coefficient bug fix, with an impulse view and a damping-ratio sweep showing where upstream's truncated polynomial degrades.</p>
   </a>
 
+  <a class="card" href="smoother_vs_shaper.html">
+    <h2>Smoothers vs shapers<span class="tag">Kalico feature</span></h2>
+    <p>Kalico input smoothers replace a shaper's discrete impulses with a smooth polynomial window. Compare any shaper against any smoother on shared vibration-reduction axes and in the time domain, from the <code>get_*_smoother</code> definitions in <code>shaper_defs.py</code>.</p>
+  </a>
+
   <div class="note">
-    <strong>Note on provenance.</strong> The pressure-advance page models a custom <code>bleeding-edge-v2</code> implementation (<code>tanh</code>/<code>recipr</code> nonlinear PA) that is not in upstream Kalico or Klipper. The input-shaper page contrasts your branch against <code>upstream/bleeding-edge-v2</code>. More resonance-compensation comparisons (smoothers, resonance tester) are being added.
+    <strong>Note on provenance.</strong> The pressure-advance page models a custom <code>bleeding-edge-v2</code> implementation (<code>tanh</code>/<code>recipr</code> nonlinear PA) that is not in upstream Kalico or Klipper. The input-shaper and smoother pages reproduce your branch's <code>shaper_defs.py</code> and contrast it against <code>upstream/bleeding-edge-v2</code>. A resonance-tester / calibration comparison is next.
   </div>
 
   <p class="foot">Math and kernels reproduced from <code>klippy/chelper/kin_extruder.c</code>, <code>klippy/extras/extruder_smoother.py</code>, and <code>klippy/extras/shaper_defs.py</code>. Charts rendered with Chart.js (CDN). Source: <a href="https://github.com/Hannott/KlipperVisuals">Hannott/KlipperVisuals</a>.</p>

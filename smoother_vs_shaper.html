@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Smoothers vs shapers — Kalico input smoothers</title>
+<style>
+  :root{
+    --text-primary:#0b0b0b; --text-secondary:#52514e; --text-muted:#898781;
+    --surface-0:#f4f3ee; --surface-1:#faf9f5; --surface-2:#ffffff;
+    --border:rgba(11,11,11,.12); --radius:8px;
+    --grid:#e1e0d9; --blue:#2a78d6; --teal:#1d9e75;
+    --font-sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --font-mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  }
+  @media (prefers-color-scheme:dark){
+    :root{
+      --text-primary:#f2f1ea; --text-secondary:#c3c2b7; --text-muted:#898781;
+      --surface-0:#191918; --surface-1:#1f1f1e; --surface-2:#262625;
+      --border:rgba(255,255,255,.14); --grid:#2c2c2a; --blue:#4f97e8; --teal:#3fbf95;
+    }
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--surface-0);color:var(--text-primary);font-family:var(--font-sans);line-height:1.6;}
+  .wrap{max-width:820px;margin:0 auto;padding:2rem 1.25rem 4rem;}
+  h1{font-size:22px;font-weight:500;margin:.5rem 0 .25rem;}
+  .sub{color:var(--text-secondary);font-size:15px;margin:0 0 1.5rem;}
+  .back{font-size:13px;color:var(--blue);text-decoration:none;}
+  code{font-family:var(--font-mono);font-size:.9em;}
+  .grouplabel{font-size:12px;letter-spacing:.04em;text-transform:uppercase;color:var(--text-muted);margin:1rem 0 .5rem;}
+  .row{display:flex;flex-wrap:wrap;gap:16px;margin-bottom:1rem;}
+  .ctl{flex:1;min-width:170px;}
+  .ctl .lbl{display:flex;justify-content:space-between;font-size:13px;color:var(--text-secondary);margin-bottom:4px;}
+  .ctl .val{font-weight:500;color:var(--text-primary);}
+  input[type=range]{width:100%;accent-color:var(--blue);}
+  select{width:100%;font-family:inherit;font-size:14px;padding:7px 10px;border-radius:var(--radius);
+    border:.5px solid var(--border);background:var(--surface-2);color:var(--text-primary);}
+  .legend{display:flex;flex-wrap:wrap;gap:16px;margin:.25rem 0 6px;font-size:13px;color:var(--text-secondary);}
+  .legend span{display:flex;align-items:center;gap:6px;}
+  .sw{width:16px;height:3px;border-radius:2px;}
+  .cap{font-size:13px;color:var(--text-secondary);margin:1.1rem 0 2px;}
+  .chart{position:relative;width:100%;height:230px;}
+  .note{margin:1rem 0;padding:.85rem 1.1rem;border-radius:var(--radius);font-size:13.5px;border:.5px solid var(--border);background:var(--surface-1);color:var(--text-secondary);}
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-top:1.25rem;}
+  .card{background:var(--surface-1);border:.5px solid var(--border);border-radius:var(--radius);padding:.85rem 1rem;}
+  .card .k{font-size:13px;color:var(--text-secondary);}
+  .card .v{font-size:20px;font-weight:500;margin-top:2px;}
+  .foot{margin-top:2.5rem;font-size:13px;color:var(--text-muted);border-top:.5px solid var(--border);padding-top:1rem;}
+  a{color:var(--blue);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="index.html">← KlipperVisuals</a>
+  <h1>Smoothers vs shapers</h1>
+  <p class="sub">Kalico input <em>smoothers</em> replace a classic shaper's discrete impulses with a smooth polynomial window <code>w(t)</code> (a continuous impulse distribution). Compare any shaper against any smoother on the same vibration-reduction axes and in the time domain. Smoothers are a Kalico feature — not present in mainline Klipper.</p>
+
+  <div class="row">
+    <div class="ctl"><div class="lbl"><span>impulse shaper</span></div>
+      <select id="shaper"><option value="none">— none —</option><option>zv</option><option>mzv</option><option>zvd</option><option selected>ei</option><option>2hump_ei</option><option>3hump_ei</option></select></div>
+    <div class="ctl"><div class="lbl"><span>smoother</span></div>
+      <select id="smoother"><option value="none">— none —</option><option>smooth_zv</option><option>smooth_mzv</option><option selected>smooth_ei</option><option>smooth_2hump_ei</option><option>smooth_zvd_ei</option><option>smooth_si</option></select></div>
+  </div>
+  <div class="row">
+    <div class="ctl"><div class="lbl"><span>shaper_freq (Hz)</span><span class="val" id="o-fr">50</span></div><input type="range" id="fr" min="20" max="120" step="1" value="50"></div>
+    <div class="ctl"><div class="lbl"><span>damping_ratio</span><span class="val" id="o-dr">0.10</span></div><input type="range" id="dr" min="0" max="0.3" step="0.005" value="0.1"></div>
+  </div>
+
+  <div class="legend">
+    <span><span class="sw" style="background:var(--blue)"></span>shaper (impulses)</span>
+    <span><span class="sw" style="background:var(--teal)"></span>smoother (polynomial)</span>
+  </div>
+
+  <div class="cap">residual vibration vs frequency <span style="color:var(--text-muted)">(lower = better suppression)</span></div>
+  <div class="chart"><canvas id="c1"></canvas></div>
+
+  <div class="cap">kernel in the time domain <span style="color:var(--text-muted)">(impulse amplitudes vs smoother weight density; both integrate to 1)</span></div>
+  <div class="chart" style="height:210px;"><canvas id="c2"></canvas></div>
+
+  <div class="note" id="note"></div>
+  <div class="cards" id="cards"></div>
+
+  <p class="foot">Smoother windows <code>w(t)=Σ Cₖ tᵏ</code> over <code>[−t_sm/2, t_sm/2]</code>, <code>t_sm = factor/freq</code>, coefficients from <code>shaper_defs.py</code> (<code>get_*_smoother</code>). Response is evaluated by treating the window as a dense impulse train and applying the same <code>shaper_calibrate</code> vibration formula used for shapers. Your branch adds a per-axis <code>damping_ratio</code> for smoothers (used when fitting the synchronized extruder smoother); upstream used a fixed 0.1. Rendered with Chart.js.</p>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+(function(){
+  var css=getComputedStyle(document.documentElement);
+  function gv(n,f){return (css.getPropertyValue(n).trim())||f;}
+  var muted=gv('--text-muted','#898781'), grid=gv('--grid','#e1e0d9');
+  var BLUE=gv('--blue','#2a78d6'), TEAL=gv('--teal','#1d9e75');
+
+  // ---- shapers (shaper_defs.py) ----
+  function zv(f,dr){var df=Math.sqrt(1-dr*dr),K=Math.exp(-dr*Math.PI/df),td=1/(f*df);return{A:[1,K],T:[0,0.5*td]};}
+  function zvd(f,dr){var df=Math.sqrt(1-dr*dr),K=Math.exp(-dr*Math.PI/df),td=1/(f*df);return{A:[1,2*K,K*K],T:[0,0.5*td,td]};}
+  function mzv(f,dr){var df=Math.sqrt(1-dr*dr),K=Math.exp(-0.75*dr*Math.PI/df),td=1/(f*df);
+    var a1=1-1/Math.SQRT2,a2=(Math.SQRT2-1)*K,a3=a1*K*K;return{A:[a1,a2,a3],T:[0,0.375*td,0.75*td]};}
+  function ei(f,dr){var vt=1/20,df=Math.sqrt(1-dr*dr),td=1/(f*df);
+    var a1=(0.24968+0.24961*vt)+((0.80008+1.23328*vt)+(0.49599+3.17316*vt)*dr)*dr;
+    var a3=(0.25149+0.21474*vt)+((-0.83249+1.41498*vt)+(0.85181-4.90094*vt)*dr)*dr;
+    var a2=1-a1-a3;var t2=0.4999+(((0.46159+8.57843*vt)*vt)+(((4.26169-108.644*vt)*vt)+((1.75601+336.989*vt)*vt)*dr)*dr)*dr;
+    return{A:[a1,a2,a3],T:[0,t2*td,td]};}
+  function expShaper(f,dr,t,a){var tau=1/f,T=[],A=[],n=a.length,k=a[0].length;
+    for(var i=0;i<n;i++){var u=t[i][k-1],vv=a[i][k-1];
+      for(var j=0;j<k-1;j++){u=u*dr+t[i][k-2-j]; vv=vv*dr+a[i][k-2-j];}
+      T.push(u*tau); A.push(vv);} return{A:A,T:T};}
+  var T2=[[0,0,0,0],[0.49890,0.16270,-0.54262,6.16180],[0.99748,0.18382,-1.58270,8.17120],[1.49920,-0.09297,-0.28338,1.85710]];
+  var A2=[[0.16054,0.76699,2.26560,-1.22750],[0.33911,0.45081,-2.58080,1.73650],[0.34089,-0.61533,-0.68765,0.42261],[0.15997,-0.60246,1.00280,-0.93145]];
+  var T3=[[0,0,0,0],[0.49974,0.23834,0.44559,12.4720],[0.99849,0.29808,-2.36460,23.3990],[1.49870,0.10306,-2.01390,17.0320],[1.99960,-0.28231,0.61536,5.40450]];
+  var A3=[[0.11275,0.76632,3.29160,-1.44380],[0.23698,0.61164,-2.57850,4.85220],[0.30008,-0.19062,-2.14560,0.13744],[0.23775,-0.73297,0.46885,-2.08650],[0.11244,-0.45439,0.96382,-1.46000]];
+  var SHAPERS={zv:zv,mzv:mzv,zvd:zvd,ei:ei,'2hump_ei':function(f,dr){return expShaper(f,dr,T2,A2);},'3hump_ei':function(f,dr){return expShaper(f,dr,T3,A3);}};
+
+  // ---- smoothers (shaper_defs.py get_*_smoother): raw coeffs highest-degree-first, factor for t_sm ----
+  var SMOOTHERS={
+    smooth_zv:{c:[-118.4265334338076,5.861885495127615,29.52796003014231,-1.465471373781904,0.01966833207740377],tf:0.8025},
+    smooth_mzv:{c:[-1906.717580206364,125.8892756660212,698.0200035767849,-37.75923018121473,-62.18762409216703,1.57172781617736,1.713117990217123],tf:0.95625},
+    smooth_ei:{c:[-1797.048868963208,120.5310596109878,669.6653197989012,-35.71975707450795,-62.49388325512682,1.396748042940248,1.848276903900512],tf:1.06625},
+    smooth_2hump_ei:{c:[-22525.88434486782,2524.826047114184,10554.22832043971,-1051.778387878068,-1475.914693073253,121.2177946817349,57.95603221424528,-4.018706414213658,0.8375784787864095],tf:1.14875},
+    smooth_si:{c:[-6186.76006449789,1206.747198930197,2579.985143622855,-476.8554763069169,-295.546608490564,52.69679971161049,4.234582468800491,-2.226157642004671,1.267781046297883],tf:1.245},
+    smooth_zvd_ei:{c:[-18835.07746719777,1914.349309746547,8786.608981369287,-807.3061869131075,-1209.429748155012,96.48879052981883,43.1595785340444,-3.577268915175282,1.083220648523371],tf:1.475}
+  };
+  function windowW(c,tau){var w=0; for(var i=0;i<c.length;i++)w=w*tau+c[i]; return w;}
+  function smootherShaper(sm,f){var t_sm=sm.tf/f,M=240,A=[],T=[];
+    for(var i=0;i<=M;i++){var tau=-0.5+i/M; var wv=windowW(sm.c,tau); if(wv<0)wv=0; A.push(wv); T.push((tau+0.5)*t_sm);}
+    return {A:A,T:T,t_sm:t_sm};}
+
+  function response(sh,f,dr){var A=sh.A,T=sh.T,n=A.length; if(!n)return 1;
+    var sumA=0; for(var i=0;i<n;i++)sumA+=A[i]; if(sumA<=0)return 1; var Tl=T[n-1];
+    var w=2*Math.PI*f, wd=w*Math.sqrt(1-dr*dr), S=0,C=0;
+    for(i=0;i<n;i++){var Wi=A[i]*Math.exp(-dr*w*(Tl-T[i])); S+=Wi*Math.sin(wd*T[i]); C+=Wi*Math.cos(wd*T[i]);}
+    return Math.sqrt(S*S+C*C)/sumA;}
+  function worstInBand(sh,fc,dr){var lo=fc*0.75,hi=fc*1.25,m=0;for(var k=0;k<=40;k++){var r=response(sh,lo+(hi-lo)*k/40,dr);if(r>m)m=r;}return m;}
+
+  function baseOpts(yLabel,xLabel,ymax){
+    return {responsive:true,maintainAspectRatio:false,animation:false,interaction:{mode:'index',intersect:false},
+      plugins:{legend:{display:false},tooltip:{callbacks:{
+        title:function(it){return (Math.round(it[0].parsed.x*1000)/1000)+'';},
+        label:function(it){return it.dataset.label+': '+(Math.round(it.parsed.y*1000)/1000);}}}},
+      scales:{x:{type:'linear',grid:{display:false},ticks:{color:muted},title:{display:true,text:xLabel,color:muted}},
+              y:{min:0,max:ymax,grid:{color:grid},ticks:{color:muted},title:{display:true,text:yLabel,color:muted}}}};
+  }
+  var c1=new Chart(document.getElementById('c1'),{type:'line',data:{datasets:[
+    {label:'shaper',data:[],borderColor:BLUE,borderWidth:2,pointRadius:0,tension:0.05},
+    {label:'smoother',data:[],borderColor:TEAL,borderWidth:2,pointRadius:0,tension:0.05}]},options:baseOpts('residual vibration','frequency (Hz)',1.05)});
+  var c2=new Chart(document.getElementById('c2'),{data:{datasets:[
+    {type:'bar',label:'shaper',data:[],backgroundColor:BLUE,barThickness:7},
+    {type:'line',label:'smoother',data:[],borderColor:TEAL,backgroundColor:'rgba(29,158,117,.12)',borderWidth:2,pointRadius:0,fill:true,tension:0.1}]},options:baseOpts('kernel weight','time (ms)',undefined)});
+
+  function card(k,val){return '<div class="card"><div class="k">'+k+'</div><div class="v">'+val+'</div></div>';}
+
+  function update(){
+    var f=+document.getElementById('fr').value, dr=+document.getElementById('dr').value;
+    var shName=document.getElementById('shaper').value, smName=document.getElementById('smoother').value;
+    document.getElementById('o-fr').textContent=f;
+    document.getElementById('o-dr').textContent=dr.toFixed(2);
+
+    var shp=(shName!=='none')?SHAPERS[shName](f,dr):null;
+    var smo=(smName!=='none')?smootherShaper(SMOOTHERS[smName],f):null;
+
+    var fmax=Math.max(150,f*3), pts=220, d1=[],d2=[];
+    for(var i=0;i<=pts;i++){var ff=2+(fmax-2)*i/pts;
+      if(shp)d1.push({x:ff,y:response(shp,ff,dr)});
+      if(smo)d2.push({x:ff,y:response(smo,ff,dr)});}
+    c1.data.datasets[0].data=d1; c1.data.datasets[1].data=d2; c1.update();
+
+    // time-domain: impulses (amplitude) + smoother window (weight density * t_sm, normalized so integral=1)
+    c2.data.datasets[0].data=shp?shp.A.map(function(a,i){return {x:shp.T[i]*1000,y:a};}):[];
+    var wpts=[];
+    if(smo){var M=120,ts=smo.t_sm; for(i=0;i<=M;i++){var tau=-0.5+i/M; var wv=windowW(SMOOTHERS[smName].c,tau); if(wv<0)wv=0; wpts.push({x:(tau+0.5)*ts*1000,y:wv});}}
+    c2.data.datasets[1].data=wpts; c2.update();
+
+    var note=document.getElementById('note');
+    note.innerHTML='A <strong>shaper</strong> applies a few discrete impulses; a <strong>smoother</strong> spreads the same corrective effect over a continuous window, producing smoother motion and no sudden velocity steps. Smoothers generally need a longer window (larger <code>t_sm</code>) than a shaper of the same family for comparable suppression. The <code>damping_ratio</code> here is the printer’s assumed damping used to evaluate residual vibration.';
+
+    var cards='';
+    if(shp)cards+=card('shaper duration',(shp.T[shp.T.length-1]*1000).toFixed(1)+' ms')+card('shaper worst residual',(worstInBand(shp,f,dr)*100).toFixed(1)+'%');
+    if(smo)cards+=card('smoother t_sm',(smo.t_sm*1000).toFixed(1)+' ms')+card('smoother worst residual',(worstInBand(smo,f,dr)*100).toFixed(1)+'%');
+    document.getElementById('cards').innerHTML=cards;
+  }
+  ['shaper','smoother'].forEach(function(id){document.getElementById(id).addEventListener('change',update);});
+  document.getElementById('fr').addEventListener('input',update);
+  document.getElementById('dr').addEventListener('input',update);
+  update();
+})();
+</script>
+</body>
+</html>
