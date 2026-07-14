@@ -409,7 +409,11 @@
     var smSingle=shaperSmoothing(single), smBB=shaperSmoothing(bb);
     var dSmTwo=[],dSmSingle=[],dSmBB=[], sp=70, smYmax=Math.max(smSingle,smBB);
     for(var si=0;si<=sp;si++){var f2=20+140*si/sp;
-      var yTwo=shaperSmoothing(convolve(fn(p1,z),fn(f2,z)));
+      var yTwo = shaperSmoothing(
+        convolve(fn(p1,z), fn(f2,z)),
+        accel,
+        scv
+      );;
       if(yTwo>smYmax)smYmax=yTwo;
       dSmTwo.push({x:f2,y:yTwo}); dSmSingle.push({x:f2,y:smSingle}); dSmBB.push({x:f2,y:smBB});}
     c5.data.datasets[0].data=dSmTwo;
