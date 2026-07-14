@@ -80,7 +80,7 @@
   <div class="note" id="note"></div>
   <div class="cards" id="cards"></div>
 
-  <p class="foot">Smoother windows <code>w(t)=Σ Cₖ tᵏ</code> over <code>[−t_sm/2, t_sm/2]</code>, <code>t_sm = factor/freq</code>, coefficients from <code>shaper_defs.py</code> (<code>get_*_smoother</code>). Response is evaluated by treating the window as a dense impulse train and applying the same <code>shaper_calibrate</code> vibration formula used for shapers. Your branch adds a per-axis <code>damping_ratio</code> for smoothers (used when fitting the synchronized extruder smoother); upstream used a fixed 0.1. Rendered with Chart.js.</p>
+  <p class="foot">Smoother windows <code>w(t)=Σ Cₖ tᵏ</code> over <code>[−t_sm/2, t_sm/2]</code>, <code>t_sm = factor/freq</code>, coefficients from <code>shaper_defs.py</code> (<code>get_*_smoother</code>). Response is evaluated by treating the window as a dense impulse train and applying the classic residual-vibration amplitude formula (see the <a href="input_shaper_response.html">input shaper page</a>). Your branch adds a per-axis <code>damping_ratio</code> for smoothers (used when fitting the synchronized extruder smoother); upstream used a fixed 0.1. Rendered with Chart.js.</p>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>

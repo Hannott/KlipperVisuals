@@ -83,7 +83,7 @@
 
   <div class="cards" id="cards"></div>
 
-  <p class="foot">Response uses <code>V(f)=|Σ Aᵢ·e^(−ζω(T_N−Tᵢ))·e^(jω_d Tᵢ)| / ΣAᵢ</code>, matching <code>shaper_calibrate._estimate_shaper</code>. The upstream <code>3hump_ei</code> row <code>[…, 3.29160 − 1.44380]</code> collapses to one number, truncating the damping polynomial from degree 3 to degree 2 for every row; your branch splits it into <code>3.29160, −1.44380</code>. Rendered with Chart.js.</p>
+  <p class="foot">Response uses the classic residual-vibration amplitude formula <code>V(f)=|Σ Aᵢ·e^(−ζω(T_N−Tᵢ))·e^(jω_d Tᵢ)| / ΣAᵢ</code> (Klipper's historical <code>estimate_shaper</code>, kept as <code>estimate_shaper_old</code> on your branch). Your branch's current <code>shaper_calibrate</code> scores shapers by the step-response velocity minimum instead — see the <a href="shaper_estimation_method.html">estimation-method page</a>. The relative branch-vs-upstream difference holds under either metric. The upstream <code>3hump_ei</code> row <code>[…, 3.29160 − 1.44380]</code> collapses to one number, truncating the damping polynomial from degree 3 to degree 2 for every row; your branch splits it into <code>3.29160, −1.44380</code>. Rendered with Chart.js.</p>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>

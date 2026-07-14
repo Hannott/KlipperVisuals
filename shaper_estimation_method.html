@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Shaper response estimation — old finite-difference vs new analytic</title>
+<style>
+  :root{
+    --text-primary:#0b0b0b; --text-secondary:#52514e; --text-muted:#898781;
+    --surface-0:#f4f3ee; --surface-1:#faf9f5; --surface-2:#ffffff;
+    --border:rgba(11,11,11,.12); --radius:8px;
+    --grid:#e1e0d9; --blue:#2a78d6; --amber:#c98500; --teal:#1d9e75; --red:#e24b4a;
+    --font-sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --font-mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  }
+  @media (prefers-color-scheme:dark){
+    :root{
+      --text-primary:#f2f1ea; --text-secondary:#c3c2b7; --text-muted:#898781;
+      --surface-0:#191918; --surface-1:#1f1f1e; --surface-2:#262625;
+      --border:rgba(255,255,255,.14); --grid:#2c2c2a; --blue:#4f97e8; --amber:#eab308; --teal:#3fbf95; --red:#e66767;
+    }
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--surface-0);color:var(--text-primary);font-family:var(--font-sans);line-height:1.6;}
+  .wrap{max-width:820px;margin:0 auto;padding:2rem 1.25rem 4rem;}
+  h1{font-size:22px;font-weight:500;margin:.5rem 0 .25rem;}
+  .sub{color:var(--text-secondary);font-size:15px;margin:0 0 1.5rem;}
+  .back{font-size:13px;color:var(--blue);text-decoration:none;}
+  code{font-family:var(--font-mono);font-size:.9em;}
+  .types{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:1rem;}
+  .types button{font-family:inherit;font-size:13px;padding:6px 12px;border-radius:var(--radius);border:.5px solid var(--border);background:var(--surface-2);color:var(--text-secondary);cursor:pointer;}
+  .types button.on{border-color:var(--blue);color:var(--blue);background:rgba(42,120,214,.08);font-weight:500;}
+  .row{display:flex;flex-wrap:wrap;gap:16px;margin-bottom:1rem;}
+  .ctl{flex:1;min-width:160px;}
+  .ctl .lbl{display:flex;justify-content:space-between;font-size:13px;color:var(--text-secondary);margin-bottom:4px;}
+  .ctl .val{font-weight:500;color:var(--text-primary);}
+  input[type=range]{width:100%;accent-color:var(--blue);}
+  .legend{display:flex;flex-wrap:wrap;gap:16px;margin:.25rem 0 6px;font-size:13px;color:var(--text-secondary);}
+  .legend span{display:flex;align-items:center;gap:6px;}
+  .sw{width:16px;height:3px;border-radius:2px;}
+  .cap{font-size:13px;color:var(--text-secondary);margin:1.1rem 0 2px;}
+  .chart{position:relative;width:100%;height:230px;}
+  .note{margin:1rem 0;padding:.85rem 1.1rem;border-radius:var(--radius);font-size:13.5px;border:.5px solid var(--border);background:var(--surface-1);color:var(--text-secondary);}
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-top:1.25rem;}
+  .card{background:var(--surface-1);border:.5px solid var(--border);border-radius:var(--radius);padding:.85rem 1rem;}
+  .card .k{font-size:13px;color:var(--text-secondary);}
+  .card .v{font-size:20px;font-weight:500;margin-top:2px;}
+  .foot{margin-top:2.5rem;font-size:13px;color:var(--text-muted);border-top:.5px solid var(--border);padding-top:1rem;}
+  a{color:var(--blue);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="index.html">← KlipperVisuals</a>
+  <h1>Shaper response estimation: old vs new</h1>
+  <p class="sub">The <code>~2x speedup</code> to <code>SHAPER_CALIBRATE</code>. Both methods score a shaper by the minimum of the shaped step-response <em>velocity</em>. The old method built the position response and finite-differenced it; the new one uses the <strong>analytic velocity</strong>, evaluates it exactly at the impulse kinks, and refines the discrete minimum with a parabola — accurate with far fewer samples.</p>
+
+  <div class="types" id="types"></div>
+  <div class="row">
+    <div class="ctl"><div class="lbl"><span>shaper_freq (Hz)</span><span class="val" id="o-fr">50</span></div><input type="range" id="fr" min="20" max="120" step="1" value="50"></div>
+    <div class="ctl"><div class="lbl"><span>damping_ratio</span><span class="val" id="o-dr">0.10</span></div><input type="range" id="dr" min="0.02" max="0.3" step="0.005" value="0.1"></div>
+    <div class="ctl"><div class="lbl"><span>old-method samples n_t</span><span class="val" id="o-nt">40</span></div><input type="range" id="nt" min="8" max="400" step="1" value="40"></div>
+  </div>
+
+  <div class="legend">
+    <span><span class="sw" style="background:var(--blue)"></span>new (analytic)</span>
+    <span><span class="sw" style="background:repeating-linear-gradient(90deg,var(--amber) 0 5px,transparent 5px 9px)"></span>old (finite diff, n_t)</span>
+  </div>
+
+  <div class="cap">residual vibration vs frequency <span style="color:var(--text-muted)">(drop n_t and watch the old method deviate)</span></div>
+  <div class="chart"><canvas id="c1"></canvas></div>
+
+  <div class="cap">step-response velocity at the peak, near <span id="fdet" style="color:var(--text-primary)">50</span> Hz <span style="color:var(--text-muted)">(the metric is this curve's minimum)</span></div>
+  <div class="chart"><canvas id="c2"></canvas></div>
+  <div class="row" style="margin-top:.5rem;">
+    <div class="ctl"><div class="lbl"><span>detail frequency (Hz)</span><span class="val" id="o-fq">50</span></div><input type="range" id="fq" min="20" max="120" step="1" value="50"></div>
+  </div>
+
+  <div class="note" id="note"></div>
+  <div class="cards" id="cards"></div>
+
+  <p class="foot">Ported from <code>shaper_calibrate.estimate_shaper</code>: window <code>[T₀, T_N + 2·max(1/f, t_s)]</code>, <code>step_response</code> / <code>step_response_velocity</code> / <code>step_response_min_velocity</code>, kink-exact evaluation at impulse times, and the parabolic <code>_refined_min</code>. The old path builds the position response and takes <code>Δpos/(ω·Δt)</code>. Both normalized by the single-step minimum velocity. Rendered with Chart.js.</p>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+(function(){
+  var css=getComputedStyle(document.documentElement);
+  function gv(n,f){return (css.getPropertyValue(n).trim())||f;}
+  var muted=gv('--text-muted','#898781'), grid=gv('--grid','#e1e0d9');
+  var BLUE=gv('--blue','#2a78d6'), AMBER=gv('--amber','#c98500'), TEAL=gv('--teal','#1d9e75'), RED=gv('--red','#e24b4a');
+
+  // shapers (shaper_defs.py)
+  function zv(f,dr){var df=Math.sqrt(1-dr*dr),K=Math.exp(-dr*Math.PI/df),td=1/(f*df);return{A:[1,K],T:[0,0.5*td]};}
+  function mzv(f,dr){var df=Math.sqrt(1-dr*dr),K=Math.exp(-0.75*dr*Math.PI/df),td=1/(f*df);var a1=1-1/Math.SQRT2,a2=(Math.SQRT2-1)*K,a3=a1*K*K;return{A:[a1,a2,a3],T:[0,0.375*td,0.75*td]};}
+  function ei(f,dr){var vt=1/20,df=Math.sqrt(1-dr*dr),td=1/(f*df);
+    var a1=(0.24968+0.24961*vt)+((0.80008+1.23328*vt)+(0.49599+3.17316*vt)*dr)*dr;
+    var a3=(0.25149+0.21474*vt)+((-0.83249+1.41498*vt)+(0.85181-4.90094*vt)*dr)*dr;
+    var a2=1-a1-a3;var t2=0.4999+(((0.46159+8.57843*vt)*vt)+(((4.26169-108.644*vt)*vt)+((1.75601+336.989*vt)*vt)*dr)*dr)*dr;
+    return{A:[a1,a2,a3],T:[0,t2*td,td]};}
+  function expShaper(f,dr,t,a){var tau=1/f,T=[],A=[],n=a.length,k=a[0].length;
+    for(var i=0;i<n;i++){var u=t[i][k-1],vv=a[i][k-1];for(var j=0;j<k-1;j++){u=u*dr+t[i][k-2-j];vv=vv*dr+a[i][k-2-j];}T.push(u*tau);A.push(vv);}return{A:A,T:T};}
+  var T2=[[0,0,0,0],[0.49890,0.16270,-0.54262,6.16180],[0.99748,0.18382,-1.58270,8.17120],[1.49920,-0.09297,-0.28338,1.85710]];
+  var A2=[[0.16054,0.76699,2.26560,-1.22750],[0.33911,0.45081,-2.58080,1.73650],[0.34089,-0.61533,-0.68765,0.42261],[0.15997,-0.60246,1.00280,-0.93145]];
+  var T3=[[0,0,0,0],[0.49974,0.23834,0.44559,12.4720],[0.99849,0.29808,-2.36460,23.3990],[1.49870,0.10306,-2.01390,17.0320],[1.99960,-0.28231,0.61536,5.40450]];
+  var A3=[[0.11275,0.76632,3.29160,-1.44380],[0.23698,0.61164,-2.57850,4.85220],[0.30008,-0.19062,-2.14560,0.13744],[0.23775,-0.73297,0.46885,-2.08650],[0.11244,-0.45439,0.96382,-1.46000]];
+  var SHAPERS={zv:zv,mzv:mzv,ei:ei,'2hump_ei':function(f,dr){return expShaper(f,dr,T2,A2);},'3hump_ei':function(f,dr){return expShaper(f,dr,T3,A3);}};
+  var ORDER=['zv','mzv','ei','2hump_ei','3hump_ei'], current='mzv';
+
+  function stepResp(t,om,z){t=Math.max(t,0);var wd=om*Math.sqrt(1-z*z),ph=Math.acos(z);return 1-Math.exp(-z*om*t)*Math.sin(wd*t+ph)/Math.sin(ph);}
+  function stepVel(t,om,z){t=Math.max(t,0);var df=Math.sqrt(1-z*z);return Math.exp(-z*om*t)*Math.sin(om*df*t)*(om/df);}
+  function minVel(z){var d2=z*z,dr=z/Math.sqrt(1-d2);var t=0.5*Math.atan2(2*d2,(2*d2-1)*dr)+Math.PI;var ph=Math.acos(z);return Math.exp(-dr*t)*(dr*Math.sin(t+ph)-Math.cos(t+ph));}
+
+  function windowEnd(sh,f){var n=sh.T.length,ts=sh.T[n-1]-sh.T[0];return sh.T[n-1]+2*Math.max(1/f,ts);}
+  function respAnalytic(sh,f,z){var A=sh.A,T=sh.T,n=A.length,invD=1/A.reduce(function(a,b){return a+b;},0);
+    var om=2*Math.PI*f,t0=T[0],t1=windowEnd(sh,f),nt=500,vs=new Array(nt);
+    for(var k=0;k<nt;k++){var t=t0+(t1-t0)*k/(nt-1),v=0;for(var i=0;i<n;i++)v+=A[i]*stepVel(t-T[i],om,z);vs[k]=v*invD/om;}
+    var j=0;for(k=1;k<nt;k++)if(vs[k]<vs[j])j=k;var vm=vs[j];
+    if(j>0&&j<nt-1){var a=vs[j-1],b=vs[j],c=vs[j+1],den=a-2*b+c;if(den>0)vm=b-(c-a)*(c-a)/(8*den);}
+    var km=Infinity;for(var jj=0;jj<n;jj++){var vv=0;for(i=0;i<n;i++)vv+=A[i]*stepVel(T[jj]-T[i],om,z);vv*=invD/om;if(vv<km)km=vv;}
+    return Math.min(vm,km)/minVel(z);}
+  function respFinite(sh,f,z,nt){var A=sh.A,T=sh.T,n=A.length,invD=1/A.reduce(function(a,b){return a+b;},0);
+    var om=2*Math.PI*f,t0=T[0],t1=windowEnd(sh,f),dt=(t1-t0)/nt,pos=new Array(nt+1);
+    for(var k=0;k<=nt;k++){var t=t0+dt*k,p=0;for(var i=0;i<n;i++)p+=A[i]*stepResp(t-T[i],om,z);pos[k]=p*invD;}
+    var vmin=Infinity;for(k=0;k<nt;k++){var v=(pos[k+1]-pos[k])/(om*dt);if(v<vmin)vmin=v;}
+    return vmin/minVel(z);}
+
+  function baseOpts(yLabel,xLabel,ymax){
+    return {responsive:true,maintainAspectRatio:false,animation:false,interaction:{mode:'index',intersect:false},
+      plugins:{legend:{display:false},tooltip:{callbacks:{
+        title:function(it){return (Math.round(it[0].parsed.x*1000)/1000)+'';},
+        label:function(it){return it.dataset.label+': '+(Math.round(it.parsed.y*1000)/1000);}}}},
+      scales:{x:{type:'linear',grid:{display:false},ticks:{color:muted},title:{display:true,text:xLabel,color:muted}},
+              y:{min:ymax===undefined?undefined:0,max:ymax,grid:{color:grid},ticks:{color:muted},title:{display:true,text:yLabel,color:muted}}}};
+  }
+  function ln(color,dash,w){return{data:[],borderColor:color,borderWidth:w||2,borderDash:dash||[],pointRadius:0,tension:0.05};}
+  var c1=new Chart(document.getElementById('c1'),{type:'line',data:{datasets:[
+    Object.assign(ln(BLUE),{label:'new'}),Object.assign(ln(AMBER,[6,4]),{label:'old'})]},options:baseOpts('residual vibration','frequency (Hz)',1.05)});
+  var c2=new Chart(document.getElementById('c2'),{type:'line',data:{datasets:[
+    Object.assign(ln(BLUE),{label:'analytic velocity'}),
+    Object.assign(ln(AMBER,[5,4],1.5),{label:'finite-diff velocity'}),
+    {label:'true min',data:[],borderColor:RED,backgroundColor:RED,pointRadius:4,showLine:false}]},options:baseOpts('response velocity','time (ms)',undefined)});
+
+  function card(k,val,accent){return '<div class="card"><div class="k">'+k+'</div><div class="v"'+(accent?' style="color:'+accent+'"':'')+'>'+val+'</div></div>';}
+
+  function update(){
+    var f=+document.getElementById('fr').value, z=+document.getElementById('dr').value, nt=+document.getElementById('nt').value, fq=+document.getElementById('fq').value;
+    document.getElementById('o-fr').textContent=f;
+    document.getElementById('o-dr').textContent=z.toFixed(2);
+    document.getElementById('o-nt').textContent=nt;
+    document.getElementById('o-fq').textContent=fq;
+    document.getElementById('fdet').textContent=fq;
+    var sh=SHAPERS[current](f,z);
+
+    var fmax=Math.max(150,f*3),pts=180,dN=[],dO=[],maxErr=0;
+    for(var i=0;i<=pts;i++){var ff=Math.max(3,(fmax)*i/pts);
+      var rn=respAnalytic(sh,ff,z), ro=respFinite(sh,ff,z,nt);
+      dN.push({x:ff,y:rn}); dO.push({x:ff,y:ro}); if(Math.abs(rn-ro)>maxErr)maxErr=Math.abs(rn-ro);}
+    c1.data.datasets[0].data=dN; c1.data.datasets[1].data=dO; c1.update();
+
+    // chart 2: velocity over time at detail freq
+    var om=2*Math.PI*fq,t0=sh.T[0],t1=windowEnd(sh,fq),invD=1/sh.A.reduce(function(a,b){return a+b;},0);
+    var an=[],mn=Infinity,mnt=0;
+    for(i=0;i<=300;i++){var t=t0+(t1-t0)*i/300,v=0;for(var q=0;q<sh.A.length;q++)v+=sh.A[q]*stepVel(t-sh.T[q],om,z);v*=invD/om;an.push({x:t*1000,y:v});if(v<mn){mn=v;mnt=t;}}
+    var fd=[];var dt=(t1-t0)/nt;
+    for(i=0;i<nt;i++){var ta=t0+dt*i,tb=ta+dt,pa=0,pb=0;for(q=0;q<sh.A.length;q++){pa+=sh.A[q]*stepResp(ta-sh.T[q],om,z);pb+=sh.A[q]*stepResp(tb-sh.T[q],om,z);}pa*=invD;pb*=invD;fd.push({x:(ta+dt*0.5)*1000,y:(pb-pa)/(om*dt)});}
+    c2.data.datasets[0].data=an; c2.data.datasets[1].data=fd; c2.data.datasets[2].data=[{x:mnt*1000,y:mn}]; c2.update();
+
+    var rnq=respAnalytic(sh,fq,z), roq=respFinite(sh,fq,z,nt);
+    var note=document.getElementById('note');
+    note.innerHTML='At <strong>n_t = '+nt+'</strong>, the old finite-difference method '+(maxErr>0.01?'deviates by up to <strong>'+(maxErr*100).toFixed(1)+'%</strong> (absolute residual) from the analytic result':'already matches the analytic result closely')+'. The finite difference samples the position response and can straddle the sharp velocity trough (red dot), under- or over-estimating it. The analytic method evaluates that trough directly and checks the impulse kinks, so it stays exact — meaning fewer samples and less work for the same accuracy.';
+    document.getElementById('cards').innerHTML=
+      card('residual @ '+fq+'Hz (new)',(rnq*100).toFixed(2)+'%')+
+      card('residual @ '+fq+'Hz (old)',(roq*100).toFixed(2)+'%',Math.abs(rnq-roq)>0.02?RED:null)+
+      card('max deviation over band',(maxErr*100).toFixed(2)+'%',maxErr>0.05?RED:null);
+  }
+
+  var tc=document.getElementById('types');
+  ORDER.forEach(function(name){var b=document.createElement('button');b.textContent=name;if(name===current)b.className='on';
+    b.onclick=function(){current=name;Array.prototype.forEach.call(tc.children,function(ch){ch.classList.remove('on');});b.classList.add('on');update();};tc.appendChild(b);});
+  ['fr','dr','nt','fq'].forEach(function(id){document.getElementById(id).addEventListener('input',update);});
+  update();
+})();
+</script>
+</body>
+</html>

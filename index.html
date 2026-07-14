@@ -59,8 +59,18 @@
     <p>Kalico input smoothers replace a shaper's discrete impulses with a smooth polynomial window. Compare any shaper against any smoother on shared vibration-reduction axes and in the time domain, from the <code>get_*_smoother</code> definitions in <code>shaper_defs.py</code>.</p>
   </a>
 
+  <a class="card" href="resonance_excitation.html">
+    <h2>Resonance test excitation explorer<span class="tag">branch vs upstream</span></h2>
+    <p>The motion <code>TEST_RESONANCES</code> generates — frequency sweep, per-cycle acceleration, and the optional sweeping oscillation. Overlays the enforced accel/velocity limits your branch derives from the real sequence against upstream's fixed formula, which ignores the sweeping term.</p>
+  </a>
+
+  <a class="card" href="shaper_estimation_method.html">
+    <h2>Shaper estimation: old vs new<span class="tag">~2x speedup</span></h2>
+    <p>How <code>SHAPER_CALIBRATE</code> scores a shaper: the old finite-difference of the step response vs the branch's analytic velocity with kink-exact evaluation and parabolic-refined minimum. Drop the sample count and watch the old method deviate while the new one stays exact.</p>
+  </a>
+
   <div class="note">
-    <strong>Note on provenance.</strong> The pressure-advance page models a custom <code>bleeding-edge-v2</code> implementation (<code>tanh</code>/<code>recipr</code> nonlinear PA) that is not in upstream Kalico or Klipper. The input-shaper and smoother pages reproduce your branch's <code>shaper_defs.py</code> and contrast it against <code>upstream/bleeding-edge-v2</code>. A resonance-tester / calibration comparison is next.
+    <strong>Note on provenance.</strong> The pressure-advance page models a custom <code>bleeding-edge-v2</code> implementation (<code>tanh</code>/<code>recipr</code> nonlinear PA) that is not in upstream Kalico or Klipper. The input-shaper, smoother, resonance-excitation, and estimation pages reproduce your branch's <code>shaper_defs.py</code>, <code>resonance_tester.py</code>, and <code>shaper_calibrate.py</code> and contrast them against <code>upstream/bleeding-edge-v2</code>.
   </div>
 
   <p class="foot">Math and kernels reproduced from <code>klippy/chelper/kin_extruder.c</code>, <code>klippy/extras/extruder_smoother.py</code>, and <code>klippy/extras/shaper_defs.py</code>. Charts rendered with Chart.js (CDN). Source: <a href="https://github.com/Hannott/KlipperVisuals">Hannott/KlipperVisuals</a>.</p>
