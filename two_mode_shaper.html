@@ -86,6 +86,7 @@
   var BLUE=gv('--blue','#2a78d6'), AMBER=gv('--amber','#c98500'), TEAL=gv('--teal','#1d9e75');
 
   function zv(f,z){var df=Math.sqrt(1-z*z),K=Math.exp(-z*Math.PI/df),td=1/(f*df);return{A:[1,K],T:[0,0.5*td]};}
+  function zvd(f,z){var df=Math.sqrt(1-z*z),K=Math.exp(-z*Math.PI/df),td=1/(f*df);return{A:[1,2*K,K*K],T:[0,0.5*td,td]};}
   function mzv(f,z){var df=Math.sqrt(1-z*z),K=Math.exp(-0.75*z*Math.PI/df),td=1/(f*df);
     var a1=1-1/Math.SQRT2,a2=(Math.SQRT2-1)*K,a3=a1*K*K;return{A:[a1,a2,a3],T:[0,0.375*td,0.75*td]};}
   function ei(f,z){var vt=1/20,df=Math.sqrt(1-z*z),td=1/(f*df);
@@ -93,7 +94,16 @@
     var a3=(0.25149+0.21474*vt)+((-0.83249+1.41498*vt)+(0.85181-4.90094*vt)*z)*z;
     var a2=1-a1-a3;var t2=0.4999+(((0.46159+8.57843*vt)*vt)+(((4.26169-108.644*vt)*vt)+((1.75601+336.989*vt)*vt)*z)*z)*z;
     return{A:[a1,a2,a3],T:[0,t2*td,td]};}
-  var BASE={ZV:zv,MZV:mzv,EI:ei}, current='ZV';
+  function expShaper(f,z,t,a){var tau=1/f,T=[],A=[],n=a.length,k=a[0].length;
+    for(var i=0;i<n;i++){var u=t[i][k-1],vv=a[i][k-1];
+      for(var j=0;j<k-1;j++){u=u*z+t[i][k-2-j];vv=vv*z+a[i][k-2-j];}
+      T.push(u*tau);A.push(vv);}return{A:A,T:T};}
+  var T2=[[0,0,0,0],[0.49890,0.16270,-0.54262,6.16180],[0.99748,0.18382,-1.58270,8.17120],[1.49920,-0.09297,-0.28338,1.85710]];
+  var A2=[[0.16054,0.76699,2.26560,-1.22750],[0.33911,0.45081,-2.58080,1.73650],[0.34089,-0.61533,-0.68765,0.42261],[0.15997,-0.60246,1.00280,-0.93145]];
+  var T3=[[0,0,0,0],[0.49974,0.23834,0.44559,12.4720],[0.99849,0.29808,-2.36460,23.3990],[1.49870,0.10306,-2.01390,17.0320],[1.99960,-0.28231,0.61536,5.40450]];
+  var A3=[[0.11275,0.76632,3.29160,-1.44380],[0.23698,0.61164,-2.57850,4.85220],[0.30008,-0.19062,-2.14560,0.13744],[0.23775,-0.73297,0.46885,-2.08650],[0.11244,-0.45439,0.96382,-1.46000]];
+  function h2(f,z){return expShaper(f,z,T2,A2);}
+  function h3(f,z){return expShaper(f,z,T3,A3);}
 
   function convolve(s1,s2){var A=[],T=[];
     for(var i=0;i<s1.A.length;i++)for(var j=0;j<s2.A.length;j++){A.push(s1.A[i]*s2.A[j]);T.push(s1.T[i]+s2.T[j]);}
@@ -105,12 +115,26 @@
     return Math.sqrt(S*S+C*C)/sA;}
   function dur(sh){var m=0;for(var i=0;i<sh.T.length;i++)if(sh.T[i]>m)m=sh.T[i];return m;}
 
-  // broadband reference: smooth_zvd_ei (widest smoother), raw coeffs highest-degree-first
-  var SZVD={c:[-18835.07746719777,1914.349309746547,8786.608981369287,-807.3061869131075,-1209.429748155012,96.48879052981883,43.1595785340444,-3.577268915175282,1.083220648523371],tf:1.475};
+  // smoothers (shaper_defs get_*_smoother): raw coeffs highest-degree-first, factor for t_sm
+  var SM={
+    smooth_zv:{c:[-118.4265334338076,5.861885495127615,29.52796003014231,-1.465471373781904,0.01966833207740377],tf:0.8025},
+    smooth_mzv:{c:[-1906.717580206364,125.8892756660212,698.0200035767849,-37.75923018121473,-62.18762409216703,1.57172781617736,1.713117990217123],tf:0.95625},
+    smooth_ei:{c:[-1797.048868963208,120.5310596109878,669.6653197989012,-35.71975707450795,-62.49388325512682,1.396748042940248,1.848276903900512],tf:1.06625},
+    smooth_2hump_ei:{c:[-22525.88434486782,2524.826047114184,10554.22832043971,-1051.778387878068,-1475.914693073253,121.2177946817349,57.95603221424528,-4.018706414213658,0.8375784787864095],tf:1.14875},
+    smooth_zvd_ei:{c:[-18835.07746719777,1914.349309746547,8786.608981369287,-807.3061869131075,-1209.429748155012,96.48879052981883,43.1595785340444,-3.577268915175282,1.083220648523371],tf:1.475},
+    smooth_si:{c:[-6186.76006449789,1206.747198930197,2579.985143622855,-476.8554763069169,-295.546608490564,52.69679971161049,4.234582468800491,-2.226157642004671,1.267781046297883],tf:1.245}
+  };
   function windowW(c,tau){var w=0;for(var i=0;i<c.length;i++)w=w*tau+c[i];return w;}
-  function smootherShaper(sm,f){var t_sm=sm.tf/f,M=200,A=[],T=[];
+  function smootherShaper(sm,f,M){M=M||200;var t_sm=sm.tf/f,A=[],T=[];
     for(var i=0;i<=M;i++){var tau=-0.5+i/M,wv=windowW(sm.c,tau);if(wv<0)wv=0;A.push(wv);T.push((tau+0.5)*t_sm);}
     return{A:A,T:T};}
+
+  // base registry: impulse shapers use zeta; smoothers are zeta-agnostic (48-point train for convolution)
+  var BASE={ZV:{fn:zv},MZV:{fn:mzv},ZVD:{fn:zvd},EI:{fn:ei},'2HUMP_EI':{fn:h2},'3HUMP_EI':{fn:h3}};
+  var ORDER=['ZV','MZV','ZVD','EI','2HUMP_EI','3HUMP_EI'];
+  Object.keys(SM).forEach(function(key){var nm=key.toUpperCase();
+    BASE[nm]={fn:function(f,z){return smootherShaper(SM[key],f,48);},smooth:true}; ORDER.push(nm);});
+  var current='ZV';
 
   var opts={responsive:true,maintainAspectRatio:false,animation:false,interaction:{mode:'index',intersect:false},
     plugins:{legend:{display:true,position:'top',align:'start',labels:{color:muted,usePointStyle:true,pointStyle:'line',boxWidth:26,padding:12,font:{size:12}}},
@@ -145,8 +169,8 @@
     document.getElementById('o-p1').textContent=p1.toFixed(1);
     document.getElementById('o-p2').textContent=p2.toFixed(1);
     document.getElementById('o-z').textContent=z.toFixed(3);
-    var fn=BASE[current];
-    var single=fn(p1,z), two=convolve(fn(p1,z),fn(p2,z)), bb=smootherShaper(SZVD,p1);
+    var fn=BASE[current].fn, isSmooth=BASE[current].smooth;
+    var single=fn(p1,z), two=convolve(fn(p1,z),fn(p2,z)), bb=smootherShaper(SM.smooth_zvd_ei,p1);
 
     var pts=320, dTwo=[],dSingle=[],dBB=[];
     for(var i=0;i<=pts;i++){var f=1+(159)*i/pts;
@@ -164,12 +188,16 @@
 
     // mismatch chart: design the two-mode shaper at a swept "assumed" zeta,
     // evaluate residual at each peak against the true zeta (the slider).
-    var za0=0.01, za1=0.20, n2=140, dP1=[],dP2=[], ymax=0;
-    for(var k=0;k<=n2;k++){var za=za0+(za1-za0)*k/n2;
-      var tw=convolve(fn(p1,za),fn(p2,za));
-      var r1=residual(tw,p1,z), r2=residual(tw,p2,z);
-      dP1.push({x:za,y:r1}); dP2.push({x:za,y:r2});
-      if(r1>ymax)ymax=r1; if(r2>ymax)ymax=r2;}
+    var za0=0.01, za1=0.20, n2=140, dP1=[],dP2=[], ymax=0, k, za;
+    if(isSmooth){var r1c=residual(two,p1,z), r2c=residual(two,p2,z); ymax=Math.max(r1c,r2c,1e-3);
+      for(k=0;k<=n2;k++){za=za0+(za1-za0)*k/n2; dP1.push({x:za,y:r1c}); dP2.push({x:za,y:r2c});}
+    }else{
+      for(k=0;k<=n2;k++){za=za0+(za1-za0)*k/n2;
+        var tw=convolve(fn(p1,za),fn(p2,za));
+        var r1=residual(tw,p1,z), r2=residual(tw,p2,z);
+        dP1.push({x:za,y:r1}); dP2.push({x:za,y:r2});
+        if(r1>ymax)ymax=r1; if(r2>ymax)ymax=r2;}
+    }
     c2.data.datasets[0].data=dP1; c2.data.datasets[1].data=dP2;
     c2.data.datasets[2].data=[{x:z,y:0},{x:z,y:ymax*1.02}];
     c2.data.datasets[2].label='true ζ ('+z.toFixed(3)+')';
@@ -183,13 +211,16 @@
       card('duration — two-mode / broadband', (dur(two)*1000).toFixed(1)+' / '+(dur(bb)*1000).toFixed(1)+' ms')+
       card('if ζ assumed 0.1 (default) — V@P1 / V@P2', pct(residual(two01,p1,z))+' / '+pct(residual(two01,p2,z)), residual(two01,p1,z)>0.03||residual(two01,p2,z)>0.03?'var(--amber)':null);
 
+    var lower = isSmooth
+      ? 'Smoothers are <strong>damping-agnostic</strong> — the window doesn&rsquo;t depend on ζ — so the lower chart is flat: no ζ-mismatch penalty. The tradeoff is a longer window and shallower notches than the impulse two-mode shapers. '
+      : 'The lower chart shows why damping matters: a notch reaches zero <em>only</em> when the shaper&rsquo;s assumed ζ matches the mode&rsquo;s true ζ — away from it the notch fills in, sharply for ZV/MZV/ZVD and more gently for EI/2hump/3hump. Both curves bottom at the same assumed ζ here because both modes share one true ζ; if the two modes are damped differently, no single assumed ζ can zero both, which is what a per-peak ζ estimate would fix. ';
     document.getElementById('note').innerHTML=
-      'The <strong>single-mode</strong> shaper notches peak&nbsp;1 but lets peak&nbsp;2 through; the <strong>broadband smoother</strong> covers both, shallower and longer; the <strong>two-mode</strong> shaper puts a deep notch at each peak (with base '+current+', '+pct(residual(two,p1,z))+' / '+pct(residual(two,p2,z))+' at '+(dur(two)*1000).toFixed(1)+'&nbsp;ms). '+
-      'The lower chart shows why damping matters: a notch reaches zero <em>only</em> when the shaper&rsquo;s assumed ζ matches the mode&rsquo;s true ζ — away from it the notch fills in, sharply for ZV/MZV and more gently for EI. Both curves bottom at the same assumed ζ here because both modes share one true ζ; if the two modes are damped differently, no single assumed ζ can zero both, which is what a per-peak ζ estimate would fix. The last card shows the cost of skipping the measurement and using the 0.1 default.';
+      'The <strong>single-mode</strong> shaper notches peak&nbsp;1 but lets peak&nbsp;2 through; the <strong>broadband smoother</strong> covers both, shallower and longer; the <strong>two-mode</strong> shaper puts a notch at each peak (with base '+current+', '+pct(residual(two,p1,z))+' / '+pct(residual(two,p2,z))+' at '+(dur(two)*1000).toFixed(1)+'&nbsp;ms). '+
+      lower + 'The last card shows the cost of skipping the measurement and using the 0.1 default.';
   }
 
   var tc=document.getElementById('types');
-  ['ZV','MZV','EI'].forEach(function(name){var b=document.createElement('button');b.textContent=name;
+  ORDER.forEach(function(name){var b=document.createElement('button');b.textContent=name;
     if(name===current)b.className='on';
     b.onclick=function(){current=name;Array.prototype.forEach.call(tc.children,function(ch){ch.classList.remove('on');});b.classList.add('on');update();};
     tc.appendChild(b);});
