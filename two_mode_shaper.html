@@ -405,7 +405,8 @@
     // corner smoothing vs peak-2 separation: single-mode and broadband are
     // tuned to peak 1 (flat baselines); only the two-mode shaper's smoothing
     // grows as the second mode is pushed away from the first.
-    var smSingle=shaperSmoothing(single), smBB=shaperSmoothing(bb);
+    var smSingle = shaperSmoothing(single, accel, scv),
+        smBB = shaperSmoothing(bb, accel, scv);
     var dSmTwo=[],dSmSingle=[],dSmBB=[], sp=70, smYmax=Math.max(smSingle,smBB);
     for(var si=0;si<=sp;si++){var f2=20+140*si/sp;
       var yTwo = shaperSmoothing(
