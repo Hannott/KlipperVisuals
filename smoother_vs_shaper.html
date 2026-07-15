@@ -109,6 +109,9 @@
   var T3=[[0,0,0,0],[0.49974,0.23834,0.44559,12.4720],[0.99849,0.29808,-2.36460,23.3990],[1.49870,0.10306,-2.01390,17.0320],[1.99960,-0.28231,0.61536,5.40450]];
   var A3=[[0.11275,0.76632,3.29160,-1.44380],[0.23698,0.61164,-2.57850,4.85220],[0.30008,-0.19062,-2.14560,0.13744],[0.23775,-0.73297,0.46885,-2.08650],[0.11244,-0.45439,0.96382,-1.46000]];
   var SHAPERS={zv:zv,mzv:mzv,zvd:zvd,ei:ei,'2hump_ei':function(f,dr){return expShaper(f,dr,T2,A2);},'3hump_ei':function(f,dr){return expShaper(f,dr,T3,A3);}};
+  // shaper_defs.py returns raw (unnormalized) amplitude ratios; firmware (kin_shaper.c)
+  // divides by sum(A) before applying impulses, so do the same before displaying them.
+  function normalizeA(sh){var s=0,n=sh.A.length,i; for(i=0;i<n;i++)s+=sh.A[i]; if(s>0)for(i=0;i<n;i++)sh.A[i]/=s; return sh;}
 
   // ---- smoothers (shaper_defs.py get_*_smoother): raw coeffs highest-degree-first, factor for t_sm ----
   var SMOOTHERS={
@@ -129,7 +132,22 @@
     var w=2*Math.PI*f, wd=w*Math.sqrt(1-dr*dr), S=0,C=0;
     for(i=0;i<n;i++){var Wi=A[i]*Math.exp(-dr*w*(Tl-T[i])); S+=Wi*Math.sin(wd*T[i]); C+=Wi*Math.cos(wd*T[i]);}
     return Math.sqrt(S*S+C*C)/sumA;}
-  function worstInBand(sh,fc,dr){var lo=fc*0.75,hi=fc*1.25,m=0;for(var k=0;k<=40;k++){var r=response(sh,lo+(hi-lo)*k/40,dr);if(r>m)m=r;}return m;}
+  // Some shapers (mzv, 2hump_ei, 3hump_ei) protect a band that isn't centered on
+  // fc - mzv's second notch sits ~1.6-1.7x fc, for instance. Detect the real notches
+  // (searching 0.35x-2x fc, which stays clear of the harmonic side-lobe every family
+  // has near ~2.9x fc) and widen the evaluation band to cover them, instead of
+  // assuming a fixed +/-25% window around fc.
+  function notchBand(sh,dr,fc){
+    if(!sh.A.length)return [fc*0.75,fc*1.25];
+    var scanLo=0.35*fc,scanHi=2.0*fc,N=400,notches=[],prevR=null,prevPrevR=null,prevF=null;
+    for(var i=0;i<=N;i++){var tf=scanLo+(scanHi-scanLo)*i/N,r=response(sh,tf,dr);
+      if(prevR!==null&&prevPrevR!==null&&prevR<prevPrevR&&prevR<=r&&prevR<0.3)notches.push(prevF);
+      prevPrevR=prevR;prevR=r;prevF=tf;}
+    var lo=fc*0.75,hi=fc*1.25;
+    if(notches.length){lo=Math.min(lo,Math.min.apply(null,notches)*0.9);hi=Math.max(hi,Math.max.apply(null,notches)*1.1);}
+    return [lo,hi];
+  }
+  function worstInBand(sh,fc,dr){var band=notchBand(sh,dr,fc),lo=band[0],hi=band[1],m=0;for(var k=0;k<=80;k++){var r=response(sh,lo+(hi-lo)*k/80,dr);if(r>m)m=r;}return m;}
 
   function baseOpts(yLabel,xLabel,ymax){
     return {responsive:true,maintainAspectRatio:false,animation:false,interaction:{mode:'index',intersect:false},
@@ -154,7 +172,7 @@
     document.getElementById('o-fr').textContent=f;
     document.getElementById('o-dr').textContent=dr.toFixed(2);
 
-    var shp=(shName!=='none')?SHAPERS[shName](f,dr):null;
+    var shp=(shName!=='none')?normalizeA(SHAPERS[shName](f,dr)):null;
     var smo=(smName!=='none')?smootherShaper(SMOOTHERS[smName],f):null;
 
     var fmax=Math.max(150,f*3), pts=220, d1=[],d2=[];
