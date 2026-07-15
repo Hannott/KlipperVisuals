@@ -61,6 +61,8 @@
     <div class="ctl"><div class="lbl"><span>peak 1 (Hz)</span><span class="val" id="o-p1">45.2</span></div><input type="range" id="p1" min="20" max="120" step="0.1" value="45.2"></div>
     <div class="ctl"><div class="lbl"><span>peak 2 (Hz)</span><span class="val" id="o-p2">79.5</span></div><input type="range" id="p2" min="20" max="160" step="0.1" value="79.5"></div>
     <div class="ctl"><div class="lbl"><span>damping_ratio</span><span class="val" id="o-z">0.043</span></div><input type="range" id="z" min="0.02" max="0.2" step="0.001" value="0.043"></div>
+    <div class="ctl"><div class="lbl"><span>SCV</span><span class="val" id="o-SCV">5</span></div><input type="range" id="SCV" min="1" max="20" step="0.1" value="5"></div>
+    <div class="ctl"><div class="lbl"><span>acceleration</span><span class="val" id="o-accl">20000</span></div><input type="range" id="accl" min="3000" max="30000" step="100" value="20000"></div>
   </div>
 
   <p style="font-size:13px;color:var(--text-muted);margin:.25rem 0 1rem;">Click a legend entry to hide or show that line.</p>
@@ -381,7 +383,11 @@
     document.getElementById('o-z').textContent=z.toFixed(3);
     var fn=BASE[current].fn, isSmooth=BASE[current].smooth;
     var single=fn(p1,z), two=convolve(fn(p1,z),fn(p2,z)), bb=smootherShaper(SM.smooth_zvd_ei,p1);
-
+    var scv = +document.getElementById("SCV").value;
+    var accel = +document.getElementById("accl").value;
+    document.getElementById("o-SCV").textContent = scv.toFixed(1);
+    document.getElementById("o-accl").textContent = accel.toLocaleString();
+    
     var pts=320, dTwo=[],dSingle=[],dBB=[];
     for(var i=0;i<=pts;i++){var f=1+(159)*i/pts;
       dTwo.push({x:f,y:residual(two,f,z)});
@@ -399,10 +405,15 @@
     // corner smoothing vs peak-2 separation: single-mode and broadband are
     // tuned to peak 1 (flat baselines); only the two-mode shaper's smoothing
     // grows as the second mode is pushed away from the first.
-    var smSingle=shaperSmoothing(single), smBB=shaperSmoothing(bb);
+    var smSingle = shaperSmoothing(single, accel, scv),
+        smBB = shaperSmoothing(bb, accel, scv);
     var dSmTwo=[],dSmSingle=[],dSmBB=[], sp=70, smYmax=Math.max(smSingle,smBB);
     for(var si=0;si<=sp;si++){var f2=20+140*si/sp;
-      var yTwo=shaperSmoothing(convolve(fn(p1,z),fn(f2,z)));
+      var yTwo = shaperSmoothing(
+        convolve(fn(p1,z), fn(f2,z)),
+        accel,
+        scv
+      );;
       if(yTwo>smYmax)smYmax=yTwo;
       dSmTwo.push({x:f2,y:yTwo}); dSmSingle.push({x:f2,y:smSingle}); dSmBB.push({x:f2,y:smBB});}
     c5.data.datasets[0].data=dSmTwo;
@@ -484,7 +495,7 @@
     if(name===current)b.className='on';
     b.onclick=function(){current=name;Array.prototype.forEach.call(tc.children,function(ch){ch.classList.remove('on');});b.classList.add('on');update();};
     tc.appendChild(b);});
-  ['p1','p2','z'].forEach(function(id){document.getElementById(id).addEventListener('input',update);});
+  ['p1','p2','z','accl','SCV'].forEach(function(id){document.getElementById(id).addEventListener('input',update);});
   update();
 })();
 </script>
