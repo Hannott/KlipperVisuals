@@ -58,8 +58,8 @@
   </a>
 
   <a class="card" href="two_mode_shaper.html">
-    <h2>Two-mode input shaper<span class="tag">prototype</span></h2>
-    <p>A concept shaper for axes with <strong>two</strong> resonances: the convolution of a single-mode shaper tuned to each peak notches both at once. Compares it against a single-mode shaper and a broadband smoother, defaulting to a measured 45.2 / 79.5 Hz Y axis. Not a Kalico shaper type — an exploration of a possible one.</p>
+    <h2>Multimode input shaper<span class="tag">Kalico feature</span></h2>
+    <p>Kalico's real <code>shaper_type = multimode</code>: convolve a base shaper tuned to each of N&nbsp;≥&nbsp;2 resonance peaks so every one gets its own notch. Configure peaks/bases directly, load real capture CSVs (peak-detection runs live, in-browser), and see the measured before/after on a real printer — a 30&times; drop in vibration power, computed from actual accelerometer captures with Kalico's own Welch pipeline.</p>
   </a>
 
   <a class="card" href="smoother_vs_shaper.html">

@@ -5,7 +5,7 @@
   var LINKS = [
     ["nonlinear_pa_explorer.html", "Pressure advance"],
     ["input_shaper_response.html", "Input shapers"],
-    ["two_mode_shaper.html", "Two-mode"],
+    ["two_mode_shaper.html", "Multimode"],
     ["smoother_vs_shaper.html", "Smoothers"],
     ["extruder_smoother_fit.html", "Extruder fit"],
     ["resonance_excitation.html", "Resonance test"],
