@@ -882,6 +882,11 @@
   var peaks=[];
   var loadedCapture=null;   // {freq,x,y,z,xyz,psd,label} -- psd/xyz is the Combined series everything below analyzes
   var lastReco=null;        // most recent findBestShaperReal() result, for the config generator
+  // Bumped by every renderRecommendation() call; its ~1-2s async search
+  // checks this before painting so an older, still-in-flight search (e.g.
+  // from before the user toggled another axis) can never clobber a newer
+  // one that already finished -- see the generation guard inside it.
+  var recomputeGen=0;
   // Which raw axes currently feed Combined (toggled via the input chart's
   // legend). Hiding an axis there recomputes Combined = sum of whichever
   // axes remain visible (matching Kalico's own psd_sum = psd_x+psd_y+psd_z),
@@ -1325,6 +1330,10 @@
   ['SCV','accl'].forEach(function(id){document.getElementById(id).addEventListener('input',update);});
   window.addEventListener('resize',function(){update();renderInput();});
   function renderRecommendation(){
+    // Bump unconditionally (even on the no-capture early return below) so a
+    // still-in-flight search from before a clear/reload can never paint its
+    // stale result over whatever state this call establishes.
+    var myGen=++recomputeGen;
     var statusEl=document.getElementById('recoStatus');
     var cardsEl=document.getElementById('cardsReco');
     var noteEl=document.getElementById('noteReco');
@@ -1334,13 +1343,21 @@
       statusEl.innerHTML='Load a capture above to compute a recommendation.';
       return;
     }
-    var b=loadedCapture;
-    statusEl.innerHTML='Computing recommendation for '+b.label+' (find_best_shaper port, ~1-2s)…';
+    // Snapshot freq/psd/label now: loadedCapture.xyz/.psd may be mutated in
+    // place by a later recombineAndCascade() before this search's setTimeout
+    // fires, and this generation may still be current at that point (e.g. a
+    // rapid second toggle that itself hasn't reached its own renderRecommendation()
+    // call yet) -- snapshotting means this search always scores the data it
+    // was actually asked to score.
+    var b=loadedCapture, bFreq=b.freq, bPsd=b.psd.slice(), bLabel=b.label;
+    statusEl.innerHTML='Computing recommendation for '+bLabel+' (find_best_shaper port, ~1-2s)…';
     setTimeout(function(){
+      if(myGen!==recomputeGen)return; // superseded by a newer recompute; drop this stale result
       var scv=5.0,maxFreq=200.0;
-      var result=findBestShaperReal(b.freq,b.psd,scv,maxFreq);
-      var allPeaks=detectAndEstimate(b.freq,b.psd,4);
-      lastReco={best:result.best,label:b.label,result:result,allPeaks:allPeaks};
+      var result=findBestShaperReal(bFreq,bPsd,scv,maxFreq);
+      var allPeaks=detectAndEstimate(bFreq,bPsd,4);
+      if(myGen!==recomputeGen)return; // superseded while computing; don't paint over newer results
+      lastReco={best:result.best,label:bLabel,result:result,allPeaks:allPeaks};
       paintRecommendation();
       seedExplorerFromReco(result.best);
     },10);
