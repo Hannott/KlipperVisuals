@@ -3,8 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Resonance test excitation explorer — Klipper / Kalico</title>
+<title data-i18n="resonance_excitation.title">Resonance test excitation explorer — Klipper / Kalico</title>
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
+<script src="i18n.js"></script>
 <style>
   html{overflow-y:scroll;}
   /* --blue/--amber/--teal/--red (the chart "data colors") are owned by
@@ -56,40 +57,41 @@
 <body>
 <script src="nav.js"></script>
 <div class="wrap">
-  <h1>Resonance test excitation explorer</h1>
-  <p class="sub">The motion <code>TEST_RESONANCES</code> commands: frequency ramps at <code>hz_per_sec</code>, each cycle accelerates at <code>accel_per_hz·freq</code>, with an optional slow <code>sweeping</code> oscillation layered on top. The enforced accel/velocity limits are derived from the <em>actual</em> generated sequence; upstream used a fixed formula that ignores the sweeping term.</p>
+  <h1 data-i18n="resonance_excitation.heading">Resonance test excitation explorer</h1>
+  <p class="sub" data-i18n-html="resonance_excitation.intro">The motion <code>TEST_RESONANCES</code> commands: frequency ramps at <code>hz_per_sec</code>, each cycle accelerates at <code>accel_per_hz·freq</code>, with an optional slow <code>sweeping</code> oscillation layered on top. The enforced accel/velocity limits are derived from the <em>actual</em> generated sequence; upstream used a fixed formula that ignores the sweeping term.</p>
 
-  <div class="grouplabel">test generator (from resonance_tester.py)</div>
+  <div class="grouplabel" data-i18n="resonance_excitation.groupLabel">test generator (from resonance_tester.py)</div>
   <div class="row">
-    <div class="ctl"><div class="lbl"><span>max_freq (Hz)</span><span class="val" id="o-fe">135</span></div><input type="range" id="fe" min="50" max="250" step="5" value="135"></div>
-    <div class="ctl"><div class="lbl"><span>accel_per_hz</span><span class="val" id="o-aph">75</span></div><input type="range" id="aph" min="20" max="200" step="5" value="75"></div>
-    <div class="ctl"><div class="lbl"><span>hz_per_sec</span><span class="val" id="o-hps">1.0</span></div><input type="range" id="hps" min="0.2" max="2" step="0.1" value="1"></div>
+    <div class="ctl"><div class="lbl"><span data-i18n="resonance_excitation.controls.maxFreq">max_freq (Hz)</span><span class="val" id="o-fe">135</span></div><input type="range" id="fe" min="50" max="250" step="5" value="135"></div>
+    <div class="ctl"><div class="lbl"><span data-i18n="resonance_excitation.controls.accelPerHz">accel_per_hz</span><span class="val" id="o-aph">75</span></div><input type="range" id="aph" min="20" max="200" step="5" value="75"></div>
+    <div class="ctl"><div class="lbl"><span data-i18n="resonance_excitation.controls.hzPerSec">hz_per_sec</span><span class="val" id="o-hps">1.0</span></div><input type="range" id="hps" min="0.2" max="2" step="0.1" value="1"></div>
   </div>
   <div class="row">
-    <div class="ctl"><div class="lbl"><span>sweeping_period (s)</span><span class="val" id="o-swp">0.40</span></div><input type="range" id="swp" min="0" max="1.2" step="0.05" value="0.4"></div>
-    <div class="ctl"><div class="lbl"><span>sweeping_accel</span><span class="val" id="o-swa">400</span></div><input type="range" id="swa" min="0" max="1500" step="50" value="400"></div>
-    <div class="ctl"><div class="lbl"><span>zoom frequency (Hz)</span><span class="val" id="o-fz">60</span></div><input type="range" id="fz" min="5" max="250" step="1" value="60"></div>
+    <div class="ctl"><div class="lbl"><span data-i18n="resonance_excitation.controls.sweepingPeriod">sweeping_period (s)</span><span class="val" id="o-swp">0.40</span></div><input type="range" id="swp" min="0" max="1.2" step="0.05" value="0.4"></div>
+    <div class="ctl"><div class="lbl"><span data-i18n="resonance_excitation.controls.sweepingAccel">sweeping_accel</span><span class="val" id="o-swa">400</span></div><input type="range" id="swa" min="0" max="1500" step="50" value="400"></div>
+    <div class="ctl"><div class="lbl"><span data-i18n="resonance_excitation.controls.zoomFrequency">zoom frequency (Hz)</span><span class="val" id="o-fz">60</span></div><input type="range" id="fz" min="5" max="250" step="1" value="60"></div>
   </div>
 
-  <div class="cap">frequency vs time <span style="color:var(--text-muted)">(the sweep — rises at hz_per_sec)</span></div>
+  <div class="cap" data-i18n-html="resonance_excitation.captions.freqVsTime">frequency vs time <span style="color:var(--text-muted)">(the sweep — rises at hz_per_sec)</span></div>
   <div class="chart" style="height:170px;"><canvas id="c1"></canvas></div>
 
-  <p style="font-size:13px;color:var(--text-muted);margin:.25rem 0 1rem;">Click a legend entry on a chart to hide or show that line.</p>
-  <div class="cap">acceleration envelope vs time <span style="color:var(--text-muted)">(with enforced accel limits)</span></div>
+  <p style="font-size:13px;color:var(--text-muted);margin:.25rem 0 1rem;" data-i18n="resonance_excitation.legendHint">Click a legend entry on a chart to hide or show that line.</p>
+  <div class="cap" data-i18n-html="resonance_excitation.captions.accelEnvelope">acceleration envelope vs time <span style="color:var(--text-muted)">(with enforced accel limits)</span></div>
   <div class="chart"><canvas id="c2"></canvas></div>
 
-  <div class="cap">zoomed waveform at the selected frequency <span style="color:var(--text-muted)">(the actual ± pulse and resulting velocity)</span></div>
+  <div class="cap" data-i18n-html="resonance_excitation.captions.zoomedWaveform">zoomed waveform at the selected frequency <span style="color:var(--text-muted)">(the actual ± pulse and resulting velocity)</span></div>
   <div class="chart" style="height:200px;"><canvas id="c3"></canvas></div>
 
   <div class="note" id="note"></div>
   <div class="cards" id="cards"></div>
 
-  <p class="foot">Motion generated by porting <code>VibrationPulseTestGenerator.gen_test</code> and <code>SweepingVibrationsTestGenerator.gen_test</code>. The sequence-derived limits <code>max|accel|+10</code> / <code>max|v|+1</code> come from accumulating the real sequence (as in <code>ResonanceTestExecutor.run_test</code>); upstream used <code>freq_end·accel_per_hz+10</code> and <code>accel_per_hz·0.25+1</code>. <code>sweeping_period=0</code> disables the sweep (its config default); it's set to 0.4 here so the difference is visible. Rendered with Chart.js.</p>
+  <p class="foot" data-i18n-html="resonance_excitation.footer">Motion generated by porting <code>VibrationPulseTestGenerator.gen_test</code> and <code>SweepingVibrationsTestGenerator.gen_test</code>. The sequence-derived limits <code>max|accel|+10</code> / <code>max|v|+1</code> come from accumulating the real sequence (as in <code>ResonanceTestExecutor.run_test</code>); upstream used <code>freq_end·accel_per_hz+10</code> and <code>accel_per_hz·0.25+1</code>. <code>sweeping_period=0</code> disables the sweep (its config default); it's set to 0.4 here so the difference is visible. Rendered with Chart.js.</p>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script>
 (function(){
+  var t=window.KV_I18N.t;
   var css=getComputedStyle(document.documentElement);
   function gv(n,f){return (css.getPropertyValue(n).trim())||f;}
   var muted=gv('--text-muted','#898781'), grid=gv('--grid','#e1e0d9');
@@ -128,22 +130,22 @@
     return {responsive:true,maintainAspectRatio:false,animation:false,interaction:{mode:'nearest',intersect:false},
       plugins:{legend:{display:true,position:'top',align:'start',labels:{color:muted,usePointStyle:true,pointStyle:'line',boxWidth:26,padding:12,font:{size:12}}},tooltip:{callbacks:{
         title:function(it){return (Math.round(it[0].parsed.x*1000)/1000)+'';},
-        label:function(it){return it.dataset.label+': '+(Math.round(it.parsed.y*100)/100);}}}},
+        label:function(it){return t('resonance_excitation.chart.tooltipLabel',{label:it.dataset.label,value:Math.round(it.parsed.y*100)/100});}}}},
       scales:{x:{type:'linear',grid:{display:false},ticks:{color:muted},title:{display:true,text:xLabel,color:muted}},
               y:{grid:{color:grid},ticks:{color:muted},title:{display:true,text:yLabel,color:muted}}}};
   }
   function L(color,dash,w,fill){return{data:[],borderColor:color,backgroundColor:fill||'transparent',borderWidth:w||2,borderDash:dash||[],pointRadius:0,tension:0,fill:fill?true:false};}
-  var c1=new Chart(document.getElementById('c1'),{type:'line',data:{datasets:[Object.assign(L(BLUE),{label:'frequency'})]},options:baseOpts('frequency (Hz)','time (s)')});
+  var c1=new Chart(document.getElementById('c1'),{type:'line',data:{datasets:[Object.assign(L(BLUE),{label:t('resonance_excitation.chart.datasetFrequency')})]},options:baseOpts(t('resonance_excitation.chart.axisFreq'),t('resonance_excitation.chart.axisTimeS'))});
   var c2=new Chart(document.getElementById('c2'),{type:'line',data:{datasets:[
-    Object.assign(L(TEAL,[],2,alpha(TEAL,.10)),{label:'+peak accel'}),
-    Object.assign(L(TEAL,[],2),{label:'-peak accel'}),
-    Object.assign(L(BLUE,[],1.5),{label:'limit (from sequence)'}),
-    Object.assign(L(AMBER,[6,4],1.5),{label:'limit (upstream formula)'})]},options:baseOpts('acceleration (mm/s²)','time (s)')});
+    Object.assign(L(TEAL,[],2,alpha(TEAL,.10)),{label:t('resonance_excitation.chart.datasetPeakAccelPos')}),
+    Object.assign(L(TEAL,[],2),{label:t('resonance_excitation.chart.datasetPeakAccelNeg')}),
+    Object.assign(L(BLUE,[],1.5),{label:t('resonance_excitation.chart.datasetLimitSequence')}),
+    Object.assign(L(AMBER,[6,4],1.5),{label:t('resonance_excitation.chart.datasetLimitUpstream')})]},options:baseOpts(t('resonance_excitation.chart.axisAccel'),t('resonance_excitation.chart.axisTimeS'))});
   var c3=new Chart(document.getElementById('c3'),{data:{datasets:[
-    {type:'line',label:'accel',data:[],borderColor:TEAL,borderWidth:2,pointRadius:0,stepped:true},
-    {type:'line',label:'velocity',data:[],borderColor:BLUE,borderWidth:2,pointRadius:0,tension:0.1,yAxisID:'y2'}]},
-    options:(function(){var o=baseOpts('acceleration (mm/s²)','time (ms)');
-      o.scales.y2={position:'right',grid:{display:false},ticks:{color:muted},title:{display:true,text:'velocity (mm/s)',color:muted}};return o;})()});
+    {type:'line',label:t('resonance_excitation.chart.datasetAccel'),data:[],borderColor:TEAL,borderWidth:2,pointRadius:0,stepped:true},
+    {type:'line',label:t('resonance_excitation.chart.datasetVelocity'),data:[],borderColor:BLUE,borderWidth:2,pointRadius:0,tension:0.1,yAxisID:'y2'}]},
+    options:(function(){var o=baseOpts(t('resonance_excitation.chart.axisAccel'),t('resonance_excitation.chart.axisTimeMs'));
+      o.scales.y2={position:'right',grid:{display:false},ticks:{color:muted},title:{display:true,text:t('resonance_excitation.chart.axisVelocity'),color:muted}};return o;})()});
 
   function card(k,val,accent){return '<div class="card"><div class="k">'+k+'</div><div class="v"'+(accent?' style="color:'+accent+'"':'')+'>'+val+'</div></div>';}
 
@@ -162,12 +164,12 @@
     var brA=lim.maxA+10, brV=lim.maxV+1, upA=fe*aph+10, upV=aph*0.25+1;
 
     // chart 1: frequency ramp
-    var f1=[]; for(var i=0;i<=200;i++){var t=T*i/200; f1.push({x:t,y:Math.min(fe,FS+hps*t)});}
+    var f1=[]; for(var i=0;i<=200;i++){var tx=T*i/200; f1.push({x:tx,y:Math.min(fe,FS+hps*tx)});}
     c1.data.datasets[0].data=f1; c1.update();
 
     // chart 2: peak accel envelope + limits
     var sweepOn=(swp>0&&swa>0);
-    var env=[],envn=[]; for(i=0;i<=200;i++){var t=T*i/200; var fr=Math.min(fe,FS+hps*t); var pk=aph*fr+(sweepOn?swa:0); env.push({x:t,y:pk}); envn.push({x:t,y:-pk});}
+    var env=[],envn=[]; for(i=0;i<=200;i++){var tx=T*i/200; var fr=Math.min(fe,FS+hps*tx); var pk=aph*fr+(sweepOn?swa:0); env.push({x:tx,y:pk}); envn.push({x:tx,y:-pk});}
     c2.data.datasets[0].data=env; c2.data.datasets[1].data=envn;
     c2.data.datasets[2].data=[{x:0,y:brA},{x:T,y:brA}];
     c2.data.datasets[3].data=[{x:0,y:upA},{x:T,y:upA}];
@@ -189,17 +191,17 @@
     var note=document.getElementById('note');
     if(sweepOn && upA<lim.maxA){
       note.className='note warn';
-      note.innerHTML='<strong>Upstream under-shoots the accel limit.</strong> With sweeping enabled, the true peak acceleration is <code>'+Math.round(lim.maxA)+'</code> mm/s², but upstream’s formula <code>freq_end·accel_per_hz+10 = '+Math.round(upA)+'</code> ignores <code>sweeping_accel</code> — so the machine’s limits wouldn’t be raised enough during the test. The sequence-derived limit is <code>'+Math.round(brA)+'</code>.';
+      note.innerHTML=t('resonance_excitation.note.warn',{maxA:Math.round(lim.maxA),upA:Math.round(upA),brA:Math.round(brA)});
     }else{
       note.className='note';
-      note.innerHTML='Each frequency runs a <code>+accel</code> / <code>−accel</code> pulse lasting <code>0.25/freq</code> each; peak velocity per pulse is <code>accel_per_hz·0.25</code>, independent of frequency. Enable sweeping (period &amp; accel &gt; 0) to see upstream’s fixed limit formula fall short.';
+      note.innerHTML=t('resonance_excitation.note.normal');
     }
     var vShort=brV-1>upV;
     document.getElementById('cards').innerHTML=
-      card('test duration',T.toFixed(0)+' s')+
-      card('true peak accel',Math.round(lim.maxA).toLocaleString()+' mm/s²')+
-      card('accel limit: sequence vs upstream','<span style="color:'+BLUE+'">'+Math.round(brA).toLocaleString()+'</span> / <span style="color:'+AMBER+'">'+Math.round(upA).toLocaleString()+'</span>')+
-      card('vel limit: sequence vs upstream','<span style="color:'+BLUE+'">'+Math.round(brV)+'</span> / <span style="color:'+AMBER+'">'+Math.round(upV)+'</span>', vShort?'var(--red)':null);
+      card(t('resonance_excitation.cards.testDuration'),t('resonance_excitation.values.seconds',{value:T.toFixed(0)}))+
+      card(t('resonance_excitation.cards.truePeakAccel'),t('resonance_excitation.values.mmPerS2',{value:Math.round(lim.maxA).toLocaleString()}))+
+      card(t('resonance_excitation.cards.accelLimitCompare'),'<span style="color:'+BLUE+'">'+Math.round(brA).toLocaleString()+'</span> / <span style="color:'+AMBER+'">'+Math.round(upA).toLocaleString()+'</span>')+
+      card(t('resonance_excitation.cards.velLimitCompare'),'<span style="color:'+BLUE+'">'+Math.round(brV)+'</span> / <span style="color:'+AMBER+'">'+Math.round(upV)+'</span>', vShort?'var(--red)':null);
   }
   ['fe','aph','hps','swp','swa','fz'].forEach(function(id){document.getElementById(id).addEventListener('input',update);});
   update();
@@ -226,6 +228,27 @@
     c3.data.datasets[1].borderColor=BLUE;
     [c1,c2,c3].forEach(function(c){c.update();});
     update(); // rebuilds the note/cards, which bake BLUE/AMBER in as inline styles
+  });
+
+  // ---- live language repaint (i18n.js "kv-locale-change" event) ----
+  // Dataset/axis labels are set once at chart creation, same as colors above.
+  window.KV_I18N.onChange(function(){
+    c1.data.datasets[0].label=t('resonance_excitation.chart.datasetFrequency');
+    c2.data.datasets[0].label=t('resonance_excitation.chart.datasetPeakAccelPos');
+    c2.data.datasets[1].label=t('resonance_excitation.chart.datasetPeakAccelNeg');
+    c2.data.datasets[2].label=t('resonance_excitation.chart.datasetLimitSequence');
+    c2.data.datasets[3].label=t('resonance_excitation.chart.datasetLimitUpstream');
+    c3.data.datasets[0].label=t('resonance_excitation.chart.datasetAccel');
+    c3.data.datasets[1].label=t('resonance_excitation.chart.datasetVelocity');
+    c1.options.scales.x.title.text=t('resonance_excitation.chart.axisTimeS');
+    c1.options.scales.y.title.text=t('resonance_excitation.chart.axisFreq');
+    c2.options.scales.x.title.text=t('resonance_excitation.chart.axisTimeS');
+    c2.options.scales.y.title.text=t('resonance_excitation.chart.axisAccel');
+    c3.options.scales.x.title.text=t('resonance_excitation.chart.axisTimeMs');
+    c3.options.scales.y.title.text=t('resonance_excitation.chart.axisAccel');
+    if(c3.options.scales.y2&&c3.options.scales.y2.title)c3.options.scales.y2.title.text=t('resonance_excitation.chart.axisVelocity');
+    [c1,c2,c3].forEach(function(c){c.update();});
+    update(); // rebuilds the note/cards text
   });
 })();
 </script>

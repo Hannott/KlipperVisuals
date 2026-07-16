@@ -3,8 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Nonlinear pressure advance explorer — tanh vs recipr</title>
+<title data-i18n="nonlinear_pa_explorer.title">Nonlinear pressure advance explorer — tanh vs recipr</title>
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
+<script src="i18n.js"></script>
 <style>
   html{overflow-y:scroll;}
   /* --blue/--amber/--teal (the chart "data colors") are owned by nav.js,
@@ -52,50 +53,51 @@
 <body>
 <script src="nav.js"></script>
 <div class="wrap">
-  <h1>Nonlinear pressure advance explorer</h1>
-  <p class="sub">Comparing the <code>tanh</code> and <code>recipr</code> models. Extra extruder advance = <code>ADVANCE·v + OFFSET·f(v/VELOCITY)</code>, where <code>f(x)=tanh(x)</code> or <code>f(x)=x/(1+x)</code>. Flow and acceleration are simulated over a trapezoidal test move, smoothed with the firmware's default parabolic extruder smoother. An <strong>upstream</strong> line shows the mainline linear model (advance = <code>pressure_advance·v</code>) for comparison.</p>
+  <h1 data-i18n="nonlinear_pa_explorer.heading">Nonlinear pressure advance explorer</h1>
+  <p class="sub" data-i18n-html="nonlinear_pa_explorer.intro">Comparing the <code>tanh</code> and <code>recipr</code> models. Extra extruder advance = <code>ADVANCE·v + OFFSET·f(v/VELOCITY)</code>, where <code>f(x)=tanh(x)</code> or <code>f(x)=x/(1+x)</code>. Flow and acceleration are simulated over a trapezoidal test move, smoothed with the firmware's default parabolic extruder smoother. An <strong>upstream</strong> line shows the mainline linear model (advance = <code>pressure_advance·v</code>) for comparison.</p>
 
-  <div class="grouplabel">model parameters</div>
+  <div class="grouplabel" data-i18n="nonlinear_pa_explorer.groups.modelParams">model parameters</div>
   <div class="row">
-    <div class="ctl"><div class="lbl"><span>ADVANCE</span><span class="val" id="o-adv">0.020</span></div><input type="range" id="adv" min="0" max="0.1" step="0.001" value="0.02"></div>
-    <div class="ctl"><div class="lbl"><span>OFFSET</span><span class="val" id="o-off">0.120</span></div><input type="range" id="off" min="0" max="0.4" step="0.005" value="0.12"></div>
-    <div class="ctl"><div class="lbl"><span>VELOCITY</span><span class="val" id="o-vel">5.0</span></div><input type="range" id="vel" min="0.5" max="30" step="0.5" value="5"></div>
+    <div class="ctl"><div class="lbl"><span data-i18n="nonlinear_pa_explorer.controls.advance">ADVANCE</span><span class="val" id="o-adv">0.020</span></div><input type="range" id="adv" min="0" max="0.1" step="0.001" value="0.02"></div>
+    <div class="ctl"><div class="lbl"><span data-i18n="nonlinear_pa_explorer.controls.offset">OFFSET</span><span class="val" id="o-off">0.120</span></div><input type="range" id="off" min="0" max="0.4" step="0.005" value="0.12"></div>
+    <div class="ctl"><div class="lbl"><span data-i18n="nonlinear_pa_explorer.controls.velocity">VELOCITY</span><span class="val" id="o-vel">5.0</span></div><input type="range" id="vel" min="0.5" max="30" step="0.5" value="5"></div>
   </div>
 
-  <div class="grouplabel">test move &amp; synchronization</div>
+  <div class="grouplabel" data-i18n-html="nonlinear_pa_explorer.groups.testMove">test move &amp; synchronization</div>
   <div class="row">
-    <div class="ctl"><div class="lbl"><span>target velocity (mm/s)</span><span class="val" id="o-tv">150</span></div><input type="range" id="tv" min="20" max="400" step="10" value="150"></div>
-    <div class="ctl"><div class="lbl"><span>acceleration (mm/s²)</span><span class="val" id="o-ac">5000</span></div><input type="range" id="ac" min="500" max="20000" step="250" value="5000"></div>
-    <div class="ctl"><div class="lbl"><span>smooth_time (s)</span><span class="val" id="o-sm">0.020</span></div><input type="range" id="sm" min="0" max="0.06" step="0.002" value="0.02"></div>
-    <div class="ctl"><div class="lbl"><span>time_offset (s)</span><span class="val" id="o-to">0.0000</span></div><input type="range" id="to" min="-0.008" max="0.008" step="0.0002" value="0"></div>
+    <div class="ctl"><div class="lbl"><span data-i18n="nonlinear_pa_explorer.controls.targetVelocity">target velocity (mm/s)</span><span class="val" id="o-tv">150</span></div><input type="range" id="tv" min="20" max="400" step="10" value="150"></div>
+    <div class="ctl"><div class="lbl"><span data-i18n="nonlinear_pa_explorer.controls.acceleration">acceleration (mm/s²)</span><span class="val" id="o-ac">5000</span></div><input type="range" id="ac" min="500" max="20000" step="250" value="5000"></div>
+    <div class="ctl"><div class="lbl"><span data-i18n="nonlinear_pa_explorer.controls.smoothTime">smooth_time (s)</span><span class="val" id="o-sm">0.020</span></div><input type="range" id="sm" min="0" max="0.06" step="0.002" value="0.02"></div>
+    <div class="ctl"><div class="lbl"><span data-i18n="nonlinear_pa_explorer.controls.timeOffset">time_offset (s)</span><span class="val" id="o-to">0.0000</span></div><input type="range" id="to" min="-0.008" max="0.008" step="0.0002" value="0"></div>
   </div>
 
-  <div class="grouplabel">upstream comparison (linear pressure advance)</div>
+  <div class="grouplabel" data-i18n="nonlinear_pa_explorer.groups.upstream">upstream comparison (linear pressure advance)</div>
   <div class="row">
-    <div class="ctl" style="max-width:260px;"><div class="lbl"><span>pressure_advance</span><span class="val" id="o-pau">0.040</span></div><input type="range" id="pau" min="0" max="0.1" step="0.001" value="0.04"></div>
+    <div class="ctl" style="max-width:260px;"><div class="lbl"><span data-i18n="nonlinear_pa_explorer.controls.pressureAdvance">pressure_advance</span><span class="val" id="o-pau">0.040</span></div><input type="range" id="pau" min="0" max="0.1" step="0.001" value="0.04"></div>
   </div>
 
-  <p style="font-size:13px;color:var(--text-muted);margin:.25rem 0 1rem;">Click a legend entry on any chart to hide or show that line.</p>
+  <p style="font-size:13px;color:var(--text-muted);margin:.25rem 0 1rem;" data-i18n="nonlinear_pa_explorer.legendHint">Click a legend entry on any chart to hide or show that line.</p>
 
-  <div class="cap">advance amount vs velocity</div>
+  <div class="cap" data-i18n="nonlinear_pa_explorer.captions.advanceVsVelocity">advance amount vs velocity</div>
   <div class="chart"><canvas id="c1"></canvas></div>
-  <div class="cap">extruder flow rate over the test move</div>
+  <div class="cap" data-i18n="nonlinear_pa_explorer.captions.flowOverMove">extruder flow rate over the test move</div>
   <div class="chart"><canvas id="c2"></canvas></div>
-  <div class="cap">extruder acceleration demand over the test move</div>
+  <div class="cap" data-i18n="nonlinear_pa_explorer.captions.accelOverMove">extruder acceleration demand over the test move</div>
   <div class="chart"><canvas id="c3"></canvas></div>
 
   <div class="cards">
-    <div class="card"><div class="k">peak extruder flow (mm/s) — tanh / recipr / upstream</div><div class="v"><span style="color:var(--blue)" id="pf-t">–</span> <span style="color:var(--text-muted);font-size:14px">/</span> <span style="color:var(--amber)" id="pf-r">–</span> <span style="color:var(--text-muted);font-size:14px">/</span> <span style="color:var(--teal)" id="pf-u">–</span></div></div>
-    <div class="card"><div class="k">peak |extruder accel| (mm/s²) — tanh / recipr / upstream</div><div class="v"><span style="color:var(--blue)" id="pa-t">–</span> <span style="color:var(--text-muted);font-size:14px">/</span> <span style="color:var(--amber)" id="pa-r">–</span> <span style="color:var(--text-muted);font-size:14px">/</span> <span style="color:var(--teal)" id="pa-u">–</span></div></div>
-    <div class="card"><div class="k">accel demand ÷ toolhead accel — tanh / recipr / upstream</div><div class="v"><span style="color:var(--blue)" id="pr-t">–</span> <span style="color:var(--text-muted);font-size:14px">/</span> <span style="color:var(--amber)" id="pr-r">–</span> <span style="color:var(--text-muted);font-size:14px">/</span> <span style="color:var(--teal)" id="pr-u">–</span></div></div>
+    <div class="card"><div class="k" data-i18n="nonlinear_pa_explorer.cards.peakFlow">peak extruder flow (mm/s) — tanh / recipr / upstream</div><div class="v"><span style="color:var(--blue)" id="pf-t">–</span> <span style="color:var(--text-muted);font-size:14px">/</span> <span style="color:var(--amber)" id="pf-r">–</span> <span style="color:var(--text-muted);font-size:14px">/</span> <span style="color:var(--teal)" id="pf-u">–</span></div></div>
+    <div class="card"><div class="k" data-i18n="nonlinear_pa_explorer.cards.peakAccel">peak |extruder accel| (mm/s²) — tanh / recipr / upstream</div><div class="v"><span style="color:var(--blue)" id="pa-t">–</span> <span style="color:var(--text-muted);font-size:14px">/</span> <span style="color:var(--amber)" id="pa-r">–</span> <span style="color:var(--text-muted);font-size:14px">/</span> <span style="color:var(--teal)" id="pa-u">–</span></div></div>
+    <div class="card"><div class="k" data-i18n="nonlinear_pa_explorer.cards.accelRatio">accel demand ÷ toolhead accel — tanh / recipr / upstream</div><div class="v"><span style="color:var(--blue)" id="pr-t">–</span> <span style="color:var(--text-muted);font-size:14px">/</span> <span style="color:var(--amber)" id="pr-r">–</span> <span style="color:var(--text-muted);font-size:14px">/</span> <span style="color:var(--teal)" id="pr-u">–</span></div></div>
   </div>
 
-  <p class="foot">Model math: <code>klippy/chelper/kin_extruder.c</code> — nonlinear <code>tanh</code>/<code>recipr</code> models and the upstream <code>pressure_advance_linear_model_func</code> (advance = <code>pressure_advance·v</code>). Smoother kernel: <code>klippy/extras/extruder_smoother.py</code> (default parabolic window <code>w(τ)=1.5−6τ²</code>). The test move assumes extruder velocity tracks toolhead velocity 1:1, so flow figures are per-unit-flow — the curve shapes and tanh-vs-recipr differences are the faithful part. Requires an internet connection for Chart.js (CDN).</p>
+  <p class="foot" data-i18n-html="nonlinear_pa_explorer.footer">Model math: <code>klippy/chelper/kin_extruder.c</code> — nonlinear <code>tanh</code>/<code>recipr</code> models and the upstream <code>pressure_advance_linear_model_func</code> (advance = <code>pressure_advance·v</code>). Smoother kernel: <code>klippy/extras/extruder_smoother.py</code> (default parabolic window <code>w(τ)=1.5−6τ²</code>). The test move assumes extruder velocity tracks toolhead velocity 1:1, so flow figures are per-unit-flow — the curve shapes and tanh-vs-recipr differences are the faithful part. Requires an internet connection for Chart.js (CDN).</p>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script>
 (function(){
+  var t=window.KV_I18N.t;
   var css=getComputedStyle(document.documentElement);
   var muted=css.getPropertyValue('--text-muted').trim()||'#898781';
   var grid=css.getPropertyValue('--grid').trim()||'#e1e0d9';
@@ -111,23 +113,23 @@
     return {responsive:true,maintainAspectRatio:false,animation:false,
       interaction:{mode:'index',intersect:false},
       plugins:{legend:{display:true,position:'top',align:'start',labels:{color:muted,usePointStyle:true,pointStyle:'line',boxWidth:26,padding:12,font:{size:12}}},tooltip:{callbacks:{
-        title:function(it){return xLinear?'v = '+Math.round(it[0].parsed.x)+' mm/s':'t = '+it[0].label+' ms';},
-        label:function(it){return it.dataset.label+': '+Math.round(it.parsed.y*1000)/1000;}
+        title:function(it){return xLinear?t('nonlinear_pa_explorer.chart.tooltipVelocity',{v:Math.round(it[0].parsed.x)}):t('nonlinear_pa_explorer.chart.tooltipTime',{t:it[0].label});},
+        label:function(it){return t('nonlinear_pa_explorer.chart.tooltipLabel',{label:it.dataset.label,value:Math.round(it.parsed.y*1000)/1000});}
       }}},
       scales:{x:(xLinear?{type:'linear',min:0,max:200}:{}),
         y:{grid:{color:grid},ticks:{color:muted},title:{display:true,text:yLabel,color:muted}}}};
   }
-  var o1=baseX(mkOpts('extra advance (mm)',true),'velocity (mm/s)');
-  var o2=baseX(mkOpts('flow (mm/s)',false),'time (ms)');
-  var o3=baseX(mkOpts('acceleration (mm/s²)',false),'time (ms)');
+  var o1=baseX(mkOpts(t('nonlinear_pa_explorer.chart.axisAdvance'),true),t('nonlinear_pa_explorer.chart.axisVelocity'));
+  var o2=baseX(mkOpts(t('nonlinear_pa_explorer.chart.axisFlow'),false),t('nonlinear_pa_explorer.chart.axisTime'));
+  var o3=baseX(mkOpts(t('nonlinear_pa_explorer.chart.axisAccel'),false),t('nonlinear_pa_explorer.chart.axisTime'));
 
   function ds(color,dash,w){return {data:[],borderColor:color,borderWidth:w||2,borderDash:dash||[],pointRadius:0,tension:0.1};}
   var c1=new Chart(document.getElementById('c1'),{type:'line',data:{labels:[],datasets:[
-    Object.assign(ds(BLUE),{label:'tanh'}),Object.assign(ds(AMBER,[6,4]),{label:'recipr'}),
-    Object.assign(ds(TEAL),{label:'upstream (linear)'})]},options:o1});
+    Object.assign(ds(BLUE),{label:t('nonlinear_pa_explorer.chart.datasetTanh')}),Object.assign(ds(AMBER,[6,4]),{label:t('nonlinear_pa_explorer.chart.datasetRecipr')}),
+    Object.assign(ds(TEAL),{label:t('nonlinear_pa_explorer.chart.datasetUpstream')})]},options:o1});
   function mk4(id,opts){return new Chart(document.getElementById(id),{type:'line',data:{labels:[],datasets:[
-    Object.assign(ds(BLUE),{label:'tanh'}),Object.assign(ds(AMBER,[6,4]),{label:'recipr'}),
-    Object.assign(ds(TEAL),{label:'upstream (linear)'}),Object.assign(ds(muted,[2,3],1.5),{label:'nominal'})]},options:opts});}
+    Object.assign(ds(BLUE),{label:t('nonlinear_pa_explorer.chart.datasetTanh')}),Object.assign(ds(AMBER,[6,4]),{label:t('nonlinear_pa_explorer.chart.datasetRecipr')}),
+    Object.assign(ds(TEAL),{label:t('nonlinear_pa_explorer.chart.datasetUpstream')}),Object.assign(ds(muted,[2,3],1.5),{label:t('nonlinear_pa_explorer.chart.datasetNominal')})]},options:opts});}
   var c2=mk4('c2',o2), c3=mk4('c3',o3);
 
   function smoothParabolic(a,r){
@@ -229,6 +231,27 @@
       c.data.datasets[0].borderColor=BLUE; c.data.datasets[1].borderColor=AMBER;
       c.data.datasets[2].borderColor=TEAL; c.data.datasets[3].borderColor=muted;
     });
+    [c1,c2,c3].forEach(function(c){c.update();});
+  });
+
+  // ---- live language repaint (i18n.js "kv-locale-change" event) ----
+  // Dataset/axis labels are set once at chart creation, same as colors above.
+  window.KV_I18N.onChange(function(){
+    c1.data.datasets[0].label=t('nonlinear_pa_explorer.chart.datasetTanh');
+    c1.data.datasets[1].label=t('nonlinear_pa_explorer.chart.datasetRecipr');
+    c1.data.datasets[2].label=t('nonlinear_pa_explorer.chart.datasetUpstream');
+    [c2,c3].forEach(function(c){
+      c.data.datasets[0].label=t('nonlinear_pa_explorer.chart.datasetTanh');
+      c.data.datasets[1].label=t('nonlinear_pa_explorer.chart.datasetRecipr');
+      c.data.datasets[2].label=t('nonlinear_pa_explorer.chart.datasetUpstream');
+      c.data.datasets[3].label=t('nonlinear_pa_explorer.chart.datasetNominal');
+    });
+    o1.scales.x.title.text=t('nonlinear_pa_explorer.chart.axisVelocity');
+    o1.scales.y.title.text=t('nonlinear_pa_explorer.chart.axisAdvance');
+    o2.scales.x.title.text=t('nonlinear_pa_explorer.chart.axisTime');
+    o2.scales.y.title.text=t('nonlinear_pa_explorer.chart.axisFlow');
+    o3.scales.x.title.text=t('nonlinear_pa_explorer.chart.axisTime');
+    o3.scales.y.title.text=t('nonlinear_pa_explorer.chart.axisAccel');
     [c1,c2,c3].forEach(function(c){c.update();});
   });
 })();

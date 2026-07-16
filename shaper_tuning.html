@@ -3,8 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Shaper tuning — Klipper / Kalico</title>
+<title data-i18n="shaper_tuning.title">Shaper tuning — Klipper / Kalico</title>
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
+<script src="i18n.js"></script>
 <style>
   html{overflow-y:scroll;}
   /* --blue/--amber/--teal/--purple/--red/--cyan (the chart "data colors")
@@ -81,22 +82,22 @@
 <body>
 <script src="nav.js"></script>
 <div class="wrap">
-  <h1>Shaper tuning</h1>
-  <p class="sub">Load a resonance capture and everything on this page is computed from <em>your</em> data: the measured spectrum, the shaper <code>SHAPER_CALIBRATE</code> would recommend (the full <code>find_best_shaper</code> search ported to your browser), a hands-on explorer for any shaper type, and a ready-to-paste <code>[input_shaper]</code> config. Nothing is uploaded anywhere — peak detection, damping estimation, and the whole shaper search run locally.</p>
+  <h1 data-i18n="shaper_tuning.heading">Shaper tuning</h1>
+  <p class="sub" data-i18n-html="shaper_tuning.intro">Load a resonance capture and everything on this page is computed from <em>your</em> data: the measured spectrum, the shaper <code>SHAPER_CALIBRATE</code> would recommend (the full <code>find_best_shaper</code> search ported to your browser), a hands-on explorer for any shaper type, and a ready-to-paste <code>[input_shaper]</code> config. Nothing is uploaded anywhere — peak detection, damping estimation, and the whole shaper search run locally.</p>
 
-  <h2>1. Load a resonance capture</h2>
+  <h2 data-i18n="shaper_tuning.steps.load">1. Load a resonance capture</h2>
   <div class="databar">
-    <button class="btn" id="loadExX">Example: X-axis capture</button>
-    <button class="btn" id="loadExY">Example: Y-axis capture</button>
-    <span style="color:var(--text-muted);font-size:13px;">or</span>
+    <button class="btn" id="loadExX" data-i18n="shaper_tuning.databar.loadExX">Example: X-axis capture</button>
+    <button class="btn" id="loadExY" data-i18n="shaper_tuning.databar.loadExY">Example: Y-axis capture</button>
+    <span style="color:var(--text-muted);font-size:13px;" data-i18n="shaper_tuning.databar.or">or</span>
     <input type="file" id="csvFile" accept=".csv,text/csv">
-    <button class="btn" id="clearData">Clear</button>
+    <button class="btn" id="clearData" data-i18n="shaper_tuning.databar.clear">Clear</button>
   </div>
-  <div class="note" id="detectStatus">No capture loaded. Load an example, or upload a Kalico <code>calibration_data_*.csv</code> / <code>resonances_*.csv</code> (a <code>freq</code> column plus <code>psd_x</code>/<code>psd_y</code>/<code>psd_z</code>/<code>psd_xyz</code>). Peak detection and half-power damping-ratio estimation run live in your browser — nothing is uploaded anywhere.</div>
-  <div class="cap">measured resonance spectrum <span style="color:var(--text-muted)">(the loaded capture; dashed verticals mark the detected resonances; click a legend entry to toggle it)</span>
-    <span style="float:right;font-size:12.5px;color:var(--text-muted);">scale:
-      <button class="btn" id="inpLog" style="padding:2px 8px;">log</button>
-      <button class="btn primary" id="inpLin" style="padding:2px 8px;">linear</button>
+  <div class="note" id="detectStatus" data-i18n-html="shaper_tuning.detectStatus.default">No capture loaded. Load an example, or upload a Kalico <code>calibration_data_*.csv</code> / <code>resonances_*.csv</code> (a <code>freq</code> column plus <code>psd_x</code>/<code>psd_y</code>/<code>psd_z</code>/<code>psd_xyz</code>). Peak detection and half-power damping-ratio estimation run live in your browser — nothing is uploaded anywhere.</div>
+  <div class="cap"><span data-i18n="shaper_tuning.captions.measuredSpectrum">measured resonance spectrum</span> <span style="color:var(--text-muted)" data-i18n="shaper_tuning.captions.measuredSpectrumNote">(the loaded capture; dashed verticals mark the detected resonances; click a legend entry to toggle it)</span>
+    <span style="float:right;font-size:12.5px;color:var(--text-muted);"><span data-i18n="shaper_tuning.scale.label">scale:</span>
+      <button class="btn" id="inpLog" style="padding:2px 8px;" data-i18n="shaper_tuning.scale.log">log</button>
+      <button class="btn primary" id="inpLin" style="padding:2px 8px;" data-i18n="shaper_tuning.scale.linear">linear</button>
     </span>
   </div>
   <div class="chart busybox" id="inputChartBox">
@@ -104,24 +105,24 @@
     <div class="busy-overlay"><div class="kv-spinner"></div></div>
   </div>
 
-  <h2>2. Recommended shaper</h2>
-  <p class="sub" style="margin-bottom:.75rem;">The same search <code>SHAPER_CALIBRATE</code> runs, on your capture: every <code>smooth_*</code> smoother and classic shaper, plus a 2-peak multimode search (with the dual-peak-cluster-widening fix), scored and selected with Kalico's formula and thresholds. Per-peak residual is shown for every resonance detected — including any beyond the top two the auto-tuner's search itself is limited to. The manual explorer below starts from this pick so you can tweak it.</p>
+  <h2 data-i18n="shaper_tuning.steps.recommended">2. Recommended shaper</h2>
+  <p class="sub" style="margin-bottom:.75rem;" data-i18n-html="shaper_tuning.recommended.intro">The same search <code>SHAPER_CALIBRATE</code> runs, on your capture: every <code>smooth_*</code> smoother and classic shaper, plus a 2-peak multimode search (with the dual-peak-cluster-widening fix), scored and selected with Kalico's formula and thresholds. Per-peak residual is shown for every resonance detected — including any beyond the top two the auto-tuner's search itself is limited to. The manual explorer below starts from this pick so you can tweak it.</p>
   <div class="busybox" id="recoBox">
     <div class="busy-mute">
-      <div class="note" id="recoStatus">Load a capture above to compute a recommendation.</div>
+      <div class="note" id="recoStatus" data-i18n="shaper_tuning.recommended.statusDefault">Load a capture above to compute a recommendation.</div>
       <div class="cards" id="cardsReco"></div>
       <div class="note" id="noteReco"></div>
     </div>
     <div class="busy-overlay"><div class="kv-spinner"></div></div>
   </div>
 
-  <h2>3. Manual shaper explorer</h2>
-  <p class="sub" style="margin-bottom:.75rem;">Pick any shaper type and see how it performs against the loaded capture — corner smoothing, projected <code>max_accel</code>, and the residual vibration left at each detected resonance. Seeded from the recommendation above; change the type or frequencies to compare.</p>
+  <h2 data-i18n="shaper_tuning.steps.explorer">3. Manual shaper explorer</h2>
+  <p class="sub" style="margin-bottom:.75rem;" data-i18n-html="shaper_tuning.explorer.intro">Pick any shaper type and see how it performs against the loaded capture — corner smoothing, projected <code>max_accel</code>, and the residual vibration left at each detected resonance. Seeded from the recommendation above; change the type or frequencies to compare.</p>
   <div class="row" style="align-items:flex-end;">
     <div class="ctl" style="max-width:260px;">
-      <div class="lbl"><span>shaper type</span></div>
+      <div class="lbl"><span data-i18n="shaper_tuning.explorer.shaperType">shaper type</span></div>
       <select id="explType">
-        <optgroup label="smoothers (no damping input)">
+        <optgroup label="smoothers (no damping input)" data-i18n-attr="label:shaper_tuning.explorer.optgroupSmoothers">
           <option value="smooth_zv">smooth_zv</option>
           <option value="smooth_mzv">smooth_mzv</option>
           <option value="smooth_ei">smooth_ei</option>
@@ -129,7 +130,7 @@
           <option value="smooth_zvd_ei">smooth_zvd_ei</option>
           <option value="smooth_si" selected>smooth_si</option>
         </optgroup>
-        <optgroup label="classic impulse shapers">
+        <optgroup label="classic impulse shapers" data-i18n-attr="label:shaper_tuning.explorer.optgroupClassic">
           <option value="zv">zv</option>
           <option value="mzv">mzv</option>
           <option value="zvd">zvd</option>
@@ -137,67 +138,67 @@
           <option value="2hump_ei">2hump_ei</option>
           <option value="3hump_ei">3hump_ei</option>
         </optgroup>
-        <optgroup label="multimode (per-peak)">
+        <optgroup label="multimode (per-peak)" data-i18n-attr="label:shaper_tuning.explorer.optgroupMultimode">
           <option value="multimode">multimode</option>
         </optgroup>
       </select>
     </div>
     <div class="ctl" id="explFreqWrap" style="max-width:150px;">
-      <div class="lbl"><span>frequency (Hz)</span></div>
+      <div class="lbl"><span data-i18n="shaper_tuning.explorer.frequencyHz">frequency (Hz)</span></div>
       <input type="number" id="explFreq" step="0.1" min="1" value="50">
     </div>
     <div class="ctl" id="explDampWrap" style="max-width:150px;">
-      <div class="lbl"><span>damping ζ</span></div>
+      <div class="lbl"><span data-i18n="shaper_tuning.explorer.dampingZeta">damping ζ</span></div>
       <input type="number" id="explDamp" step="0.001" min="0.005" max="0.5" value="0.1">
     </div>
   </div>
   <div id="explMulti" style="display:none;">
-    <div class="peakctl-head"><span></span><span>base shaper</span><span>freq (Hz)</span><span>damping ζ</span><span></span></div>
+    <div class="peakctl-head"><span></span><span data-i18n="shaper_tuning.explorer.baseShaperHeader">base shaper</span><span data-i18n="shaper_tuning.explorer.freqHzShort">freq (Hz)</span><span data-i18n="shaper_tuning.explorer.dampingZeta">damping ζ</span><span></span></div>
     <div class="peakrows" id="peakRows"></div>
     <div class="row" style="margin-bottom:.25rem;">
-      <button class="btn" id="addPeak">+ add peak</button>
+      <button class="btn" id="addPeak" data-i18n="shaper_tuning.explorer.addPeak">+ add peak</button>
     </div>
     <div class="budget" id="budgetNote"></div>
   </div>
 
   <div class="row">
-    <div class="ctl"><div class="lbl"><span>SCV</span><span class="val" id="o-SCV">5</span></div><input type="range" id="SCV" min="1" max="20" step="0.1" value="5"></div>
-    <div class="ctl"><div class="lbl"><span>acceleration</span><span class="val" id="o-accl">6000</span></div><input type="range" id="accl" min="3000" max="30000" step="100" value="6000"></div>
+    <div class="ctl"><div class="lbl"><span data-i18n="shaper_tuning.explorer.scv">SCV</span><span class="val" id="o-SCV">5</span></div><input type="range" id="SCV" min="1" max="20" step="0.1" value="5"></div>
+    <div class="ctl"><div class="lbl"><span data-i18n="shaper_tuning.explorer.acceleration">acceleration</span><span class="val" id="o-accl">6000</span></div><input type="range" id="accl" min="3000" max="30000" step="100" value="6000"></div>
   </div>
 
   <div class="cards" id="cards"></div>
   <div class="note" id="note"></div>
 
-  <div class="cap" style="margin-top:1rem;">residual vibration vs frequency <span style="color:var(--text-muted)">(the selected shaper's response; dashed verticals mark the detected resonances; lower = better)</span></div>
+  <div class="cap" style="margin-top:1rem;"><span data-i18n="shaper_tuning.captions.residualVsFreq">residual vibration vs frequency</span> <span style="color:var(--text-muted)" data-i18n="shaper_tuning.captions.residualVsFreqNote">(the selected shaper's response; dashed verticals mark the detected resonances; lower = better)</span></div>
   <div class="chart"><canvas id="c1"></canvas></div>
 
-  <h2>4. Generate <code>[input_shaper]</code> config</h2>
-  <p class="sub" style="margin-bottom:.5rem;">Emits the shaper currently selected in the explorer above, in Kalico's config format.</p>
+  <h2 data-i18n-html="shaper_tuning.steps.generateConfig">4. Generate <code>[input_shaper]</code> config</h2>
+  <p class="sub" style="margin-bottom:.5rem;" data-i18n="shaper_tuning.config.intro">Emits the shaper currently selected in the explorer above, in Kalico's config format.</p>
   <div class="cfgbar">
-    <button class="btn primary" id="genCfg">Generate config</button>
-    <label>axis
+    <button class="btn primary" id="genCfg" data-i18n="shaper_tuning.config.generateBtn">Generate config</button>
+    <label><span data-i18n="shaper_tuning.config.axisLabel">axis</span>
       <select id="cfgAxis">
         <option value="x" selected>x</option>
         <option value="y">y</option>
-        <option value="both">both (x &amp; y)</option>
+        <option value="both" data-i18n="shaper_tuning.config.axisBoth">both (x &amp; y)</option>
       </select>
     </label>
-    <label><input type="checkbox" id="cfgPrefix"> apply save_config prefix (<code>#*#</code>)</label>
+    <label><input type="checkbox" id="cfgPrefix"> <span data-i18n-html="shaper_tuning.config.prefixLabel">apply save_config prefix (<code>#*#</code>)</span></label>
   </div>
   <pre class="cfgout" id="cfgOut" style="display:none;"></pre>
 
   <div id="deepSection" style="display:none;">
-  <div class="bandhdr"><span class="tag">Deeper analysis — multimode extruder synchronization</span></div>
-  <h2>Deeper analysis</h2>
-  <p class="sub" id="deepIntro" style="margin-bottom:.75rem;">How this hand-built multimode shaper behaves across per-peak damping mismatch, and the fitted extruder-smoother kernel that keeps pressure advance synchronized with it. (Shown only while the explorer is set to <strong>multimode</strong>.)</p>
+  <div class="bandhdr"><span class="tag" data-i18n="shaper_tuning.deep.tag">Deeper analysis — multimode extruder synchronization</span></div>
+  <h2 data-i18n="shaper_tuning.steps.deepAnalysis">Deeper analysis</h2>
+  <p class="sub" id="deepIntro" style="margin-bottom:.75rem;" data-i18n-html="shaper_tuning.deep.intro">How this hand-built multimode shaper behaves across per-peak damping mismatch, and the fitted extruder-smoother kernel that keeps pressure advance synchronized with it. (Shown only while the explorer is set to <strong>multimode</strong>.)</p>
   <div id="deepBody">
-  <div class="cap">notch depth vs a uniformly-assumed damping ratio <span style="color:var(--text-muted)">(what if the design used ONE shared ζ for every peak instead of each peak's own measured value? True ζ per peak marked with a matching vertical)</span></div>
+  <div class="cap"><span data-i18n="shaper_tuning.captions.notchDepth">notch depth vs a uniformly-assumed damping ratio</span> <span style="color:var(--text-muted)" data-i18n="shaper_tuning.captions.notchDepthNote">(what if the design used ONE shared ζ for every peak instead of each peak's own measured value? True ζ per peak marked with a matching vertical)</span></div>
   <div class="chart" style="height:270px;"><canvas id="c2"></canvas></div>
 
-  <div class="cap" style="margin-top:1.5rem;">extruder synchronization kernel <span style="color:var(--text-muted)">(exact convolution vs a fitted smoother counterpart, over the shaper's own duration)</span></div>
+  <div class="cap" style="margin-top:1.5rem;"><span data-i18n="shaper_tuning.captions.extruderKernel">extruder synchronization kernel</span> <span style="color:var(--text-muted)" data-i18n="shaper_tuning.captions.extruderKernelNote">(exact convolution vs a fitted smoother counterpart, over the shaper's own duration)</span></div>
   <div class="chart" style="height:230px;"><canvas id="c3"></canvas></div>
 
-  <div class="cap">extruder acceleration demand at a sharp corner <span style="color:var(--text-muted)">(100&rarr;20&nbsp;mm/s corner, exact vs fitted)</span></div>
+  <div class="cap"><span data-i18n="shaper_tuning.captions.cornerAccel">extruder acceleration demand at a sharp corner</span> <span style="color:var(--text-muted)" data-i18n-html="shaper_tuning.captions.cornerAccelNote">(100&rarr;20&nbsp;mm/s corner, exact vs fitted)</span></div>
   <div class="chart" style="height:230px;"><canvas id="c4"></canvas></div>
 
   <div class="cards" id="cards2"></div>
@@ -205,12 +206,13 @@
   </div>
   </div>
 
-  <p class="foot">Everything is computed from the loaded capture. The recommendation ports Kalico's <code>find_best_shaper</code> (<code>shaper_calibrate.py</code>) — every smoother/shaper candidate plus a 2-peak multimode search with the dual-peak-cluster-widening fix, scored with Kalico's formula. Multimode shaper = convolution of a base shaper tuned to each configured peak (amplitudes multiply, times add). Peak detection and half-power damping estimation port <code>_detect_resonance_peaks</code> / <code>_estimate_damping_ratio</code>. The fitted extruder kernel reproduces <code>extruder_smoother.get_multi_mode_extruder_smoother</code> (Legendre basis, KKT-constrained least squares). Rendered with Chart.js.</p>
+  <p class="foot" data-i18n-html="shaper_tuning.footer">Everything is computed from the loaded capture. The recommendation ports Kalico's <code>find_best_shaper</code> (<code>shaper_calibrate.py</code>) — every smoother/shaper candidate plus a 2-peak multimode search with the dual-peak-cluster-widening fix, scored with Kalico's formula. Multimode shaper = convolution of a base shaper tuned to each configured peak (amplitudes multiply, times add). Peak detection and half-power damping estimation port <code>_detect_resonance_peaks</code> / <code>_estimate_damping_ratio</code>. The fitted extruder kernel reproduces <code>extruder_smoother.get_multi_mode_extruder_smoother</code> (Legendre basis, KKT-constrained least squares). Rendered with Chart.js.</p>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script>
 (function(){
+  var t=window.KV_I18N.t;
   var css=getComputedStyle(document.documentElement);
   function gv(n,f){return (css.getPropertyValue(n).trim())||f;}
   var muted=gv('--text-muted','#898781'), grid=gv('--grid','#e1e0d9');
@@ -929,7 +931,7 @@
         '<select class="pk-base">'+opts+'</select>'+
         '<input type="number" class="pk-freq" step="0.1" min="1" value="'+p.freq+'">'+
         '<input type="number" class="pk-damp" step="0.001" min="0.005" max="0.5" value="'+p.damping+'">'+
-        '<button class="btn pk-remove" type="button" title="remove peak">&times;</button>'+
+        '<button class="btn pk-remove" type="button" title="'+t('shaper_tuning.explorer.removePeakTitle')+'">&times;</button>'+
       '</div>';
     }
     peakRowsEl.innerHTML=html;
@@ -937,15 +939,15 @@
   }
   function refreshBudget(){
     if(!peaks.length){
-      budgetEl.innerHTML='No peaks &mdash; load a capture above, or add peaks manually.';
+      budgetEl.innerHTML=t('shaper_tuning.budget.noPeaks');
       addPeakBtn.disabled=false;
       return;
     }
     var pulses=pulseCount(peaks);
     var over=pulses>MAX_SHAPER_PULSES;
     budgetEl.innerHTML=(over?'<strong style="color:var(--red)">':'')+
-      pulses+' / '+MAX_SHAPER_PULSES+' impulses used ('+peaks.map(function(p){return BASE_LABEL[p.base];}).join(' &times; ')+')'+
-      (over?' &mdash; exceeds the firmware\'s pulse buffer; pick shorter base shaper(s) (e.g. ZV or MZV) or remove a peak.</strong>':'');
+      t('shaper_tuning.budget.line',{pulses:pulses,max:MAX_SHAPER_PULSES,bases:peaks.map(function(p){return BASE_LABEL[p.base];}).join(' &times; ')})+
+      (over?t('shaper_tuning.budget.overSuffix')+'</strong>':'');
     // Disable "add peak" if even the cheapest addition (ZV, 2 pulses) would overflow, or the row cap is hit.
     addPeakBtn.disabled = peaks.length>=6 || pulses*2>MAX_SHAPER_PULSES;
   }
@@ -973,17 +975,46 @@
 
   // ================= data loading =================
   var detectStatus=document.getElementById('detectStatus');
-  function applyDetected(pairs,sourceLabel){
+  // Computes the "source" phrase used by detectStatus, from the currently
+  // loaded capture's own label plus whichever raw axes still feed Combined
+  // (axisHidden) -- the single source of truth for that phrase, reused both
+  // right after detection and when just re-painting the status text in a
+  // newly-selected language (see renderDetectStatus / the KV_I18N.onChange
+  // handler near the bottom).
+  function computeSourceLabel(){
+    if(!loadedCapture)return null;
+    var d=loadedCapture;
+    var present=['x','y','z'].filter(function(a){return d[a];});
+    var active=present.filter(function(a){return !axisHidden[a];});
+    if(active.length===present.length)return d.label;
+    return t('shaper_tuning.capture.combinedRecomputed',{
+      active:active.map(function(a){return a.toUpperCase();}).join('+'),
+      hidden:present.filter(function(a){return axisHidden[a];}).map(function(a){return a.toUpperCase();}).join(', ')
+    });
+  }
+  // Repaints detectStatus from the CURRENT peaks/loadedCapture state, with no
+  // side effects -- used both by applyDetected (right after detection) and by
+  // the KV_I18N.onChange handler (just re-rendering the same state in a newly
+  // selected language, no re-detection).
+  function renderDetectStatus(){
+    if(!loadedCapture){detectStatus.innerHTML=t('shaper_tuning.detectStatus.default');return;}
+    var sourceLabel=computeSourceLabel();
+    if(!peaks.length){detectStatus.innerHTML=t('shaper_tuning.detectStatus.noPeaksDetected',{source:sourceLabel});return;}
+    detectStatus.innerHTML=t('shaper_tuning.detectStatus.detected',{
+      n:peaks.length, source:sourceLabel,
+      list:peaks.map(function(p){return p.freq.toFixed(1)+'&nbsp;Hz (&zeta;='+p.damping.toFixed(3)+')';}).join(', ')
+    });
+  }
+  function applyDetected(pairs){
     if(pairs.length<1){
       peaks=[];renderPeakRows();update();
-      detectStatus.innerHTML='No peaks detected in '+sourceLabel+'.';
+      renderDetectStatus();
       return;
     }
     var prevBases=peaks.map(function(p){return p.base;});
     peaks=pairs.map(function(p,i){return {base: prevBases[i]||prevBases[prevBases.length-1]||'mzv', freq: Math.round(p.freq*10)/10, damping: Math.round(p.damping*1000)/1000};});
     renderPeakRows();
-    detectStatus.innerHTML='Detected '+pairs.length+' peak(s) in '+sourceLabel+' (live, in-browser): '+
-      pairs.map(function(p){return p.freq.toFixed(1)+'&nbsp;Hz (&zeta;='+p.damping.toFixed(3)+')';}).join(', ')+'.';
+    renderDetectStatus();
     update();
   }
   // Loading a capture drives everything: the input graph, the manual
@@ -995,7 +1026,7 @@
     loadedCapture={freq:freq,x:x,y:y,z:z,xyz:xyz,psd:xyz,label:label};
     axisHidden={x:false,y:false,z:false}; // a fresh capture starts with every axis feeding Combined
     var detected=detectAndEstimate(freq,xyz,4);
-    applyDetected(detected,label);
+    applyDetected(detected);
     // sensible pre-recommendation default for the single-mode freq field
     if(detected.length)explFreq=Math.round(detected[0].freq*10)/10;
     renderInput();
@@ -1019,21 +1050,18 @@
       newXyz[i]=s;
     }
     d.xyz=newXyz; d.psd=newXyz;
-    var label = active.length===present.length ? d.label :
-      ('Combined recomputed from '+active.map(function(a){return a.toUpperCase();}).join('+')+
-       ' ('+present.filter(function(a){return axisHidden[a];}).map(function(a){return a.toUpperCase();}).join(', ')+' hidden)');
     var detected=detectAndEstimate(d.freq,d.xyz,4);
-    applyDetected(detected,label);
+    applyDetected(detected);
     renderInput();
     renderRecommendation();  // async; re-seeds the explorer when it finishes
   }
   function clearAll(){
-    if(loadedCapture && !window.confirm('Reset all data on this page? This clears the loaded capture, the recommendation, and the explorer.'))return;
+    if(loadedCapture && !window.confirm(t('shaper_tuning.capture.resetConfirm')))return;
     loadedCapture=null;lastReco=null;peaks=[];axisHidden={x:false,y:false,z:false};
     explType='smooth_si';explFreq=50.0;explDamp=0.1;
     syncExplorerControls();
     renderPeakRows();
-    detectStatus.innerHTML='No capture loaded. Load an example, or upload a Kalico <code>calibration_data_*.csv</code> / <code>resonances_*.csv</code> (a <code>freq</code> column plus <code>psd_x</code>/<code>psd_y</code>/<code>psd_z</code>/<code>psd_xyz</code>). Peak detection and half-power damping-ratio estimation run live in your browser — nothing is uploaded anywhere.';
+    renderDetectStatus();
     renderInput();
     renderRecommendation();
     update();
@@ -1041,11 +1069,11 @@
   }
   document.getElementById('loadExX').addEventListener('click',function(){
     var d=unflatten(EXAMPLE_X_FLAT);
-    loadCapture(d.freq,d.x,d.y,d.z,d.xyz,'the X-axis capture');
+    loadCapture(d.freq,d.x,d.y,d.z,d.xyz,t('shaper_tuning.capture.xAxis'));
   });
   document.getElementById('loadExY').addEventListener('click',function(){
     var d=unflatten(EXAMPLE_Y_FLAT);
-    loadCapture(d.freq,d.x,d.y,d.z,d.xyz,'the Y-axis capture');
+    loadCapture(d.freq,d.x,d.y,d.z,d.xyz,t('shaper_tuning.capture.yAxis'));
   });
   document.getElementById('clearData').addEventListener('click',clearAll);
   document.getElementById('csvFile').addEventListener('change',function(e){
@@ -1054,13 +1082,13 @@
     reader.onload=function(ev){
       try{
         var lines=ev.target.result.split(/\r?\n/).filter(function(l){return l.trim().length;});
-        if(!lines.length)throw new Error('empty file');
+        if(!lines.length)throw new Error(t('shaper_tuning.capture.csvEmptyFile'));
         var header=lines[0].split(',').map(function(s){return s.trim().toLowerCase();});
         var freqIdx=header.indexOf('freq');
         var xIdx=header.indexOf('psd_x'),yIdx=header.indexOf('psd_y'),zIdx=header.indexOf('psd_z');
         var xyzIdx=header.indexOf('psd_xyz');
         if(xyzIdx<0)xyzIdx=header.indexOf('psd'); // plain freq+psd CSVs
-        if(freqIdx<0||xyzIdx<0)throw new Error('could not find a "freq" column and a "psd_xyz" (or "psd") column');
+        if(freqIdx<0||xyzIdx<0)throw new Error(t('shaper_tuning.capture.csvMissingColumns'));
         var freqArr=[],xArr=xIdx>=0?[]:null,yArr=yIdx>=0?[]:null,zArr=zIdx>=0?[]:null,xyzArr=[];
         for(var i=1;i<lines.length;i++){
           var cols=lines[i].split(',');
@@ -1073,7 +1101,7 @@
         }
         loadCapture(freqArr,xArr,yArr,zArr,xyzArr,'"'+file.name+'"');
       }catch(err){
-        detectStatus.innerHTML='Could not parse "'+file.name+'": '+err.message+'. Expected a Kalico resonance CSV with a "freq" column and a "psd_x"/"psd_y"/"psd_z"/"psd_xyz" column.';
+        detectStatus.innerHTML=t('shaper_tuning.capture.csvParseError',{filename:file.name,error:err.message});
       }
     };
     reader.readAsText(file);
@@ -1082,10 +1110,10 @@
   // ================= charts =================
   var opts={responsive:true,maintainAspectRatio:false,animation:false,interaction:{mode:'index',intersect:false},
     plugins:{legend:{display:true,position:'top',align:'start',labels:{color:muted,usePointStyle:true,pointStyle:'line',boxWidth:26,padding:12,font:{size:12}}},
-      tooltip:{callbacks:{title:function(it){return (Math.round(it[0].parsed.x*10)/10)+' Hz';},
-        label:function(it){return it.dataset.label+': '+(Math.round(it.parsed.y*1000)/10)+'%';}}}},
-    scales:{x:{type:'linear',min:0,max:210,grid:{display:false},ticks:{color:muted},title:{display:true,text:'frequency (Hz)',color:muted}},
-      y:{min:0,max:1.5,grid:{color:grid},ticks:{color:muted,callback:function(v){return Math.round(v*100)+'%';}},title:{display:true,text:'residual vibration',color:muted}}}};
+      tooltip:{callbacks:{title:function(it){return t('shaper_tuning.chart.tooltip.freqHz',{f:Math.round(it[0].parsed.x*10)/10});},
+        label:function(it){return t('shaper_tuning.chart.tooltip.percentLabel',{label:it.dataset.label,value:Math.round(it.parsed.y*1000)/10});}}}},
+    scales:{x:{type:'linear',min:0,max:210,grid:{display:false},ticks:{color:muted},title:{display:true,text:t('shaper_tuning.chart.axis.frequencyHz'),color:muted}},
+      y:{min:0,max:1.5,grid:{color:grid},ticks:{color:muted,callback:function(v){return Math.round(v*100)+'%';}},title:{display:true,text:t('shaper_tuning.chart.axis.residualVibration'),color:muted}}}};
   function ln(color,dash,w){return{data:[],borderColor:color,borderWidth:w||2,borderDash:dash||[],pointRadius:0,tension:0.05};}
   var c1=new Chart(document.getElementById('c1'),{type:'line',data:{datasets:[]},options:opts});
 
@@ -1111,39 +1139,39 @@
   }
   var optsInput={responsive:true,maintainAspectRatio:false,animation:false,interaction:{mode:'index',intersect:false},
     plugins:{legend:{display:true,position:'top',align:'start',onClick:inputLegendOnClick,labels:{color:muted,usePointStyle:true,pointStyle:'line',boxWidth:26,padding:12,font:{size:12}}},
-      tooltip:{callbacks:{title:function(it){return (Math.round(it[0].parsed.x*10)/10)+' Hz';},
-        label:function(it){return it.dataset.label+': '+it.parsed.y.toPrecision(3);}}}},
-    scales:{x:{type:'linear',min:0,max:205,grid:{display:false},ticks:{color:muted},title:{display:true,text:'frequency (Hz)',color:muted}},
-      y:{type:'linear',min:0,grid:{color:grid},ticks:{color:muted},title:{display:true,text:'normalized PSD',color:muted}}}};
+      tooltip:{callbacks:{title:function(it){return t('shaper_tuning.chart.tooltip.freqHz',{f:Math.round(it[0].parsed.x*10)/10});},
+        label:function(it){return t('shaper_tuning.chart.tooltip.rawLabel',{label:it.dataset.label,value:it.parsed.y.toPrecision(3)});}}}},
+    scales:{x:{type:'linear',min:0,max:205,grid:{display:false},ticks:{color:muted},title:{display:true,text:t('shaper_tuning.chart.axis.frequencyHz'),color:muted}},
+      y:{type:'linear',min:0,grid:{color:grid},ticks:{color:muted},title:{display:true,text:t('shaper_tuning.chart.axis.normalizedPSD'),color:muted}}}};
   var cInput=new Chart(document.getElementById('cInput'),{type:'line',data:{datasets:[]},options:optsInput});
 
   var opts2={responsive:true,maintainAspectRatio:false,animation:false,interaction:{mode:'index',intersect:false},
     plugins:{legend:{display:true,position:'top',align:'start',labels:{color:muted,usePointStyle:true,pointStyle:'line',boxWidth:26,padding:12,font:{size:12}}},
-      tooltip:{callbacks:{title:function(it){return 'assumed ζ = '+(Math.round(it[0].parsed.x*1000)/1000);},
-        label:function(it){return it.dataset.label+': '+(Math.round(it.parsed.y*1000)/10)+'%';}}}},
-    scales:{x:{type:'linear',min:0.01,max:0.2,grid:{display:false},ticks:{color:muted},title:{display:true,text:"design's uniformly-assumed damping ratio ζ",color:muted}},
-      y:{min:0,grid:{color:grid},ticks:{color:muted,callback:function(v){var mx=this.max||1,d=mx<0.03?2:(mx<0.3?1:0);return (v*100).toFixed(d)+'%';}},title:{display:true,text:'residual at peak',color:muted}}}};
+      tooltip:{callbacks:{title:function(it){return t('shaper_tuning.chart.tooltip.assumedZeta',{z:Math.round(it[0].parsed.x*1000)/1000});},
+        label:function(it){return t('shaper_tuning.chart.tooltip.percentLabel',{label:it.dataset.label,value:Math.round(it.parsed.y*1000)/10});}}}},
+    scales:{x:{type:'linear',min:0.01,max:0.2,grid:{display:false},ticks:{color:muted},title:{display:true,text:t('shaper_tuning.chart.axis.dampingRatioZeta'),color:muted}},
+      y:{min:0,grid:{color:grid},ticks:{color:muted,callback:function(v){var mx=this.max||1,d=mx<0.03?2:(mx<0.3?1:0);return (v*100).toFixed(d)+'%';}},title:{display:true,text:t('shaper_tuning.chart.axis.residualAtPeak'),color:muted}}}};
   var c2=new Chart(document.getElementById('c2'),{type:'line',data:{datasets:[]},options:opts2});
 
   var opts3={responsive:true,maintainAspectRatio:false,animation:false,interaction:{mode:'index',intersect:false},
     plugins:{legend:{display:true,position:'top',align:'start',labels:{color:muted,usePointStyle:true,pointStyle:'line',boxWidth:26,padding:12,font:{size:12}}},
-      tooltip:{callbacks:{title:function(it){return (Math.round(it[0].parsed.x*100)/100)+' ms';},
-        label:function(it){return it.dataset.label+': '+(Math.round(it.parsed.y*1000)/1000);}}}},
-    scales:{x:{type:'linear',grid:{display:false},ticks:{color:muted},title:{display:true,text:'time (ms)',color:muted}},
-      y:{grid:{color:grid},ticks:{color:muted},title:{display:true,text:'kernel weight',color:muted}}}};
+      tooltip:{callbacks:{title:function(it){return t('shaper_tuning.chart.tooltip.timeMs',{t:Math.round(it[0].parsed.x*100)/100});},
+        label:function(it){return t('shaper_tuning.chart.tooltip.rawLabel',{label:it.dataset.label,value:Math.round(it.parsed.y*1000)/1000});}}}},
+    scales:{x:{type:'linear',grid:{display:false},ticks:{color:muted},title:{display:true,text:t('shaper_tuning.chart.axis.timeMs'),color:muted}},
+      y:{grid:{color:grid},ticks:{color:muted},title:{display:true,text:t('shaper_tuning.chart.axis.kernelWeight'),color:muted}}}};
   var c3=new Chart(document.getElementById('c3'),{data:{datasets:[
-    {type:'bar',label:'exact (impulses)',data:[],backgroundColor:AMBER,barThickness:6},
-    {type:'line',label:'fitted smoother',data:[],borderColor:BLUE,borderWidth:2,pointRadius:0,tension:0.1}]},options:opts3});
+    {type:'bar',label:t('shaper_tuning.chart.dataset.exactImpulses'),data:[],backgroundColor:AMBER,barThickness:6},
+    {type:'line',label:t('shaper_tuning.chart.dataset.fittedSmoother'),data:[],borderColor:BLUE,borderWidth:2,pointRadius:0,tension:0.1}]},options:opts3});
 
   var opts4={responsive:true,maintainAspectRatio:false,animation:false,interaction:{mode:'index',intersect:false},
     plugins:{legend:{display:true,position:'top',align:'start',labels:{color:muted,usePointStyle:true,pointStyle:'line',boxWidth:26,padding:12,font:{size:12}}},
-      tooltip:{callbacks:{title:function(it){return (Math.round(it[0].parsed.x*100)/100)+' ms';},
-        label:function(it){return it.dataset.label+': '+Math.round(it.parsed.y).toLocaleString()+' mm/s²';}}}},
-    scales:{x:{type:'linear',grid:{display:false},ticks:{color:muted},title:{display:true,text:'time (ms)',color:muted}},
-      y:{grid:{color:grid},ticks:{color:muted},title:{display:true,text:'extruder acceleration (mm/s²)',color:muted}}}};
+      tooltip:{callbacks:{title:function(it){return t('shaper_tuning.chart.tooltip.timeMs',{t:Math.round(it[0].parsed.x*100)/100});},
+        label:function(it){return t('shaper_tuning.chart.tooltip.accelLabel',{label:it.dataset.label,value:Math.round(it.parsed.y).toLocaleString()});}}}},
+    scales:{x:{type:'linear',grid:{display:false},ticks:{color:muted},title:{display:true,text:t('shaper_tuning.chart.axis.timeMs'),color:muted}},
+      y:{grid:{color:grid},ticks:{color:muted},title:{display:true,text:t('shaper_tuning.chart.axis.extruderAccelMmS2'),color:muted}}}};
   var c4=new Chart(document.getElementById('c4'),{type:'line',data:{datasets:[
-    Object.assign(ln(AMBER,[6,4]),{label:'exact convolution'}),
-    Object.assign(ln(BLUE),{label:'fitted smoother'})]},options:opts4});
+    Object.assign(ln(AMBER,[6,4]),{label:t('shaper_tuning.chart.dataset.exactConvolution')}),
+    Object.assign(ln(BLUE),{label:t('shaper_tuning.chart.dataset.fittedSmoother')})]},options:opts4});
 
   // ================= explorer state =================
   var explType='smooth_si', explFreq=50.0, explDamp=0.1;
@@ -1190,10 +1218,10 @@
     var kind,sh,label,valid=true,reason='';
     if(mm){
       if(peaks.length<2||peaks.some(function(p){return !(p.freq>0);})||pulseCount(peaks)>MAX_SHAPER_PULSES){
-        valid=false;reason=peaks.length? 'multimode needs ≥2 peaks with positive frequencies within the 32-impulse budget.':'no peaks configured — add peaks below or load a capture.';
+        valid=false;reason=peaks.length? t('shaper_tuning.reasons.multimodeNeedsPeaks'):t('shaper_tuning.reasons.noPeaksConfigured');
       }else{kind='multimode';sh=buildMultiMode(peaks);label=shaperLabel(peaks);}
     }else{
-      if(!(explFreq>0)){valid=false;reason='enter a positive frequency.';}
+      if(!(explFreq>0)){valid=false;reason=t('shaper_tuning.reasons.positiveFrequency');}
       else if(sm){kind='smoother';sh=makeSmoother(type,explFreq);label=type;}
       else{kind='shaper';sh=BASEFN[type](explFreq,explDamp);label=type;}
     }
@@ -1215,26 +1243,26 @@
     // ---- residual vs frequency ----
     var pts=300,d=[];
     for(var i=0;i<=pts;i++){var f=1+209*i/pts;d.push({x:f,y:worstResidualDisplay(kind,sh,f)});}
-    var ds1=[Object.assign(ln(BLUE),{label:label+' residual',data:d})];
+    var ds1=[Object.assign(ln(BLUE),{label:t('shaper_tuning.chart.dataset.residualLabel',{label:label}),data:d})];
     res.forEach(function(p,idx){
-      ds1.push(Object.assign(ln(PALETTE[(idx+1)%PALETTE.length],[4,4],1),{label:'resonance '+p.freq.toFixed(0)+' Hz',data:[{x:p.freq,y:0},{x:p.freq,y:1.5}]}));
+      ds1.push(Object.assign(ln(PALETTE[(idx+1)%PALETTE.length],[4,4],1),{label:t('shaper_tuning.chart.dataset.resonanceMarker',{freq:p.freq.toFixed(0)}),data:[{x:p.freq,y:0},{x:p.freq,y:1.5}]}));
     });
     c1.data.datasets=ds1;c1.update();
 
     // ---- readout cards ----
     var freqLabel=mm?peaks.map(function(p){return p.freq.toFixed(1);}).join(' / ')+' Hz':explFreq.toFixed(1)+' Hz';
-    var cardsHtml=card('shaper',label,BLUE)+card('frequency',freqLabel)+
-      card('smoothing (SCV '+scv.toFixed(1)+', '+accel.toLocaleString()+' mm/s²)',smoothing.toFixed(4))+
-      card('projected max_accel',Math.round(maxAccel).toLocaleString()+' mm/s²',TEAL);
-    if(mm)cardsHtml+=card('impulses',pulseCount(peaks)+' / '+MAX_SHAPER_PULSES+' ('+(dur(sh)*1000).toFixed(1)+' ms)');
+    var cardsHtml=card(t('shaper_tuning.cards.shaper'),label,BLUE)+card(t('shaper_tuning.cards.frequency'),freqLabel)+
+      card(t('shaper_tuning.cards.smoothingScv',{scv:scv.toFixed(1),accel:accel.toLocaleString()}),smoothing.toFixed(4))+
+      card(t('shaper_tuning.cards.projectedMaxAccel'),Math.round(maxAccel).toLocaleString()+' mm/s²',TEAL);
+    if(mm)cardsHtml+=card(t('shaper_tuning.cards.impulses'),pulseCount(peaks)+' / '+MAX_SHAPER_PULSES+' ('+(dur(sh)*1000).toFixed(1)+' ms)');
     document.getElementById('cards').innerHTML=cardsHtml;
 
     // ---- per-resonance residual ----
     if(res.length){
-      document.getElementById('note').innerHTML='Residual vibration this shaper leaves at each detected resonance (worst case across ζ='+TEST_DAMPING_RATIOS.join('/')+'):<br>'+
+      document.getElementById('note').innerHTML=t('shaper_tuning.notes.residualPerPeak',{ratios:TEST_DAMPING_RATIOS.join('/')})+'<br>'+
         res.map(function(p){return p.freq.toFixed(1)+'&nbsp;Hz: <strong>'+pct(worstResidualAccurate(kind,sh,p.freq))+'</strong>';}).join(' &nbsp; ');
     }else{
-      document.getElementById('note').innerHTML='<span style="color:var(--text-muted)">Load a capture to see the residual left at each detected resonance.</span>';
+      document.getElementById('note').innerHTML='<span style="color:var(--text-muted)">'+t('shaper_tuning.notes.loadCaptureForResidual')+'</span>';
     }
 
     // ---- deeper analysis (multimode only) ----
@@ -1257,9 +1285,9 @@
         if(r>ymax)ymax=r;
       });
     }
-    var ds2=peaks.map(function(p,idx){return Object.assign(ln(PALETTE[idx%PALETTE.length],idx%2?[6,4]:[],2),{label:'residual @ peak '+(idx+1)+' ('+p.freq.toFixed(1)+' Hz)',data:perPeakData[idx]});});
+    var ds2=peaks.map(function(p,idx){return Object.assign(ln(PALETTE[idx%PALETTE.length],idx%2?[6,4]:[],2),{label:t('shaper_tuning.chart.dataset.residualAtPeakN',{n:idx+1,freq:p.freq.toFixed(1)}),data:perPeakData[idx]});});
     peaks.forEach(function(p,idx){
-      ds2.push(Object.assign(ln(PALETTE[idx%PALETTE.length],[2,2],1),{label:'true ζ peak '+(idx+1)+' ('+p.damping.toFixed(3)+')',data:[{x:p.damping,y:0},{x:p.damping,y:ymax*1.05}]}));
+      ds2.push(Object.assign(ln(PALETTE[idx%PALETTE.length],[2,2],1),{label:t('shaper_tuning.chart.dataset.trueZetaPeakN',{n:idx+1,damping:p.damping.toFixed(3)}),data:[{x:p.damping,y:0},{x:p.damping,y:ymax*1.05}]}));
     });
     c2.data.datasets=ds2; c2.update();
 
@@ -1278,12 +1306,13 @@
 
     var reduction=acc.peakExact/Math.max(acc.peakSmooth,1e-6);
     document.getElementById('cards2').innerHTML=
-      card('extruder kernel order', (C.length-1)+' ('+C.length+' coeffs)')+
-      card('peak extruder accel — exact', Math.round(acc.peakExact).toLocaleString()+' mm/s²', AMBER)+
-      card('peak extruder accel — fitted', Math.round(acc.peakSmooth).toLocaleString()+' mm/s²', BLUE)+
-      card('reduction', reduction.toFixed(1)+'×', TEAL);
-    document.getElementById('note2').innerHTML=
-      'The <strong>exact</strong> convolution ('+multi.A.length+' impulses, base '+label+') is a mathematically perfect match to the shaped toolhead motion, but each impulse is a velocity-derivative discontinuity. The <strong>fitted</strong> smoother (order '+(C.length-1)+') trades a little exactness for a continuous kernel, cutting peak extruder acceleration by <strong>'+reduction.toFixed(1)+'×</strong> at a sharp 100&rarr;20&nbsp;mm/s corner. This ports <code>extruder_smoother.get_multi_mode_extruder_smoother</code>, fit near every peak with that peak\'s own damping ratio. The chart above it shows why per-peak damping matters: with one shared assumed ζ, only the peak whose true ζ matches gets a clean notch.';
+      card(t('shaper_tuning.cards.extruderKernelOrder'), (C.length-1)+' ('+C.length+' coeffs)')+
+      card(t('shaper_tuning.cards.peakExtruderAccelExact'), Math.round(acc.peakExact).toLocaleString()+' mm/s²', AMBER)+
+      card(t('shaper_tuning.cards.peakExtruderAccelFitted'), Math.round(acc.peakSmooth).toLocaleString()+' mm/s²', BLUE)+
+      card(t('shaper_tuning.cards.reduction'), reduction.toFixed(1)+'×', TEAL);
+    document.getElementById('note2').innerHTML=t('shaper_tuning.notes.deepNote',{
+      impulses:multi.A.length, base:label, order:C.length-1, reduction:reduction.toFixed(1)
+    });
   }
 
   // ---- input PSD chart: X / Y / Z / Combined. X/Y/Z are toggleable via the
@@ -1311,17 +1340,17 @@
     if(d.x||d.y||d.z){
       var activeAxes=['x','y','z'].filter(function(a){return d[a]&&!axisHidden[a];});
       var allPresent=['x','y','z'].filter(function(a){return d[a];});
-      combinedLabel=activeAxes.length===allPresent.length?'Combined (analyzed)':
-        'Combined ('+activeAxes.map(function(a){return a.toUpperCase();}).join('+')+', analyzed)';
+      combinedLabel=activeAxes.length===allPresent.length?t('shaper_tuning.capture.combinedAnalyzed'):
+        t('shaper_tuning.capture.combinedAxesAnalyzed',{axes:activeAxes.map(function(a){return a.toUpperCase();}).join('+')});
     }
     ds.push(Object.assign(ln(RED),{label:combinedLabel,data:series(d.xyz)}));
     var res=detectAndEstimate(d.freq,d.xyz,4);
     res.forEach(function(p,idx){
-      ds.push(Object.assign(ln(muted,[4,4],1),{label:'peak '+(idx+1)+' ('+p.freq.toFixed(1)+' Hz)',data:[{x:p.freq,y:markerLo},{x:p.freq,y:yMax*1.1}]}));
+      ds.push(Object.assign(ln(muted,[4,4],1),{label:t('shaper_tuning.chart.dataset.peakMarker',{n:idx+1,freq:p.freq.toFixed(1)}),data:[{x:p.freq,y:markerLo},{x:p.freq,y:yMax*1.1}]}));
     });
     cInput.options.scales.y.type=isLog?'logarithmic':'linear';
     cInput.options.scales.y.min=isLog?undefined:0;
-    cInput.options.scales.y.title.text=isLog?'normalized PSD (log scale)':'normalized PSD';
+    cInput.options.scales.y.title.text=isLog?t('shaper_tuning.chart.axis.normalizedPSDLog'):t('shaper_tuning.chart.axis.normalizedPSD');
     cInput.data.datasets=ds;
     // axisHidden is our source of truth (not Chart.js's internal meta,
     // which isn't guaranteed to survive replacing .data.datasets wholesale).
@@ -1360,7 +1389,7 @@
     cardsEl.innerHTML='';noteEl.innerHTML='';
     if(!loadedCapture){
       lastReco=null;
-      statusEl.innerHTML='Load a capture above to compute a recommendation.';
+      statusEl.innerHTML=t('shaper_tuning.recommended.statusDefault');
       setBusy('inputChartBox',false);setBusy('recoBox',false);
       return;
     }
@@ -1371,7 +1400,7 @@
     // call yet) -- snapshotting means this search always scores the data it
     // was actually asked to score.
     var b=loadedCapture, bFreq=b.freq, bPsd=b.psd.slice(), bLabel=b.label;
-    statusEl.innerHTML='Computing recommendation for '+bLabel+' (find_best_shaper port, ~1-2s)…';
+    statusEl.innerHTML=t('shaper_tuning.status.computing',{label:bLabel});
     setBusy('inputChartBox',true);setBusy('recoBox',true);
     setTimeout(function(){
       if(myGen!==recomputeGen)return; // superseded by a newer recompute; drop this stale result (a newer call owns the busy state now)
@@ -1413,21 +1442,24 @@
       return '<div>'+p.freq.toFixed(1)+'&nbsp;Hz: <strong>'+(Math.round(r*1000)/10).toFixed(1)+'%</strong></div>';
     }).join('');
     cardsEl.innerHTML=
-      card('recommended',label,BLUE)+
-      card('frequency',freqLabel)+
-      card('vibrations (search score)',(Math.round(best.vibrs*1000)/10).toFixed(1)+'%')+
-      card('smoothing',best.smoothing.toFixed(4))+
-      card('max_accel',Math.round(best.maxAccel).toLocaleString()+' mm/s²',TEAL);
+      card(t('shaper_tuning.cards.recommended'),label,BLUE)+
+      card(t('shaper_tuning.cards.frequency'),freqLabel)+
+      card(t('shaper_tuning.cards.vibrationsSearchScore'),(Math.round(best.vibrs*1000)/10).toFixed(1)+'%')+
+      card(t('shaper_tuning.cards.smoothing'),best.smoothing.toFixed(4))+
+      card(t('shaper_tuning.cards.maxAccel'),Math.round(best.maxAccel).toLocaleString()+' mm/s²',TEAL);
     var cfgHtml=isMultimode?
       ('<code>shaper_type_&lt;axis&gt; = multimode</code> <code>shaper_base_&lt;axis&gt; = '+best.base+', '+best.base2+
        '</code> <code>shaper_freq_&lt;axis&gt; = '+best.freq.toFixed(1)+', '+best.freq2.toFixed(1)+
        '</code> <code>damping_ratio_&lt;axis&gt; = '+best.dampingRatio.toFixed(4)+', '+best.dampingRatio2.toFixed(4)+'</code>')
       :('<code>shaper_type_&lt;axis&gt; = '+best.name+'</code> <code>shaper_freq_&lt;axis&gt; = '+best.freq.toFixed(1)+'</code>');
-    statusEl.innerHTML='Based on '+result.peaks.length+' peak(s) the auto-tuner\'s own 2-peak search considered ('+
-      result.peaks.map(function(f){return f.toFixed(1)+'&nbsp;Hz';}).join(', ')+
-      '), out of '+allPeaks.length+' detected overall. Recommended config: '+cfgHtml;
-    noteEl.innerHTML='Per-peak residual using the recommended shaper above, at <strong>every</strong> peak actually detected in the capture (not just the ones the 2-peak auto-tuner search saw):<br>'+perPeakHtml+
-      (allPeaks.length>2?'<br><span style="color:var(--amber)">The auto-tuner only ever searches its top 2 detected peaks; a 3rd/4th peak (like above) can only be well-suppressed by coincidence, or by manually configuring a multimode shaper with all of them listed (use the explorer below).</span>':'');
+    statusEl.innerHTML=t('shaper_tuning.status.basedOn',{
+      n:result.peaks.length,
+      list:result.peaks.map(function(f){return f.toFixed(1)+'&nbsp;Hz';}).join(', '),
+      total:allPeaks.length,
+      cfgHtml:cfgHtml
+    });
+    noteEl.innerHTML=t('shaper_tuning.notes.recoNoteIntro')+'<br>'+perPeakHtml+
+      (allPeaks.length>2?'<br><span style="color:var(--amber)">'+t('shaper_tuning.notes.recoCaveat')+'</span>':'');
   }
   // Seed the manual explorer from the recommendation so it starts on the
   // recommended shaper (the user can then change type / frequencies).
@@ -1467,7 +1499,7 @@
     var outEl=document.getElementById('cfgOut');
     outEl.style.display='block';
     if(!explorerConfigValid()){
-      outEl.textContent='# Configure a valid shaper in the explorer above first.';
+      outEl.textContent=t('shaper_tuning.config.invalidComment');
       return;
     }
     var axisSel=document.getElementById('cfgAxis').value;
@@ -1511,6 +1543,36 @@
     [c1,cInput,c2,c3,c4].forEach(function(ch){ch.update();});
   }
   if(window.KV_PALETTE)window.KV_PALETTE.onChange(repaintAll);
+
+  // ---- live language repaint (i18n.js "kv-locale-change" event) ----
+  // Axis titles and the c3/c4 dataset labels are set once at chart creation,
+  // same as the colors above, so they need an explicit re-translation here.
+  // Everything else (cards, notes, dynamic dataset/legend labels, status
+  // text) is already rebuilt from scratch on every call to the existing
+  // render functions -- calling them again after a locale switch is enough.
+  window.KV_I18N.onChange(function(){
+    opts.scales.x.title.text=t('shaper_tuning.chart.axis.frequencyHz');
+    opts.scales.y.title.text=t('shaper_tuning.chart.axis.residualVibration');
+    optsInput.scales.x.title.text=t('shaper_tuning.chart.axis.frequencyHz');
+    optsInput.scales.y.title.text=inputScale==='log'?t('shaper_tuning.chart.axis.normalizedPSDLog'):t('shaper_tuning.chart.axis.normalizedPSD');
+    opts2.scales.x.title.text=t('shaper_tuning.chart.axis.dampingRatioZeta');
+    opts2.scales.y.title.text=t('shaper_tuning.chart.axis.residualAtPeak');
+    opts3.scales.x.title.text=t('shaper_tuning.chart.axis.timeMs');
+    opts3.scales.y.title.text=t('shaper_tuning.chart.axis.kernelWeight');
+    opts4.scales.x.title.text=t('shaper_tuning.chart.axis.timeMs');
+    opts4.scales.y.title.text=t('shaper_tuning.chart.axis.extruderAccelMmS2');
+    c3.data.datasets[0].label=t('shaper_tuning.chart.dataset.exactImpulses');
+    c3.data.datasets[1].label=t('shaper_tuning.chart.dataset.fittedSmoother');
+    c4.data.datasets[0].label=t('shaper_tuning.chart.dataset.exactConvolution');
+    c4.data.datasets[1].label=t('shaper_tuning.chart.dataset.fittedSmoother');
+
+    renderDetectStatus();
+    renderInput();
+    renderPeakRows();
+    update();               // rebuilds c1 + cards/note, and c2/c3/c4 (via renderDeep) when multimode is selected
+    if(lastReco)paintRecommendation(); else document.getElementById('recoStatus').innerHTML=t('shaper_tuning.recommended.statusDefault');
+    [c1,cInput,c2,c3,c4].forEach(function(ch){ch.update();});
+  });
 
   // ---- initial state: empty ----
   renderInput();
