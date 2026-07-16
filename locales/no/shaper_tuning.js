@@ -64,7 +64,8 @@ window.KV_LOCALES.no.shaper_tuning = {
     addPeak: "+ legg til topp",
     removePeakTitle: "fjern topp",
     scv: "SCV",
-    acceleration: "akselerasjon"
+    acceleration: "akselerasjon",
+    accelEditHint: "Klikk for å skrive inn en eksakt verdi"
   },
   budget: {
     noPeaks: "Ingen topper — last inn en måling ovenfor, eller legg til topper manuelt.",
@@ -78,11 +79,12 @@ window.KV_LOCALES.no.shaper_tuning = {
   },
   cards: {
     shaper: "shaper",
-    frequency: "frekvens",
-    smoothingScv: "glatting (SCV {{scv}}, {{accel}} mm/s²)",
+    frequencyTarget: "målfrekvens",
+    frequenciesTarget: "målfrekvenser",
+    smoothingScv: "glatting<br>(SCV {{scv}}, {{accel}} mm/s²)",
     smoothing: "glatting",
     projectedMaxAccel: "forventet max_accel",
-    impulses: "impulser",
+    residualVibrations: "restvibrasjoner (verste tilfelle)",
     extruderKernelOrder: "orden på ekstruderkjerne",
     peakExtruderAccelExact: "maks ekstruderakselerasjon — eksakt",
     peakExtruderAccelFitted: "maks ekstruderakselerasjon — tilpasset",
@@ -149,8 +151,8 @@ window.KV_LOCALES.no.shaper_tuning = {
   config: {
     intro: "Skriver ut shaperen som for øyeblikket er valgt i utforskeren ovenfor, i Kalicos konfigurasjonsformat.",
     generateBtn: "Generer konfigurasjon",
-    axisLabel: "akse",
-    axisBoth: "begge (x og y)",
+    axisDetected: "akse: {{axis}}",
+    axisUnknown: "akse: X og Y (kunne ikke gjenkjennes fra filnavnet — inkluderer begge)",
     prefixLabel: "bruk save_config-prefiks (<code>#*#</code>)",
     invalidComment: "# Konfigurer en gyldig shaper i utforskeren ovenfor først."
   },

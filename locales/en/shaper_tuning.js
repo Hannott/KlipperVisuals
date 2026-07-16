@@ -64,7 +64,8 @@ window.KV_LOCALES.en.shaper_tuning = {
     addPeak: "+ add peak",
     removePeakTitle: "remove peak",
     scv: "SCV",
-    acceleration: "acceleration"
+    acceleration: "acceleration",
+    accelEditHint: "Click to enter an exact value"
   },
   budget: {
     noPeaks: "No peaks — load a capture above, or add peaks manually.",
@@ -78,11 +79,12 @@ window.KV_LOCALES.en.shaper_tuning = {
   },
   cards: {
     shaper: "shaper",
-    frequency: "frequency",
-    smoothingScv: "smoothing (SCV {{scv}}, {{accel}} mm/s²)",
+    frequencyTarget: "target frequency",
+    frequenciesTarget: "target frequencies",
+    smoothingScv: "smoothing<br>(SCV {{scv}}, {{accel}} mm/s²)",
     smoothing: "smoothing",
     projectedMaxAccel: "projected max_accel",
-    impulses: "impulses",
+    residualVibrations: "residual vibrations (worst case)",
     extruderKernelOrder: "extruder kernel order",
     peakExtruderAccelExact: "peak extruder accel — exact",
     peakExtruderAccelFitted: "peak extruder accel — fitted",
@@ -149,8 +151,8 @@ window.KV_LOCALES.en.shaper_tuning = {
   config: {
     intro: "Emits the shaper currently selected in the explorer above, in Kalico's config format.",
     generateBtn: "Generate config",
-    axisLabel: "axis",
-    axisBoth: "both (x &amp; y)",
+    axisDetected: "axis: {{axis}}",
+    axisUnknown: "axis: X & Y (couldn't detect from the filename — including both)",
     prefixLabel: "apply save_config prefix (<code>#*#</code>)",
     invalidComment: "# Configure a valid shaper in the explorer above first."
   },

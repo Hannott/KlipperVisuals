@@ -64,7 +64,8 @@ window.KV_LOCALES.cs.shaper_tuning = {
     addPeak: "+ přidejte vrchol",
     removePeakTitle: "odebrat vrchol",
     scv: "SCV",
-    acceleration: "akcelerace"
+    acceleration: "akcelerace",
+    accelEditHint: "Klikněte pro zadání přesné hodnoty"
   },
   budget: {
     noPeaks: "Žádné vrcholy — načtěte záznam výše, nebo přidejte vrcholy ručně.",
@@ -78,11 +79,12 @@ window.KV_LOCALES.cs.shaper_tuning = {
   },
   cards: {
     shaper: "tvořovač",
-    frequency: "frekvence",
-    smoothingScv: "vyhlazení (SCV {{scv}}, {{accel}} mm/s²)",
+    frequencyTarget: "cílová frekvence",
+    frequenciesTarget: "cílové frekvence",
+    smoothingScv: "vyhlazení<br>(SCV {{scv}}, {{accel}} mm/s²)",
     smoothing: "vyhlazení",
     projectedMaxAccel: "projektovaný max_accel",
-    impulses: "impulsy",
+    residualVibrations: "zbytkové vibrace (nejhorší případ)",
     extruderKernelOrder: "řád jádra extrudéru",
     peakExtruderAccelExact: "vrcholová akcelerace extrudéru — přesná",
     peakExtruderAccelFitted: "vrcholová akcelerace extrudéru — přizpůsobená",
@@ -149,8 +151,8 @@ window.KV_LOCALES.cs.shaper_tuning = {
   config: {
     intro: "Vypíše tvořovač aktuálně vybraný v níže uvedeném průzkumníku v Kalico formátu konfigurace.",
     generateBtn: "Generujte konfiguraci",
-    axisLabel: "osa",
-    axisBoth: "obě (x a y)",
+    axisDetected: "osa: {{axis}}",
+    axisUnknown: "osa: X a Y (nelze rozpoznat z názvu souboru — zahrnuji obě)",
     prefixLabel: "použijte save_config prefix (<code>#*#</code>)",
     invalidComment: "# Nejprve nakonfigurujte platný tvořovač v níže uvedeném průzkumníku."
   },

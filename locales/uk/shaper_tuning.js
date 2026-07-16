@@ -64,7 +64,8 @@ window.KV_LOCALES.uk.shaper_tuning = {
     addPeak: "+ додати піку",
     removePeakTitle: "видалити піку",
     scv: "SCV",
-    acceleration: "прискорення"
+    acceleration: "прискорення",
+    accelEditHint: "Клацніть, щоб ввести точне значення"
   },
   budget: {
     noPeaks: "Немає піків — завантажте запис вище або додайте піки вручну.",
@@ -78,11 +79,12 @@ window.KV_LOCALES.uk.shaper_tuning = {
   },
   cards: {
     shaper: "шейпер",
-    frequency: "freq",
-    smoothingScv: "заокруглення (SCV {{scv}}, {{accel}} мм/с²)",
+    frequencyTarget: "цільова частота",
+    frequenciesTarget: "цільові частоти",
+    smoothingScv: "заокруглення<br>(SCV {{scv}}, {{accel}} мм/с²)",
     smoothing: "заокруглення",
     projectedMaxAccel: "прогнозована max_accel",
-    impulses: "імпульси",
+    residualVibrations: "залишкові вібрації (найгірший випадок)",
     extruderKernelOrder: "порядок ядра екструдера",
     peakExtruderAccelExact: "піковане прискорення екструдера — точне",
     peakExtruderAccelFitted: "піковане прискорення екструдера — підібране",
@@ -149,8 +151,8 @@ window.KV_LOCALES.uk.shaper_tuning = {
   config: {
     intro: "Видає шейпер, поточно обраний у дослідникові вище, у форматі конфігу Kalico.",
     generateBtn: "Створити конфіг",
-    axisLabel: "вісь",
-    axisBoth: "обидві (x &amp; y)",
+    axisDetected: "вісь: {{axis}}",
+    axisUnknown: "вісь: X та Y (не вдалося визначити з імені файлу — включено обидві)",
     prefixLabel: "застосувати префікс save_config (<code>#*#</code>)",
     invalidComment: "# Спочатку налаштуйте дійсний шейпер у дослідникові вище."
   },
