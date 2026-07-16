@@ -30,7 +30,9 @@ window.KV_LOCALES.en.shaper_tuning = {
       multimode: "+ multimode, N-peak shaping (this fork's bleeding-edge-v2)."
     },
     info: "On the <strong>Klipper</strong> and <strong>Kalico BE</strong> tiers each shaper (or smoother) targets a single resonance, so it can't cancel several peaks at once. This tool keeps your tallest peak and sets the rest aside — click any peak marker in the measured-spectrum legend below to include or exclude it. To shape multiple resonances at once, use the <strong>Multimode</strong> tier.",
-    dismiss: "Dismiss"
+    dismiss: "Dismiss",
+    downloadNote: "Want to try this on your own printer?",
+    downloadLink: "Download the multimode-shaping-v3 branch for testing"
   },
   library: {
     label: "Previously uploaded",

@@ -30,7 +30,9 @@ window.KV_LOCALES.cs.shaper_tuning = {
       multimode: "+ multimode, tvarování s více vrcholy (bleeding-edge-v2 této fork)."
     },
     info: "Na úrovních <strong>Klipper</strong> a <strong>Kalico BE</strong> každý tvořovač (nebo vyhlazovač) cílí na jednu rezonanci, takže nedokáže potlačit několik vrcholů najednou. Tento nástroj ponechá váš nejvyšší vrchol a ostatní odloží — kliknutím na značku vrcholu v legendě naměřeného spektra níže ji zahrnete nebo vyloučíte. Chcete-li tvarovat více rezonancí najednou, použijte úroveň <strong>Multimode</strong>.",
-    dismiss: "Zavřít"
+    dismiss: "Zavřít",
+    downloadNote: "Chcete si to vyzkoušet na vlastní tiskárně?",
+    downloadLink: "Stáhnout větev multimode-shaping-v3 pro testování"
   },
   library: {
     label: "Dříve nahráno",

@@ -113,6 +113,16 @@
     <button type="button" class="btn" id="tierMultimode" data-i18n="shaper_tuning.tier.multimode">Multimode</button>
     <span id="tierNote" style="font-size:12.5px;color:var(--text-muted);"></span>
   </div>
+  <!-- Shown only on the Multimode tier: multimode isn't in any released
+       firmware yet, so point testers at the branch to install it. As of this
+       writing multimode-shaping-v3 is a byte-for-byte-identical, cleaned-up-
+       history re-post of bleeding-edge-v2's multimode commits (verified via
+       `git rev-parse <branch>^{tree}` matching on both) -- if you're updating
+       this link because a newer branch superseded it, re-verify that claim
+       rather than assuming it still holds. -->
+  <div id="multimodeDownload" style="display:none;font-size:12.5px;color:var(--text-muted);margin:0 0 .75rem;">
+    <span data-i18n="shaper_tuning.tier.downloadNote">Want to try this on your own printer?</span> <a href="https://github.com/Hannott/kalico/tree/multimode-shaping-v3" target="_blank" rel="noopener noreferrer" data-i18n="shaper_tuning.tier.downloadLink">Download the multimode-shaping-v3 branch for testing</a>.
+  </div>
   <!-- Dismissible info box for the single-shaper tiers: a single shaper (or
        smoother) can only target one resonance, so the tool keeps the tallest
        peak and sets the rest aside. Dismissal persists (localStorage). -->
@@ -1839,6 +1849,11 @@
   function renderTierNote(){
     document.getElementById('tierNote').textContent=t('shaper_tuning.tier.note.'+firmwareTier);
   }
+  // Multimode isn't in any released Klipper/Kalico build -- only shown while
+  // that tier is selected, since the other tiers don't need the download link.
+  function renderMultimodeDownload(){
+    document.getElementById('multimodeDownload').style.display=tierAllowsMultimode()?'':'none';
+  }
   // The dismissible info box below the tier tabs, shown on the single-shaper
   // tiers (Klipper / Kalico BE) to explain why they target only one peak.
   // Once closed it stays closed (localStorage), so the text covers both tiers.
@@ -1855,6 +1870,7 @@
     document.getElementById(tier==='klipper'?'tierKlipper':tier==='kalicobe'?'tierKalicoBE':'tierMultimode').classList.add('primary');
     renderTierNote();
     renderTierInfo();
+    renderMultimodeDownload();
     applyTierToExplorerOptions();
     recomputeAutoExclude(); // single tier: set aside all but tallest; multimode: clear
     renderInput();          // restyle peak markers for the new effective exclusions
@@ -2350,6 +2366,7 @@
   document.getElementById(firmwareTier==='klipper'?'tierKlipper':firmwareTier==='kalicobe'?'tierKalicoBE':'tierMultimode').classList.add('primary');
   renderTierNote();
   renderTierInfo();
+  renderMultimodeDownload();
   applyTierToExplorerOptions();
 
   // ---- initial state: restore a capture from this session if present,
