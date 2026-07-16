@@ -880,8 +880,15 @@
   // Default is NO data: peaks empty, no capture loaded. Loading an example
   // or a file (or the manual "+ add peak") fills these in.
   var peaks=[];
-  var loadedCapture=null;   // {freq,psd,label} unshaped capture for the recommendation
+  var loadedCapture=null;   // {freq,x,y,z,xyz,psd,label} -- psd/xyz is the Combined series everything below analyzes
   var lastReco=null;        // most recent findBestShaperReal() result, for the config generator
+  // Which raw axes currently feed Combined (toggled via the input chart's
+  // legend). Hiding an axis there recomputes Combined = sum of whichever
+  // axes remain visible (matching Kalico's own psd_sum = psd_x+psd_y+psd_z),
+  // then recomputes peaks/recommendation/explorer from that new Combined --
+  // see recombineAndCascade().
+  var axisHidden={x:false,y:false,z:false};
+  var inputAxisIndex={}; // axis name -> dataset index in cInput, set by renderInput()
 
   // ================= peak-row UI =================
   var peakRowsEl=document.getElementById('peakRows');
@@ -967,6 +974,7 @@
   // x/y/z (when available) are shown on the input chart for context only.
   function loadCapture(freq,x,y,z,xyz,label){
     loadedCapture={freq:freq,x:x,y:y,z:z,xyz:xyz,psd:xyz,label:label};
+    axisHidden={x:false,y:false,z:false}; // a fresh capture starts with every axis feeding Combined
     var detected=detectAndEstimate(freq,xyz,4);
     applyDetected(detected,label);
     // sensible pre-recommendation default for the single-mode freq field
@@ -975,9 +983,34 @@
     update();
     renderRecommendation();  // async; seeds the explorer when it finishes
   }
+  // Recomputes Combined = sum of whichever raw axes are still visible on the
+  // input chart (matching Kalico's own psd_sum = psd_x+psd_y+psd_z), then
+  // cascades a full recompute from that new Combined: peak detection, the
+  // recommendation search, and the explorer's seed -- exactly like loading a
+  // fresh capture, since Combined itself effectively changed.
+  function recombineAndCascade(){
+    if(!loadedCapture)return;
+    var d=loadedCapture;
+    var present=['x','y','z'].filter(function(a){return d[a];});
+    var active=present.filter(function(a){return !axisHidden[a];});
+    var n=d.freq.length, newXyz=new Array(n);
+    for(var i=0;i<n;i++){
+      var s=0;
+      for(var k=0;k<active.length;k++)s+=d[active[k]][i];
+      newXyz[i]=s;
+    }
+    d.xyz=newXyz; d.psd=newXyz;
+    var label = active.length===present.length ? d.label :
+      ('Combined recomputed from '+active.map(function(a){return a.toUpperCase();}).join('+')+
+       ' ('+present.filter(function(a){return axisHidden[a];}).map(function(a){return a.toUpperCase();}).join(', ')+' hidden)');
+    var detected=detectAndEstimate(d.freq,d.xyz,4);
+    applyDetected(detected,label);
+    renderInput();
+    renderRecommendation();  // async; re-seeds the explorer when it finishes
+  }
   function clearAll(){
     if(loadedCapture && !window.confirm('Reset all data on this page? This clears the loaded capture, the recommendation, and the explorer.'))return;
-    loadedCapture=null;lastReco=null;peaks=[];
+    loadedCapture=null;lastReco=null;peaks=[];axisHidden={x:false,y:false,z:false};
     explType='smooth_si';explFreq=50.0;explDamp=0.1;
     syncExplorerControls();
     renderPeakRows();
@@ -1039,8 +1072,26 @@
 
   // input PSD chart (log/lin toggle)
   var inputScale='linear';
+  // Clicking X/Y/Z toggles which raw axes feed Combined and triggers a full
+  // recompute (recombineAndCascade, defined near the other capture-loading
+  // logic below); clicking Combined or a peak marker just toggles display.
+  function inputLegendOnClick(e,legendItem,legend){
+    var idx=legendItem.datasetIndex, ci=legend.chart, axis=null;
+    for(var a in inputAxisIndex)if(inputAxisIndex[a]===idx)axis=a;
+    if(axis){
+      var willHide=!axisHidden[axis];
+      if(willHide){
+        var remaining=['x','y','z'].filter(function(ax){return ax!==axis&&loadedCapture&&loadedCapture[ax]&&!axisHidden[ax];});
+        if(!remaining.length)return; // keep at least one axis feeding Combined
+      }
+      axisHidden[axis]=willHide;
+      recombineAndCascade();
+    }else{
+      if(ci.isDatasetVisible(idx))ci.hide(idx);else ci.show(idx);
+    }
+  }
   var optsInput={responsive:true,maintainAspectRatio:false,animation:false,interaction:{mode:'index',intersect:false},
-    plugins:{legend:{display:true,position:'top',align:'start',labels:{color:muted,usePointStyle:true,pointStyle:'line',boxWidth:26,padding:12,font:{size:12}}},
+    plugins:{legend:{display:true,position:'top',align:'start',onClick:inputLegendOnClick,labels:{color:muted,usePointStyle:true,pointStyle:'line',boxWidth:26,padding:12,font:{size:12}}},
       tooltip:{callbacks:{title:function(it){return (Math.round(it[0].parsed.x*10)/10)+' Hz';},
         label:function(it){return it.dataset.label+': '+it.parsed.y.toPrecision(3);}}}},
     scales:{x:{type:'linear',min:0,max:205,grid:{display:false},ticks:{color:muted},title:{display:true,text:'frequency (Hz)',color:muted}},
@@ -1216,12 +1267,14 @@
       'The <strong>exact</strong> convolution ('+multi.A.length+' impulses, base '+label+') is a mathematically perfect match to the shaped toolhead motion, but each impulse is a velocity-derivative discontinuity. The <strong>fitted</strong> smoother (order '+(C.length-1)+') trades a little exactness for a continuous kernel, cutting peak extruder acceleration by <strong>'+reduction.toFixed(1)+'×</strong> at a sharp 100&rarr;20&nbsp;mm/s corner. This ports <code>extruder_smoother.get_multi_mode_extruder_smoother</code>, fit near every peak with that peak\'s own damping ratio. The chart above it shows why per-peak damping matters: with one shared assumed ζ, only the peak whose true ζ matches gets a clean notch.';
   }
 
-  // ---- input PSD chart: X / Y / Z / Combined, each independently
-  // toggleable via the legend (Chart.js's default legend click behavior).
-  // Peak detection, the recommendation, and the explorer all analyze the
-  // Combined (xyz) series regardless of which lines are shown/hidden here.
+  // ---- input PSD chart: X / Y / Z / Combined. X/Y/Z are toggleable via the
+  // legend (inputLegendOnClick above) -- hiding one recombines Combined from
+  // whichever axes remain and cascades a full recompute (recombineAndCascade
+  // below). Combined and the peak markers use plain show/hide, purely
+  // cosmetic. Peak detection, the recommendation, and the explorer all
+  // analyze Combined (d.xyz/d.psd) regardless of which lines are drawn here.
   function renderInput(){
-    if(!loadedCapture){cInput.data.datasets=[];cInput.update();return;}
+    if(!loadedCapture){cInput.data.datasets=[];inputAxisIndex={};cInput.update();return;}
     var isLog=inputScale==='log';
     var d=loadedCapture;
     function series(arr){var pts=[];for(var i=0;i<d.freq.length;i++){if(!isLog||arr[i]>0)pts.push({x:d.freq[i],y:arr[i]});}return pts;}
@@ -1231,11 +1284,18 @@
       for(var i=0;i<arr.length;i++){if(arr[i]>yMax)yMax=arr[i];if(arr[i]>0&&arr[i]<yMin)yMin=arr[i];}
     });
     var markerLo=isLog?yMin:0;
-    var ds=[];
-    if(d.x)ds.push(Object.assign(ln(BLUE,[],1.5),{label:'X',data:series(d.x)}));
-    if(d.y)ds.push(Object.assign(ln(AMBER,[],1.5),{label:'Y',data:series(d.y)}));
-    if(d.z)ds.push(Object.assign(ln(TEAL,[],1.5),{label:'Z',data:series(d.z)}));
-    ds.push(Object.assign(ln(RED),{label:d.x||d.y||d.z?'Combined (analyzed)':d.label,data:series(d.xyz)}));
+    var ds=[]; inputAxisIndex={};
+    if(d.x){inputAxisIndex.x=ds.length;ds.push(Object.assign(ln(BLUE,[],1.5),{label:'X',data:series(d.x)}));}
+    if(d.y){inputAxisIndex.y=ds.length;ds.push(Object.assign(ln(AMBER,[],1.5),{label:'Y',data:series(d.y)}));}
+    if(d.z){inputAxisIndex.z=ds.length;ds.push(Object.assign(ln(TEAL,[],1.5),{label:'Z',data:series(d.z)}));}
+    var combinedLabel=d.label;
+    if(d.x||d.y||d.z){
+      var activeAxes=['x','y','z'].filter(function(a){return d[a]&&!axisHidden[a];});
+      var allPresent=['x','y','z'].filter(function(a){return d[a];});
+      combinedLabel=activeAxes.length===allPresent.length?'Combined (analyzed)':
+        'Combined ('+activeAxes.map(function(a){return a.toUpperCase();}).join('+')+', analyzed)';
+    }
+    ds.push(Object.assign(ln(RED),{label:combinedLabel,data:series(d.xyz)}));
     var res=detectAndEstimate(d.freq,d.xyz,4);
     res.forEach(function(p,idx){
       ds.push(Object.assign(ln(muted,[4,4],1),{label:'peak '+(idx+1)+' ('+p.freq.toFixed(1)+' Hz)',data:[{x:p.freq,y:markerLo},{x:p.freq,y:yMax*1.1}]}));
@@ -1243,7 +1303,11 @@
     cInput.options.scales.y.type=isLog?'logarithmic':'linear';
     cInput.options.scales.y.min=isLog?undefined:0;
     cInput.options.scales.y.title.text=isLog?'normalized PSD (log scale)':'normalized PSD';
-    cInput.data.datasets=ds;cInput.update();
+    cInput.data.datasets=ds;
+    // axisHidden is our source of truth (not Chart.js's internal meta,
+    // which isn't guaranteed to survive replacing .data.datasets wholesale).
+    for(var a in inputAxisIndex)cInput.getDatasetMeta(inputAxisIndex[a]).hidden=axisHidden[a];
+    cInput.update();
   }
   document.getElementById('inpLog').addEventListener('click',function(){
     inputScale='log';this.classList.add('primary');document.getElementById('inpLin').classList.remove('primary');renderInput();
