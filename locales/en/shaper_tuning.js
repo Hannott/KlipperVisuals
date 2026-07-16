@@ -17,7 +17,13 @@ window.KV_LOCALES.en.shaper_tuning = {
     loadExY: "Example: Y-axis capture",
     or: "or",
     upload: "Upload capture…",
-    clear: "Clear"
+    clear: "Clear",
+    tryExample: "No data yet? Try an example:"
+  },
+  library: {
+    label: "Previously uploaded",
+    loadTitle: "Load this capture",
+    removeTitle: "Remove from list"
   },
   detectStatus: {
     default: "No capture loaded. Load an example, or upload a Kalico <code>calibration_data_*.csv</code> / <code>resonances_*.csv</code> (a <code>freq</code> column plus <code>psd_x</code>/<code>psd_y</code>/<code>psd_z</code>/<code>psd_xyz</code>). Peak detection and half-power damping-ratio estimation run live in your browser — nothing is uploaded anywhere.",

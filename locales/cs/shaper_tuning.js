@@ -17,7 +17,13 @@ window.KV_LOCALES.cs.shaper_tuning = {
     loadExY: "Příklad: Y-osový záznam",
     or: "nebo",
     upload: "Nahrát záznam…",
-    clear: "Vymazat"
+    clear: "Vymazat",
+    tryExample: "Zatím žádná data? Vyzkoušejte příklad:"
+  },
+  library: {
+    label: "Dříve nahráno",
+    loadTitle: "Načíst tento záznam",
+    removeTitle: "Odebrat ze seznamu"
   },
   detectStatus: {
     default: "Žádný záznam není načten. Načtěte příklad nebo nahrajte Kalico <code>calibration_data_*.csv</code> / <code>resonances_*.csv</code> (sloupec <code>freq</code> plus <code>psd_x</code>/<code>psd_y</code>/<code>psd_z</code>/<code>psd_xyz</code>). Detekce vrcholů a odhad tlumícího poměru přes metodu polovičního výkonu běží přímo ve vašem prohlížeči — nic se neposílá nikam.",

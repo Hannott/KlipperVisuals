@@ -17,7 +17,13 @@ window.KV_LOCALES.uk.shaper_tuning = {
     loadExY: "Приклад: запис осі Y",
     or: "або",
     upload: "Завантажити запис…",
-    clear: "Очистити"
+    clear: "Очистити",
+    tryExample: "Ще немає даних? Спробуйте приклад:"
+  },
+  library: {
+    label: "Раніше завантажено",
+    loadTitle: "Завантажити цей запис",
+    removeTitle: "Видалити зі списку"
   },
   detectStatus: {
     default: "Запис не завантажено. Завантажте приклад або завантажте Kalico <code>calibration_data_*.csv</code> / <code>resonances_*.csv</code> (стовпець <code>freq</code> плюс <code>psd_x</code>/<code>psd_y</code>/<code>psd_z</code>/<code>psd_xyz</code>). Виявлення піків та оцінка коефіцієнта демпірування за половинною потужністю виконуються в реальному часі у вашому браузері — нічого не завантажується ніде.",

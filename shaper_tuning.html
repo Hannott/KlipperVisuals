@@ -71,6 +71,18 @@
   .databar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:.6rem;}
   .databar input[type=file]{font-size:12.5px;max-width:220px;}
   .databar .fname{font-size:12.5px;color:var(--text-muted);font-family:var(--font-mono);max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .library{margin:0 0 .8rem;}
+  .library-label{font-size:11px;letter-spacing:.04em;text-transform:uppercase;color:var(--text-muted);margin-bottom:5px;}
+  .library-list{display:flex;flex-direction:column;gap:5px;}
+  .library-row{display:flex;align-items:center;gap:10px;padding:6px 10px;border-radius:6px;border:.5px solid var(--border);background:var(--surface-2);cursor:pointer;font-size:12.5px;}
+  .library-row:hover{border-color:var(--blue);}
+  .library-row.active{border-color:var(--blue);background:color-mix(in srgb, var(--blue) 8%, transparent);}
+  .library-name{font-family:var(--font-mono);color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;}
+  .library-date{color:var(--text-muted);font-size:11px;white-space:nowrap;}
+  .library-remove{padding:1px 8px;line-height:1;font-size:15px;}
+  .examples-hint{font-size:12.5px;color:var(--text-muted);margin:0 0 1rem;display:flex;flex-wrap:wrap;gap:6px;align-items:center;}
+  .examples-hint button.linklike{background:none;border:none;padding:0;margin:0;color:var(--blue);text-decoration:underline;cursor:pointer;font:inherit;font-size:12.5px;}
+  .examples-hint button.linklike:hover{color:var(--text-primary);}
   .aspectbox{position:relative;width:100%;overflow:hidden;border-radius:var(--radius);border:.5px solid var(--border);background:var(--surface-1);}
   .aspectbox canvas{position:absolute;inset:0;width:100%!important;height:100%!important;}
   .bandhdr{margin:3rem 0 .25rem;padding-top:1.25rem;border-top:1px solid var(--border);}
@@ -88,9 +100,6 @@
 
   <h2 data-i18n="shaper_tuning.steps.load">1. Load a resonance capture</h2>
   <div class="databar">
-    <button class="btn" id="loadExX" data-i18n="shaper_tuning.databar.loadExX">Example: X-axis capture</button>
-    <button class="btn" id="loadExY" data-i18n="shaper_tuning.databar.loadExY">Example: Y-axis capture</button>
-    <span style="color:var(--text-muted);font-size:13px;" data-i18n="shaper_tuning.databar.or">or</span>
     <!-- Native file input is hidden; the styled button below triggers it, so
          the label matches the site's buttons and is localizable (the browser's
          own "Choose File" text can't be styled or translated). -->
@@ -98,6 +107,21 @@
     <button class="btn" id="uploadBtn" data-i18n="shaper_tuning.databar.upload">Upload capture…</button>
     <span id="uploadName" class="fname"></span>
     <button class="btn" id="clearData" data-i18n="shaper_tuning.databar.clear">Clear</button>
+  </div>
+  <!-- Every successfully parsed upload is cached (freq/x/y/z/xyz, not the
+       raw file) in localStorage so it can be reloaded instantly without
+       re-uploading -- see addToLibrary/renderLibrary. Hidden while empty. -->
+  <div class="library" id="libraryBox" style="display:none;">
+    <div class="library-label" data-i18n="shaper_tuning.library.label">Previously uploaded</div>
+    <div class="library-list" id="libraryList"></div>
+  </div>
+  <!-- Examples are de-emphasized on purpose: this page is about the user's
+       own data, not the bundled samples. -->
+  <div class="examples-hint">
+    <span data-i18n="shaper_tuning.databar.tryExample">No data yet? Try an example:</span>
+    <button type="button" class="linklike" id="loadExX" data-i18n="shaper_tuning.databar.loadExX">Example: X-axis capture</button>
+    <span data-i18n="shaper_tuning.databar.or">or</span>
+    <button type="button" class="linklike" id="loadExY" data-i18n="shaper_tuning.databar.loadExY">Example: Y-axis capture</button>
   </div>
   <!-- No data-i18n here on purpose: renderDetectStatus() owns this text (it
        reflects live detection state, not a static string) and re-runs on
@@ -1246,6 +1270,7 @@
     renderInput();
     update();
     renderRecommendation();  // async; seeds the explorer when it finishes
+    renderLibrary(); // refresh the "active" highlight to match the new capture
   }
   // Recomputes Combined = sum of whichever raw axes are still visible on the
   // input chart (matching Kalico's own psd_sum = psd_x+psd_y+psd_z), then
@@ -1282,6 +1307,7 @@
     var co=document.getElementById('cfgOut');co.style.display='none';co.textContent='';
     uploadNameEl.textContent='';
     persistState(true); // no capture -> clears the stored state
+    renderLibrary(); // drop the "active" highlight, library entries themselves are untouched
   }
   // ---- cross-page persistence (sessionStorage) ----------------------------
   // Keep the loaded capture, axis selection, explorer selection and the
@@ -1325,8 +1351,71 @@
     syncExplorerControls();
     update();
     if(lastReco)paintRecommendation(); else renderRecommendation(); // recompute only if reco wasn't stored
+    renderLibrary();
     return true;
   }
+  // ---- persistent upload library (localStorage) ---------------------------
+  // Every successfully parsed upload is cached here (post-parse: freq/x/y/z/
+  // xyz, not the raw file bytes -- small regardless of how big the original
+  // file was) so the user can reload it instantly later without re-uploading.
+  // This is a standing library, separate from persistState()'s sessionStorage
+  // blob above (the *current* working state): it survives closing the tab.
+  // Capped so an unbounded stream of uploads can't quietly exhaust the
+  // origin's localStorage quota.
+  var LIBRARY_KEY='kv-shaper-tuning-library', MAX_LIBRARY_ITEMS=20;
+  function loadLibrary(){
+    try{var raw=localStorage.getItem(LIBRARY_KEY);return raw?JSON.parse(raw):[];}catch(e){return [];}
+  }
+  function saveLibrary(lib){
+    try{localStorage.setItem(LIBRARY_KEY,JSON.stringify(lib));}
+    catch(e){
+      // Quota exceeded: drop the oldest entry and retry once; if it still
+      // fails, give up silently rather than blocking the upload itself.
+      if(lib.length>1){
+        lib=lib.slice().sort(function(a,b){return a.addedAt-b.addedAt;});lib.shift();
+        try{localStorage.setItem(LIBRARY_KEY,JSON.stringify(lib));}catch(e2){}
+      }
+    }
+  }
+  function addToLibrary(name,cap){
+    var lib=loadLibrary().filter(function(e){return e.name!==name;});
+    lib.push({name:name,addedAt:Date.now(),freq:cap.freq,x:cap.x,y:cap.y,z:cap.z,xyz:cap.xyz});
+    lib.sort(function(a,b){return a.addedAt-b.addedAt;});
+    while(lib.length>MAX_LIBRARY_ITEMS)lib.shift();
+    saveLibrary(lib);
+    renderLibrary();
+  }
+  function removeFromLibrary(name){
+    saveLibrary(loadLibrary().filter(function(e){return e.name!==name;}));
+    renderLibrary();
+  }
+  function stripQuotes(s){return s&&s.charAt(0)==='"'?s.slice(1,-1):s;}
+  function escHtml(s){return String(s).replace(/[&<>"]/g,function(c){return c==='&'?'&amp;':c==='<'?'&lt;':c==='>'?'&gt;':'&quot;';});}
+  function renderLibrary(){
+    var lib=loadLibrary();
+    var box=document.getElementById('libraryBox'), list=document.getElementById('libraryList');
+    if(!lib.length){box.style.display='none';list.innerHTML='';return;}
+    box.style.display='';
+    lib=lib.slice().sort(function(a,b){return b.addedAt-a.addedAt;}); // most recent first
+    var activeName=loadedCapture?stripQuotes(loadedCapture.label):null;
+    list.innerHTML=lib.map(function(e){
+      var isActive=e.name===activeName;
+      return '<div class="library-row'+(isActive?' active':'')+'" data-name="'+escHtml(e.name)+'" title="'+t('shaper_tuning.library.loadTitle')+'">'+
+        '<span class="library-name">'+escHtml(e.name)+'</span>'+
+        '<span class="library-date">'+new Date(e.addedAt).toLocaleDateString()+'</span>'+
+        '<button class="btn library-remove" type="button" title="'+t('shaper_tuning.library.removeTitle')+'">&times;</button>'+
+      '</div>';
+    }).join('');
+  }
+  document.getElementById('libraryList').addEventListener('click',function(e){
+    var row=e.target.closest('.library-row'); if(!row)return;
+    var name=row.dataset.name;
+    if(e.target.classList.contains('library-remove')){removeFromLibrary(name);return;}
+    var entry=loadLibrary().find(function(x){return x.name===name;});
+    if(!entry)return;
+    uploadNameEl.textContent=entry.name;
+    loadCapture(entry.freq,entry.x,entry.y,entry.z,entry.xyz,'"'+entry.name+'"');
+  });
   document.getElementById('loadExX').addEventListener('click',function(){
     var d=unflatten(EXAMPLE_X_FLAT);
     loadCapture(d.freq,d.x,d.y,d.z,d.xyz,t('shaper_tuning.capture.xAxis'));
@@ -1369,6 +1458,7 @@
           var cap=calcFreqResponse(tt,ax,ay,az);
           if(!cap)throw new Error(t('shaper_tuning.capture.rawTooShort'));
           normalizeToFrequencies(cap);
+          addToLibrary(file.name,{freq:cap.freq,x:cap.x,y:cap.y,z:cap.z,xyz:cap.xyz});
           loadCapture(cap.freq,cap.x,cap.y,cap.z,cap.xyz,'"'+file.name+'"');
           return;
         }
@@ -1387,6 +1477,7 @@
           if(yArr)yArr.push(parseFloat(cols[yIdx]));
           if(zArr)zArr.push(parseFloat(cols[zIdx]));
         }
+        addToLibrary(file.name,{freq:freqArr,x:xArr,y:yArr,z:zArr,xyz:xyzArr});
         loadCapture(freqArr,xArr,yArr,zArr,xyzArr,'"'+file.name+'"');
       }catch(err){
         uploadNameEl.textContent='';
@@ -1863,6 +1954,7 @@
     renderDetectStatus();
     renderInput();
     renderPeakRows();
+    renderLibrary(); // re-translate the row titles (load/remove) baked in at render time
     update();               // rebuilds c1 + cards/note, and c2/c3/c4 (via renderDeep) when multimode is selected
     if(lastReco)paintRecommendation(); else document.getElementById('recoStatus').innerHTML=t('shaper_tuning.recommended.statusDefault');
     [c1,cInput,c2,c3,c4].forEach(function(ch){ch.update();});
@@ -1877,6 +1969,7 @@
     renderPeakRows();
     syncExplorerControls();
     update();
+    renderLibrary(); // the library is localStorage-based, independent of the session
   }
 })();
 </script>

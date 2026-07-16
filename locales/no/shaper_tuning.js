@@ -17,7 +17,13 @@ window.KV_LOCALES.no.shaper_tuning = {
     loadExY: "Eksempel: Y-akse-måling",
     or: "eller",
     upload: "Last opp måling…",
-    clear: "Tøm"
+    clear: "Tøm",
+    tryExample: "Ingen data ennå? Prøv et eksempel:"
+  },
+  library: {
+    label: "Tidligere opplastet",
+    loadTitle: "Last inn denne målingen",
+    removeTitle: "Fjern fra listen"
   },
   detectStatus: {
     default: "Ingen måling lastet inn. Last inn et eksempel, eller last opp en Kalico <code>calibration_data_*.csv</code> / <code>resonances_*.csv</code> (en <code>freq</code>-kolonne pluss <code>psd_x</code>/<code>psd_y</code>/<code>psd_z</code>/<code>psd_xyz</code>). Toppdeteksjon og estimering av dempingsforhold via halveringspunktmetoden kjører direkte i nettleseren din — ingenting lastes opp noe sted.",
