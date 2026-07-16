@@ -2234,9 +2234,16 @@
        '</code> <code>shaper_freq_&lt;axis&gt; = '+best.freqs.map(function(f){return f.toFixed(1);}).join(', ')+
        '</code> <code>damping_ratio_&lt;axis&gt; = '+best.dampingRatios.map(function(d){return d.toFixed(4);}).join(', ')+'</code>')
       :('<code>shaper_type_&lt;axis&gt; = '+best.name+'</code> <code>shaper_freq_&lt;axis&gt; = '+best.freq.toFixed(1)+'</code>');
+    // result.peaks is intentionally magnitude-ordered (most significant
+    // first) -- it faithfully mirrors _detect_resonance_peaks's own return
+    // contract and is what fitMultiMode's ascending-by-frequency re-sort
+    // starts from (see the PORTING MAP header). Sort a COPY here purely so
+    // this sentence reads left-to-right ascending like the config line
+    // right below it; don't sort result.peaks itself.
+    var peaksAscending=result.peaks.slice().sort(function(a,b){return a-b;});
     statusEl.innerHTML=t('shaper_tuning.status.basedOn',{
       n:result.peaks.length,
-      list:result.peaks.map(function(f){return f.toFixed(1)+'&nbsp;Hz';}).join(', '),
+      list:peaksAscending.map(function(f){return f.toFixed(1)+'&nbsp;Hz';}).join(', '),
       total:allPeaks.length,
       cfgHtml:cfgHtml
     });
