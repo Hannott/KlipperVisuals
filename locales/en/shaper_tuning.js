@@ -42,7 +42,7 @@ window.KV_LOCALES.en.shaper_tuning = {
   },
   captions: {
     measuredSpectrum: "measured resonance spectrum",
-    measuredSpectrumNote: "(the loaded capture; dashed verticals mark the detected resonances; click a legend entry to toggle it)",
+    measuredSpectrumNote: "(the loaded capture; dashed verticals mark the detected resonances; click a peak in the legend to drop that resonance from the recommendation, or an axis to include/exclude it)",
     residualVsFreq: "residual vibration vs frequency",
     residualVsFreqNote: "(the selected shaper's response; dashed verticals mark the detected resonances; lower = better)",
     notchDepth: "notch depth vs a uniformly-assumed damping ratio",
@@ -146,6 +146,7 @@ window.KV_LOCALES.en.shaper_tuning = {
       residualLabel: "{{label}} residual",
       resonanceMarker: "resonance {{freq}} Hz",
       peakMarker: "peak {{n}} ({{freq}} Hz)",
+      peakMarkerExcluded: "peak {{n}} ({{freq}} Hz) — excluded",
       residualAtPeakN: "residual @ peak {{n}} ({{freq}} Hz)",
       trueZetaPeakN: "true ζ peak {{n}} ({{damping}})"
     },

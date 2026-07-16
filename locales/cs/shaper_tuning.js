@@ -42,7 +42,7 @@ window.KV_LOCALES.cs.shaper_tuning = {
   },
   captions: {
     measuredSpectrum: "naměřené rezonanční spektrum",
-    measuredSpectrumNote: "(načtený záznam; přerušované svislé čáry označují detekované resonance; klikněte na položku legendy pro skrytí/zobrazení)",
+    measuredSpectrumNote: "(načtený záznam; přerušované svislé čáry označují detekované resonance; kliknutím na vrchol v legendě vyloučíte danou rezonanci z doporučení, kliknutím na osu ji zahrnete/vyloučíte)",
     residualVsFreq: "zbytková vibrace vs frekvence",
     residualVsFreqNote: "(odpověď vybraného vyhlazovače; přerušované svislé čáry označují detekované resonance; nižší = lepší)",
     notchDepth: "hloubka zářezu vs jednotně předpokládaný poměr tlumení",
@@ -146,6 +146,7 @@ window.KV_LOCALES.cs.shaper_tuning = {
       residualLabel: "{{label}} zbytková vibrace",
       resonanceMarker: "rezonance {{freq}} Hz",
       peakMarker: "vrchol {{n}} ({{freq}} Hz)",
+      peakMarkerExcluded: "vrchol {{n}} ({{freq}} Hz) — vyloučeno",
       residualAtPeakN: "zbytková vibrace @ vrchol {{n}} ({{freq}} Hz)",
       trueZetaPeakN: "skutečná ζ vrchol {{n}} ({{damping}})"
     },

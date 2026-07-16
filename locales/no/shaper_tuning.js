@@ -42,7 +42,7 @@ window.KV_LOCALES.no.shaper_tuning = {
   },
   captions: {
     measuredSpectrum: "målt resonansspektrum",
-    measuredSpectrumNote: "(den innlastede målingen; stiplede vertikale linjer markerer de detekterte resonansene; klikk en legendeoppføring for å vise/skjule den)",
+    measuredSpectrumNote: "(den innlastede målingen; stiplede vertikale linjer markerer de detekterte resonansene; klikk en topp i forklaringen for å utelate den resonansen fra anbefalingen, eller en akse for å ta den med/utelate den)",
     residualVsFreq: "restvibrasjon mot frekvens",
     residualVsFreqNote: "(responsen til den valgte shaperen; stiplede vertikale linjer markerer de detekterte resonansene; lavere = bedre)",
     notchDepth: "dybde på notch mot et uniformt antatt dempingsforhold",
@@ -146,6 +146,7 @@ window.KV_LOCALES.no.shaper_tuning = {
       residualLabel: "{{label}} residual",
       resonanceMarker: "resonans {{freq}} Hz",
       peakMarker: "topp {{n}} ({{freq}} Hz)",
+      peakMarkerExcluded: "topp {{n}} ({{freq}} Hz) — ekskludert",
       residualAtPeakN: "residual @ topp {{n}} ({{freq}} Hz)",
       trueZetaPeakN: "sann ζ topp {{n}} ({{damping}})"
     },

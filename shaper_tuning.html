@@ -554,6 +554,36 @@
     withDamp.sort(function(a,b){return a.freq-b.freq;});
     return withDamp;
   }
+  // A detected peak is "excluded" if the user deselected a marker within a
+  // few Hz of it (detection can shift slightly between recomputes).
+  function isPeakExcluded(f){
+    return excludedPeaks.some(function(pf){return Math.abs(pf-f)<3.0;});
+  }
+  // Returns a copy of psdArr with the band around each excluded peak zeroed,
+  // walking outward from the peak center to the surrounding valleys so the
+  // whole resonance lump is removed without eating neighbouring peaks. This
+  // is what makes "deselect a peak" mean "analyze as if it weren't there":
+  // peak detection, the single-shaper score, and the multimode search all
+  // run on this masked spectrum.
+  function maskExcludedPeaks(freqArr,psdArr){
+    if(!excludedPeaks.length)return psdArr.slice();
+    var out=psdArr.slice(),n=psdArr.length;
+    excludedPeaks.forEach(function(pf){
+      var i0=0,bd=Infinity;
+      for(var i=0;i<n;i++){var d=Math.abs(freqArr[i]-pf);if(d<bd){bd=d;i0=i;}}
+      // Only mask if there's actually a local peak here (guards stale entries).
+      if(!(psdArr[i0]>0))return;
+      // Walk out to the surrounding valleys, then widen to at least +-8 Hz
+      // (the peak-detector's own min separation) so a shoulder next to the
+      // excluded peak isn't left behind to be re-detected as a new peak.
+      var lo=i0;while(lo>0&&psdArr[lo-1]<psdArr[lo])lo--;
+      var hi=i0;while(hi<n-1&&psdArr[hi+1]<psdArr[hi])hi++;
+      while(lo>0&&freqArr[i0]-freqArr[lo-1]<=8.0)lo--;
+      while(hi<n-1&&freqArr[hi+1]-freqArr[i0]<=8.0)hi++;
+      for(var j=lo;j<=hi;j++)out[j]=0;
+    });
+    return out;
+  }
 
   // ================= real find_best_shaper recommendation =================
   // Everything below ports klippy/extras/shaper_calibrate.py's find_best_shaper
@@ -1152,6 +1182,13 @@
   // or a file (or the manual "+ add peak") fills these in.
   var peaks=[];
   var loadedCapture=null;   // {freq,x,y,z,xyz,psd,label} -- psd/xyz is the Combined series everything below analyzes
+  // Resonance peaks the user has deselected (by clicking their marker in the
+  // measured-spectrum legend). Stored as frequencies. Their PSD band is masked
+  // out of everything the recommendation analyzes, so the auto-tuner behaves as
+  // if that resonance weren't present -- the single knob for steering a
+  // single-shaper pick away from a peak you don't care about (e.g. a minor
+  // high-frequency one the f^2-weighted score would otherwise chase).
+  var excludedPeaks=[];
   var lastReco=null;        // most recent findBestShaperReal() result, for the config generator
   // Bumped by every renderRecommendation() call; its ~1-2s async search
   // checks this before painting so an older, still-in-flight search (e.g.
@@ -1165,6 +1202,7 @@
   // see recombineAndCascade().
   var axisHidden={x:false,y:false,z:false};
   var inputAxisIndex={}; // axis name -> dataset index in cInput, set by renderInput()
+  var peakMarkerFreq={}; // cInput dataset index -> peak frequency, set by renderInput()
 
   // ================= peak-row UI =================
   var peakRowsEl=document.getElementById('peakRows');
@@ -1285,6 +1323,7 @@
   function loadCapture(freq,x,y,z,xyz,label,testAxis){
     loadedCapture={freq:freq,x:x,y:y,z:z,xyz:xyz,psd:xyz,label:label,testAxis:testAxis||null};
     axisHidden={x:false,y:false,z:false}; // a fresh capture starts with every axis feeding Combined
+    excludedPeaks=[]; // a fresh capture starts with every detected peak in play
     var detected=detectAndEstimate(freq,xyz,4);
     applyDetected(detected);
     // sensible pre-recommendation default for the single-mode freq field
@@ -1336,7 +1375,7 @@
   }
   function clearAll(){
     if(loadedCapture && !window.confirm(t('shaper_tuning.capture.resetConfirm')))return;
-    loadedCapture=null;lastReco=null;peaks=[];axisHidden={x:false,y:false,z:false};
+    loadedCapture=null;lastReco=null;peaks=[];axisHidden={x:false,y:false,z:false};excludedPeaks=[];
     explType='smooth_si';explFreq=50.0;explDamp=0.1;
     acclInput.min='3000';acclInput.max='30000';setAccel(6000,true);
     syncExplorerControls();
@@ -1367,7 +1406,7 @@
       _lastPersist=now;
       var d=loadedCapture;
       var blob={cap:{freq:d.freq,x:d.x,y:d.y,z:d.z,xyz:d.xyz,label:d.label,testAxis:d.testAxis},
-        axisHidden:axisHidden,
+        axisHidden:axisHidden, excludedPeaks:excludedPeaks,
         expl:{explType:explType,peaks:peaks,explFreq:explFreq,explDamp:explDamp,explAccel:explAccel,fname:uploadNameEl.textContent}};
       if(lastReco)blob.reco={best:lastReco.best,peaks:lastReco.result.peaks,allShapers:lastReco.result.allShapers,allPeaks:lastReco.allPeaks,label:lastReco.label};
       sessionStorage.setItem(STORE_KEY,JSON.stringify(blob));
@@ -1381,6 +1420,7 @@
     var c=blob.cap;
     loadedCapture={freq:c.freq,x:c.x,y:c.y,z:c.z,xyz:c.xyz,psd:c.xyz,label:c.label,testAxis:c.testAxis||null};
     axisHidden=blob.axisHidden||{x:false,y:false,z:false};
+    excludedPeaks=blob.excludedPeaks||[];
     if(blob.expl){
       explType=blob.expl.explType;peaks=blob.expl.peaks||[];
       explFreq=blob.expl.explFreq;explDamp=blob.expl.explDamp;
@@ -1568,9 +1608,20 @@
       }
       axisHidden[axis]=willHide;
       recombineAndCascade();
-    }else{
-      if(ci.isDatasetVisible(idx))ci.hide(idx);else ci.show(idx);
+      return;
     }
+    // Peak marker -> toggle that resonance in/out of the analysis.
+    var pf=peakMarkerFreq[idx];
+    if(pf!=null){
+      var i=excludedPeaks.findIndex(function(x){return Math.abs(x-pf)<3.0;});
+      if(i>=0)excludedPeaks.splice(i,1);else excludedPeaks.push(pf);
+      renderInput();            // restyle the marker
+      renderRecommendation();   // re-search on the newly masked spectrum
+      persistState(true);
+      return;
+    }
+    // Combined (or anything else): plain cosmetic show/hide.
+    if(ci.isDatasetVisible(idx))ci.hide(idx);else ci.show(idx);
   }
   var optsInput={responsive:true,maintainAspectRatio:false,animation:false,interaction:{mode:'index',intersect:false},
     plugins:{legend:{display:true,position:'top',align:'start',onClick:inputLegendOnClick,labels:{color:muted,usePointStyle:true,pointStyle:'line',boxWidth:26,padding:12,font:{size:12}}},
@@ -1709,7 +1760,7 @@
 
     var smoothing=(kind==='smoother')?getSmootherSmoothing(sh,accel,scv):shaperSmoothing(sh,accel,scv);
     var maxAccel=(kind==='smoother')?findMaxAccel(sh,scv,getSmootherSmoothing):findMaxAccel(sh,scv,shaperSmoothing);
-    var res=loadedCapture?detectAndEstimate(loadedCapture.freq,loadedCapture.psd,4):[];
+    var res=loadedCapture?detectAndEstimate(loadedCapture.freq,maskExcludedPeaks(loadedCapture.freq,loadedCapture.psd),4):[];
 
     // ---- residual vs frequency ----
     var pts=300,d=[];
@@ -1817,9 +1868,19 @@
         t('shaper_tuning.capture.combinedAxesAnalyzed',{axes:activeAxes.map(function(a){return a.toUpperCase();}).join('+')});
     }
     ds.push(Object.assign(ln(RED),{label:combinedLabel,data:series(d.xyz)}));
+    // Detect on the FULL spectrum so every real peak shows a marker the user
+    // can toggle -- excluded ones are drawn faint/dotted and labelled, and the
+    // dataset index -> frequency map lets the legend click below toggle them.
     var res=detectAndEstimate(d.freq,d.xyz,4);
+    peakMarkerFreq={};
     res.forEach(function(p,idx){
-      ds.push(Object.assign(ln(muted,[4,4],1),{label:t('shaper_tuning.chart.dataset.peakMarker',{n:idx+1,freq:p.freq.toFixed(1)}),data:[{x:p.freq,y:markerLo},{x:p.freq,y:yMax*1.1}]}));
+      var ex=isPeakExcluded(p.freq);
+      peakMarkerFreq[ds.length]=p.freq;
+      var key=ex?'shaper_tuning.chart.dataset.peakMarkerExcluded':'shaper_tuning.chart.dataset.peakMarker';
+      ds.push(Object.assign(ln(muted,ex?[2,3]:[4,4],1),{
+        label:t(key,{n:idx+1,freq:p.freq.toFixed(1)}),
+        data:[{x:p.freq,y:markerLo},{x:p.freq,y:yMax*1.1}],
+        borderColor:ex?'rgba(137,135,129,0.35)':muted}));
     });
     cInput.options.scales.y.type=isLog?'logarithmic':'linear';
     cInput.options.scales.y.min=isLog?undefined:0;
@@ -1933,7 +1994,7 @@
     // rapid second toggle that itself hasn't reached its own renderRecommendation()
     // call yet) -- snapshotting means this search always scores the data it
     // was actually asked to score.
-    var b=loadedCapture, bFreq=b.freq, bPsd=b.psd.slice(), bLabel=b.label;
+    var b=loadedCapture, bFreq=b.freq, bPsd=maskExcludedPeaks(b.freq,b.psd), bLabel=b.label;
     statusEl.innerHTML=t('shaper_tuning.status.computing',{label:bLabel});
     setBusy('inputChartBox',true);setBusy('recoBox',true);
     setTimeout(function(){
