@@ -40,5 +40,5 @@ window.KV_LOCALES.en.index = {
     title: "Note on provenance.",
     body: "The pressure-advance page models a custom <code>bleeding-edge-v2</code> implementation (<code>tanh</code>/<code>recipr</code> nonlinear PA) that is not in upstream Kalico or Klipper. The shaper-tuning, smoother, resonance-excitation, and estimation pages reproduce the Kalico shaper code (<code>shaper_defs.py</code>, <code>resonance_tester.py</code>, <code>shaper_calibrate.py</code>) with proposed fixes and contrast them against current upstream Kalico (<code>bleeding-edge-v2</code>)."
   },
-  footer: "Math and kernels reproduced from <code>klippy/chelper/kin_extruder.c</code>, <code>klippy/extras/extruder_smoother.py</code>, and <code>klippy/extras/shaper_defs.py</code>. Charts rendered with Chart.js (CDN). Source: <a href=\"https://github.com/Hannott/KlipperVisuals\">Hannott/KlipperVisuals</a>."
+  footer: "Math and kernels reproduced from <code>klippy/chelper/kin_extruder.c</code>, <code>klippy/extras/extruder_smoother.py</code>, and <code>klippy/extras/shaper_defs.py</code>. Charts rendered with Chart.js (CDN). Source: <a href=\"https://github.com/Hannott/KlipperVisuals\">Hannott/KlipperVisuals</a>. <a href=\"disclaimer.html\">Disclaimer &amp; credits</a>."
 };

@@ -40,5 +40,5 @@ window.KV_LOCALES.no.index = {
     title: "Merknad om opprinnelse.",
     body: "Pressure advance-siden modellerer en tilpasset <code>bleeding-edge-v2</code>-implementasjon (<code>tanh</code>/<code>recipr</code> ikke-lineær PA) som ikke finnes i oppstrøms Kalico eller Klipper. Sidene for shaper-tuning, smoother, resonanseksitasjon og estimering reproduserer Kalicos shaper-kode (<code>shaper_defs.py</code>, <code>resonance_tester.py</code>, <code>shaper_calibrate.py</code>) med foreslåtte fikser og sammenligner dem mot nåværende oppstrøms Kalico (<code>bleeding-edge-v2</code>)."
   },
-  footer: "Matematikk og kjerner reprodusert fra <code>klippy/chelper/kin_extruder.c</code>, <code>klippy/extras/extruder_smoother.py</code> og <code>klippy/extras/shaper_defs.py</code>. Diagrammer rendret med Chart.js (CDN). Kildekode: <a href=\"https://github.com/Hannott/KlipperVisuals\">Hannott/KlipperVisuals</a>."
+  footer: "Matematikk og kjerner reprodusert fra <code>klippy/chelper/kin_extruder.c</code>, <code>klippy/extras/extruder_smoother.py</code> og <code>klippy/extras/shaper_defs.py</code>. Diagrammer rendret med Chart.js (CDN). Kildekode: <a href=\"https://github.com/Hannott/KlipperVisuals\">Hannott/KlipperVisuals</a>. <a href=\"disclaimer.html\">Ansvarsfraskrivelse og kreditering</a>."
 };

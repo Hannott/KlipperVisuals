@@ -40,5 +40,5 @@ window.KV_LOCALES.cs.index = {
     title: "Poznámka k původu.",
     body: "Stránka s tlakovým posuvem modeluje vlastní implementaci <code>bleeding-edge-v2</code> (<code>tanh</code>/<code>recipr</code> nelineární PA), která není v upstream Kalico nebo Klipper. Stránky s laděním formátoru, vyhlazovačem, buzením rezonance a odhadem reprodukují kód formátoru Kalico (<code>shaper_defs.py</code>, <code>resonance_tester.py</code>, <code>shaper_calibrate.py</code>) s navrhovanými opravami a porovnávají je s aktuálním upstream Kalico (<code>bleeding-edge-v2</code>)."
   },
-  footer: "Matematika a jádra reprodukována z <code>klippy/chelper/kin_extruder.c</code>, <code>klippy/extras/extruder_smoother.py</code> a <code>klippy/extras/shaper_defs.py</code>. Grafy vykresleny pomocí Chart.js (CDN). Zdroj: <a href=\"https://github.com/Hannott/KlipperVisuals\">Hannott/KlipperVisuals</a>."
+  footer: "Matematika a jádra reprodukována z <code>klippy/chelper/kin_extruder.c</code>, <code>klippy/extras/extruder_smoother.py</code> a <code>klippy/extras/shaper_defs.py</code>. Grafy vykresleny pomocí Chart.js (CDN). Zdroj: <a href=\"https://github.com/Hannott/KlipperVisuals\">Hannott/KlipperVisuals</a>. <a href=\"disclaimer.html\">Prohlášení o odpovědnosti a poděkování</a>."
 };

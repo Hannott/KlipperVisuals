@@ -40,5 +40,5 @@ window.KV_LOCALES.uk.index = {
     title: "Примітка щодо походження.",
     body: "Сторінка попереднього тиску моделює спеціальну реалізацію <code>bleeding-edge-v2</code> (нелінійний PA <code>tanh</code>/<code>recipr</code>), яка відсутня у вихідному Kalico або Klipper. Сторінки налаштування формувача, згладжувача, збудження резонансу та оцінки відтворюють код формувача Kalico (<code>shaper_defs.py</code>, <code>resonance_tester.py</code>, <code>shaper_calibrate.py</code>) із запропонованими виправленнями та контрастують їх з поточним вихідним Kalico (<code>bleeding-edge-v2</code>)."
   },
-  footer: "Математику та ядра відтворено з <code>klippy/chelper/kin_extruder.c</code>, <code>klippy/extras/extruder_smoother.py</code> та <code>klippy/extras/shaper_defs.py</code>. Діаграми відрендеровані за допомогою Chart.js (CDN). Джерело: <a href=\"https://github.com/Hannott/KlipperVisuals\">Hannott/KlipperVisuals</a>."
+  footer: "Математику та ядра відтворено з <code>klippy/chelper/kin_extruder.c</code>, <code>klippy/extras/extruder_smoother.py</code> та <code>klippy/extras/shaper_defs.py</code>. Діаграми відрендеровані за допомогою Chart.js (CDN). Джерело: <a href=\"https://github.com/Hannott/KlipperVisuals\">Hannott/KlipperVisuals</a>. <a href=\"disclaimer.html\">Застереження та подяки</a>."
 };

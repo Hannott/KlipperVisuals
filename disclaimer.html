@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Disclaimer &amp; credits — KlipperVisuals</title>
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<script src="i18n.js"></script>
+<style>
+  html{overflow-y:scroll;}
+  :root{
+    --text-primary:#0b0b0b; --text-secondary:#52514e; --text-muted:#898781;
+    --surface-0:#f4f3ee; --surface-1:#faf9f5; --surface-2:#ffffff;
+    --border:rgba(11,11,11,.12); --radius:10px;
+    --font-sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --font-mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  }
+  @media (prefers-color-scheme:dark){
+    :root{
+      --text-primary:#f2f1ea; --text-secondary:#c3c2b7; --text-muted:#898781;
+      --surface-0:#191918; --surface-1:#1f1f1e; --surface-2:#262625;
+      --border:rgba(255,255,255,.14);
+    }
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--surface-0);color:var(--text-primary);font-family:var(--font-sans);line-height:1.6;}
+  .wrap{max-width:760px;margin:0 auto;padding:2.5rem 1.25rem 4rem;}
+  h1{font-size:1.6rem;margin:0 0 .5rem;}
+  h2{font-size:1.05rem;margin:2rem 0 .5rem;border-top:.5px solid var(--border);padding-top:1.25rem;}
+  p,li{color:var(--text-secondary);font-size:14.5px;}
+  .sub{color:var(--text-muted);margin:0 0 1.5rem;}
+  a{color:var(--blue,#2a78d6);}
+  .foot{margin-top:2.5rem;font-size:13px;color:var(--text-muted);border-top:.5px solid var(--border);padding-top:1rem;}
+  code{font-family:var(--font-mono);font-size:.92em;background:var(--surface-2);border:.5px solid var(--border);border-radius:4px;padding:.05em .35em;}
+</style>
+</head>
+<body>
+<script src="nav.js"></script>
+<div class="wrap">
+  <h1>Disclaimer &amp; credits</h1>
+  <p class="sub">Last updated 2026-07-16. Applies to every page on this site.</p>
+
+  <h2>No warranty, use at your own risk</h2>
+  <p>KlipperVisuals is an independent, unofficial set of educational visualizations.
+  It is provided <strong>"as is"</strong>, with no warranty of any kind, express or
+  implied, including but not limited to accuracy, fitness for a particular purpose,
+  or merchantability. You use it entirely at your own risk.</p>
+
+  <h2>Not a calibration tool, not a substitute for your firmware</h2>
+  <p>Every chart re-implements a piece of Klipper/Kalico firmware math in
+  client-side JavaScript so it can be explored interactively. These are
+  best-effort reproductions for illustration purposes — they can contain bugs,
+  drift out of sync with upstream firmware changes, or simply behave slightly
+  differently from the actual C/Python code running on your printer's MCU and
+  host. <strong>Never</strong> treat a number, recommendation, or generated
+  config snippet from this site as a replacement for running the real
+  <code>SHAPER_CALIBRATE</code>, <code>TEST_RESONANCES</code>, or any other
+  in-firmware command, and always sanity-check any config change on your
+  printer before trusting it unattended.</p>
+
+  <h2>No liability for print failures, damage, or injury</h2>
+  <p>Input shaping, pressure advance, and acceleration/velocity limits directly
+  affect how your printer moves. Bad values can cause failed prints, wasted
+  filament and time, layer shifts, mechanical stress, and — like any
+  misconfiguration of a machine with moving parts, heaters, and often
+  unattended operation — in the worst case, damaged hardware, fire, or
+  injury. The authors and contributors of this project accept
+  <strong>no responsibility or liability</strong> for any print failures,
+  wasted material, hardware damage, property damage, fire, injury, or any
+  other direct, indirect, incidental, or consequential loss arising from the
+  use, misuse, or inability to use this site or any value derived from it.
+  Test changes conservatively, keep an eye on your printer, and use standard
+  fire/electrical safety precautions for any 3D printer.</p>
+
+  <h2>Your data stays on your device</h2>
+  <p>Every calculation — including anything you upload on the
+  <a href="shaper_tuning.html">Shaper tuning</a> page — runs locally in your
+  browser. Nothing is uploaded, transmitted, or stored anywhere by this site;
+  the "previously uploaded" library and saved page state use your browser's
+  own local storage, which you can clear at any time from your browser
+  settings.</p>
+
+  <h2>Not affiliated with Klipper or Kalico</h2>
+  <p>This is an independent, community project and is not affiliated with,
+  endorsed by, or officially connected to the Klipper or Kalico projects or
+  their maintainers. "Klipper" and "Kalico" are referenced here only to
+  describe the firmware whose algorithms these pages visualize.</p>
+
+  <h2>Credits &amp; licensing</h2>
+  <ul>
+    <li>Physics and algorithms are ported from
+      <a href="https://github.com/Klipper3d/klipper">Klipper</a> (GNU GPLv3) and
+      <a href="https://github.com/KalicoCrew/kalico">Kalico</a>, a Klipper fork
+      (also GNU GPLv3) — see each project's own repository for their full
+      license text and copyright notices.</li>
+    <li>Charts are rendered with <a href="https://www.chartjs.org/">Chart.js</a>
+      (MIT license), loaded from a public CDN.</li>
+    <li>This site's own code is available at
+      <a href="https://github.com/Hannott/KlipperVisuals">github.com/Hannott/KlipperVisuals</a>.
+      Found a bug or a mismatch with real firmware behavior? Please open an
+      issue there.</li>
+  </ul>
+
+  <p class="foot"><a href="index.html">&larr; Back to KlipperVisuals</a></p>
+</div>
+</body>
+</html>
