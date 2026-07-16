@@ -3,8 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Smoothers vs shapers — Kalico input smoothers</title>
+<title data-i18n="smoother_vs_shaper.title">Smoothers vs shapers — Kalico input smoothers</title>
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
+<script src="i18n.js"></script>
 <style>
   html{overflow-y:scroll;}
   /* --blue/--teal (the chart "data colors") are owned by nav.js, which
@@ -57,37 +58,38 @@
 <body>
 <script src="nav.js"></script>
 <div class="wrap">
-  <h1>Smoothers vs shapers</h1>
-  <p class="sub">Kalico input <em>smoothers</em> replace a classic shaper's discrete impulses with a smooth polynomial window <code>w(t)</code> (a continuous impulse distribution). Compare any shaper against any smoother on the same vibration-reduction axes and in the time domain. Smoothers are a Kalico feature — not present in mainline Klipper.</p>
+  <h1 data-i18n="smoother_vs_shaper.heading">Smoothers vs shapers</h1>
+  <p class="sub" data-i18n-html="smoother_vs_shaper.intro">Kalico input <em>smoothers</em> replace a classic shaper's discrete impulses with a smooth polynomial window <code>w(t)</code> (a continuous impulse distribution). Compare any shaper against any smoother on the same vibration-reduction axes and in the time domain. Smoothers are a Kalico feature — not present in mainline Klipper.</p>
 
   <div class="row">
-    <div class="ctl"><div class="lbl"><span>impulse shaper</span></div>
-      <select id="shaper"><option value="none">— none —</option><option>zv</option><option>mzv</option><option>zvd</option><option selected>ei</option><option>2hump_ei</option><option>3hump_ei</option></select></div>
-    <div class="ctl"><div class="lbl"><span>smoother</span></div>
-      <select id="smoother"><option value="none">— none —</option><option>smooth_zv</option><option>smooth_mzv</option><option selected>smooth_ei</option><option>smooth_2hump_ei</option><option>smooth_zvd_ei</option><option>smooth_si</option></select></div>
+    <div class="ctl"><div class="lbl"><span data-i18n="smoother_vs_shaper.controls.shaperLabel">impulse shaper</span></div>
+      <select id="shaper"><option value="none" data-i18n="smoother_vs_shaper.shaperOptions.none">— none —</option><option value="zv" data-i18n="smoother_vs_shaper.shaperOptions.zv">zv</option><option value="mzv" data-i18n="smoother_vs_shaper.shaperOptions.mzv">mzv</option><option value="zvd" data-i18n="smoother_vs_shaper.shaperOptions.zvd">zvd</option><option value="ei" selected data-i18n="smoother_vs_shaper.shaperOptions.ei">ei</option><option value="2hump_ei" data-i18n="smoother_vs_shaper.shaperOptions.ei2">2hump_ei</option><option value="3hump_ei" data-i18n="smoother_vs_shaper.shaperOptions.ei3">3hump_ei</option></select></div>
+    <div class="ctl"><div class="lbl"><span data-i18n="smoother_vs_shaper.controls.smootherLabel">smoother</span></div>
+      <select id="smoother"><option value="none" data-i18n="smoother_vs_shaper.smootherOptions.none">— none —</option><option value="smooth_zv" data-i18n="smoother_vs_shaper.smootherOptions.smoothZv">smooth_zv</option><option value="smooth_mzv" data-i18n="smoother_vs_shaper.smootherOptions.smoothMzv">smooth_mzv</option><option value="smooth_ei" selected data-i18n="smoother_vs_shaper.smootherOptions.smoothEi">smooth_ei</option><option value="smooth_2hump_ei" data-i18n="smoother_vs_shaper.smootherOptions.smoothEi2">smooth_2hump_ei</option><option value="smooth_zvd_ei" data-i18n="smoother_vs_shaper.smootherOptions.smoothZvdEi">smooth_zvd_ei</option><option value="smooth_si" data-i18n="smoother_vs_shaper.smootherOptions.smoothSi">smooth_si</option></select></div>
   </div>
   <div class="row">
-    <div class="ctl"><div class="lbl"><span>shaper_freq (Hz)</span><span class="val" id="o-fr">50</span></div><input type="range" id="fr" min="20" max="120" step="1" value="50"></div>
-    <div class="ctl"><div class="lbl"><span>damping_ratio</span><span class="val" id="o-dr">0.10</span></div><input type="range" id="dr" min="0" max="0.3" step="0.005" value="0.1"></div>
+    <div class="ctl"><div class="lbl"><span data-i18n="smoother_vs_shaper.controls.shaperFreq">shaper_freq (Hz)</span><span class="val" id="o-fr">50</span></div><input type="range" id="fr" min="20" max="120" step="1" value="50"></div>
+    <div class="ctl"><div class="lbl"><span data-i18n="smoother_vs_shaper.controls.dampingRatio">damping_ratio</span><span class="val" id="o-dr">0.10</span></div><input type="range" id="dr" min="0" max="0.3" step="0.005" value="0.1"></div>
   </div>
 
-  <p style="font-size:13px;color:var(--text-muted);margin:.25rem 0 1rem;">Click a legend entry on either chart to hide or show that line.</p>
+  <p style="font-size:13px;color:var(--text-muted);margin:.25rem 0 1rem;" data-i18n="smoother_vs_shaper.legendHint">Click a legend entry on either chart to hide or show that line.</p>
 
-  <div class="cap">residual vibration vs frequency <span style="color:var(--text-muted)">(lower = better suppression)</span></div>
+  <div class="cap" data-i18n-html="smoother_vs_shaper.captions.residualVsFreq">residual vibration vs frequency <span style="color:var(--text-muted)">(lower = better suppression)</span></div>
   <div class="chart"><canvas id="c1"></canvas></div>
 
-  <div class="cap">kernel in the time domain <span style="color:var(--text-muted)">(impulse amplitudes vs smoother weight density; both integrate to 1)</span></div>
+  <div class="cap" data-i18n-html="smoother_vs_shaper.captions.kernelTimeDomain">kernel in the time domain <span style="color:var(--text-muted)">(impulse amplitudes vs smoother weight density; both integrate to 1)</span></div>
   <div class="chart" style="height:210px;"><canvas id="c2"></canvas></div>
 
   <div class="note" id="note"></div>
   <div class="cards" id="cards"></div>
 
-  <p class="foot">Smoother windows <code>w(t)=Σ Cₖ tᵏ</code> over <code>[−t_sm/2, t_sm/2]</code>, <code>t_sm = factor/freq</code>, coefficients from <code>shaper_defs.py</code> (<code>get_*_smoother</code>). Response is evaluated by treating the window as a dense impulse train and applying the classic residual-vibration amplitude formula. Kalico adds a per-axis <code>damping_ratio</code> for smoothers (used when fitting the synchronized extruder smoother); earlier versions assumed a fixed 0.1. Rendered with Chart.js.</p>
+  <p class="foot" data-i18n-html="smoother_vs_shaper.footer">Smoother windows <code>w(t)=Σ Cₖ tᵏ</code> over <code>[−t_sm/2, t_sm/2]</code>, <code>t_sm = factor/freq</code>, coefficients from <code>shaper_defs.py</code> (<code>get_*_smoother</code>). Response is evaluated by treating the window as a dense impulse train and applying the classic residual-vibration amplitude formula. Kalico adds a per-axis <code>damping_ratio</code> for smoothers (used when fitting the synchronized extruder smoother); earlier versions assumed a fixed 0.1. Rendered with Chart.js.</p>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script>
 (function(){
+  var t=window.KV_I18N.t;
   var css=getComputedStyle(document.documentElement);
   function gv(n,f){return (css.getPropertyValue(n).trim())||f;}
   var muted=gv('--text-muted','#898781'), grid=gv('--grid','#e1e0d9');
@@ -161,16 +163,18 @@
     return {responsive:true,maintainAspectRatio:false,animation:false,interaction:{mode:'index',intersect:false},
       plugins:{legend:{display:true,position:'top',align:'start',labels:{color:muted,usePointStyle:true,pointStyle:'line',boxWidth:26,padding:12,font:{size:12}}},tooltip:{callbacks:{
         title:function(it){return (Math.round(it[0].parsed.x*1000)/1000)+'';},
-        label:function(it){return it.dataset.label+': '+(Math.round(it.parsed.y*1000)/1000);}}}},
+        label:function(it){return t('smoother_vs_shaper.chart.tooltipLabel',{label:it.dataset.label,value:Math.round(it.parsed.y*1000)/1000});}}}},
       scales:{x:{type:'linear',grid:{display:false},ticks:{color:muted},title:{display:true,text:xLabel,color:muted}},
               y:{min:0,max:ymax,grid:{color:grid},ticks:{color:muted},title:{display:true,text:yLabel,color:muted}}}};
   }
+  var o1=baseOpts(t('smoother_vs_shaper.chart.axisResidual'),t('smoother_vs_shaper.chart.axisFrequency'),1.05);
+  var o2=baseOpts(t('smoother_vs_shaper.chart.axisKernelWeight'),t('smoother_vs_shaper.chart.axisTime'),undefined);
   var c1=new Chart(document.getElementById('c1'),{type:'line',data:{datasets:[
-    {label:'shaper',data:[],borderColor:BLUE,borderWidth:2,pointRadius:0,tension:0.05},
-    {label:'smoother',data:[],borderColor:TEAL,borderWidth:2,pointRadius:0,tension:0.05}]},options:baseOpts('residual vibration','frequency (Hz)',1.05)});
+    {label:t('smoother_vs_shaper.chart.datasetShaper'),data:[],borderColor:BLUE,borderWidth:2,pointRadius:0,tension:0.05},
+    {label:t('smoother_vs_shaper.chart.datasetSmoother'),data:[],borderColor:TEAL,borderWidth:2,pointRadius:0,tension:0.05}]},options:o1});
   var c2=new Chart(document.getElementById('c2'),{data:{datasets:[
-    {type:'bar',label:'shaper',data:[],backgroundColor:BLUE,barThickness:7},
-    {type:'line',label:'smoother',data:[],borderColor:TEAL,backgroundColor:alpha(TEAL,.12),borderWidth:2,pointRadius:0,fill:true,tension:0.1}]},options:baseOpts('kernel weight','time (ms)',undefined)});
+    {type:'bar',label:t('smoother_vs_shaper.chart.datasetShaper'),data:[],backgroundColor:BLUE,barThickness:7},
+    {type:'line',label:t('smoother_vs_shaper.chart.datasetSmoother'),data:[],borderColor:TEAL,backgroundColor:alpha(TEAL,.12),borderWidth:2,pointRadius:0,fill:true,tension:0.1}]},options:o2});
 
   function card(k,val){return '<div class="card"><div class="k">'+k+'</div><div class="v">'+val+'</div></div>';}
 
@@ -196,11 +200,11 @@
     c2.data.datasets[1].data=wpts; c2.update();
 
     var note=document.getElementById('note');
-    note.innerHTML='A <strong>shaper</strong> applies a few discrete impulses; a <strong>smoother</strong> spreads the same corrective effect over a continuous window, producing smoother motion and no sudden velocity steps. Smoothers generally need a longer window (larger <code>t_sm</code>) than a shaper of the same family for comparable suppression. The <code>damping_ratio</code> here is the printer’s assumed damping used to evaluate residual vibration.';
+    note.innerHTML=t('smoother_vs_shaper.note');
 
     var cards='';
-    if(shp)cards+=card('shaper duration',(shp.T[shp.T.length-1]*1000).toFixed(1)+' ms')+card('shaper worst residual',(worstInBand(shp,f,dr)*100).toFixed(1)+'%');
-    if(smo)cards+=card('smoother t_sm',(smo.t_sm*1000).toFixed(1)+' ms')+card('smoother worst residual',(worstInBand(smo,f,dr)*100).toFixed(1)+'%');
+    if(shp)cards+=card(t('smoother_vs_shaper.cards.shaperDuration'),(shp.T[shp.T.length-1]*1000).toFixed(1)+' ms')+card(t('smoother_vs_shaper.cards.shaperWorstResidual'),(worstInBand(shp,f,dr)*100).toFixed(1)+'%');
+    if(smo)cards+=card(t('smoother_vs_shaper.cards.smootherTsm'),(smo.t_sm*1000).toFixed(1)+' ms')+card(t('smoother_vs_shaper.cards.smootherWorstResidual'),(worstInBand(smo,f,dr)*100).toFixed(1)+'%');
     document.getElementById('cards').innerHTML=cards;
   }
   ['shaper','smoother'].forEach(function(id){document.getElementById(id).addEventListener('change',update);});
@@ -223,6 +227,22 @@
     c2.data.datasets[0].backgroundColor=BLUE;
     c2.data.datasets[1].borderColor=TEAL; c2.data.datasets[1].backgroundColor=alpha(TEAL,.12);
     c1.update(); c2.update();
+  });
+
+  // ---- live language repaint (i18n.js "kv-locale-change" event) ----
+  // Dataset/axis labels are set once at chart creation, same as colors above.
+  // note/#cards are plain innerHTML built by update(), so re-running it
+  // refreshes them (and the chart data, harmlessly) in the new locale.
+  window.KV_I18N.onChange(function(){
+    o1.scales.x.title.text=t('smoother_vs_shaper.chart.axisFrequency');
+    o1.scales.y.title.text=t('smoother_vs_shaper.chart.axisResidual');
+    o2.scales.x.title.text=t('smoother_vs_shaper.chart.axisTime');
+    o2.scales.y.title.text=t('smoother_vs_shaper.chart.axisKernelWeight');
+    c1.data.datasets[0].label=t('smoother_vs_shaper.chart.datasetShaper');
+    c1.data.datasets[1].label=t('smoother_vs_shaper.chart.datasetSmoother');
+    c2.data.datasets[0].label=t('smoother_vs_shaper.chart.datasetShaper');
+    c2.data.datasets[1].label=t('smoother_vs_shaper.chart.datasetSmoother');
+    update();
   });
 })();
 </script>

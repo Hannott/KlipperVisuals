@@ -63,15 +63,19 @@
     onChange: function (fn) { window.addEventListener("kv-palette-change", fn); }
   };
 
-  var LINKS = [
-    ["nonlinear_pa_explorer.html", "Pressure advance"],
-    ["shaper_tuning.html", "Shaper tuning"],
-    ["smoother_vs_shaper.html", "Smoothers"],
-    ["extruder_smoother_fit.html", "Extruder fit"],
-    ["resonance_excitation.html", "Resonance test"],
-    ["shaper_estimation_method.html", "Estimation"]
+  var LINK_PAGES = [
+    "nonlinear_pa_explorer.html",
+    "shaper_tuning.html",
+    "smoother_vs_shaper.html",
+    "extruder_smoother_fit.html",
+    "resonance_excitation.html",
+    "shaper_estimation_method.html"
   ];
   var WIDTH = "1040px"; // must match .wrap max-width on the pages
+  var i18n = window.KV_I18N; // populated by i18n.js, loaded before this script
+  function linkLabel(page) {
+    return i18n.t("common.nav." + page.replace(/\.html$/, ""));
+  }
 
   var cur = (location.pathname.split("/").pop() || "index.html").toLowerCase();
   if (cur === "") cur = "index.html";
@@ -88,39 +92,73 @@
     ".kv-nav .links a{color:var(--text-secondary);padding-bottom:3px;border-bottom:2px solid transparent;}",
     ".kv-nav .links a:hover{color:var(--text-primary);}",
     ".kv-nav a.current{color:var(--blue);border-bottom-color:var(--blue);}",
-    ".kv-nav .palette-wrap{position:absolute;top:50%;right:1.25rem;transform:translateY(-50%);display:flex;flex-direction:column;align-items:flex-end;gap:2px;}",
-    ".kv-nav .palette-label{font-size:10px;letter-spacing:.05em;text-transform:uppercase;color:var(--text-muted);}",
-    ".kv-nav .palette{font-family:inherit;font-size:12.5px;padding:4px 6px;border-radius:6px;border:.5px solid var(--border);background:var(--surface-2);color:var(--text-secondary);}",
-    ".kv-nav .palette:hover{color:var(--text-primary);}"
+    ".kv-nav .controls-wrap{position:absolute;top:50%;right:1.25rem;transform:translateY(-50%);display:flex;align-items:flex-end;gap:10px;}",
+    ".kv-nav .control{display:flex;flex-direction:column;align-items:flex-end;gap:2px;}",
+    ".kv-nav .control-label{font-size:10px;letter-spacing:.05em;text-transform:uppercase;color:var(--text-muted);}",
+    ".kv-nav .control select{font-family:inherit;font-size:12.5px;padding:4px 6px;border-radius:6px;border:.5px solid var(--border);background:var(--surface-2);color:var(--text-secondary);}",
+    ".kv-nav .control select:hover{color:var(--text-primary);}"
   ].join("");
   var st = document.createElement("style");
   st.textContent = css;
   (document.head || document.documentElement).appendChild(st);
 
   var brandCur = cur === "index.html" ? " current" : "";
-  var h = '<div class="kv-nav-inner"><a class="brand' + brandCur + '" href="index.html">KlipperVisuals</a><nav class="links">';
-  for (var i = 0; i < LINKS.length; i++) {
-    var isCur = cur === LINKS[i][0].toLowerCase();
-    h += "<a" + (isCur ? ' class="current" aria-current="page"' : "") + ' href="' + LINKS[i][0] + '">' + LINKS[i][1] + "</a>";
-  }
-  h += "</nav></div>";
-  h += '<div class="palette-wrap"><label class="palette-label" for="kv-palette-select">Color palette</label>';
-  h += '<select class="palette" id="kv-palette-select" title="Chart color palette (colorblind-safe)">';
-  for (var p = 0; p < window.KV_PALETTE.names.length; p++) {
-    var name = window.KV_PALETTE.names[p];
-    h += '<option value="' + name + '"' + (name === activeName ? " selected" : "") + ">" + PALETTES[name].label + "</option>";
-  }
-  h += "</select></div>";
 
+  function render() {
+    var h = '<div class="kv-nav-inner"><a class="brand' + brandCur + '" href="index.html">KlipperVisuals</a><nav class="links">';
+    for (var i = 0; i < LINK_PAGES.length; i++) {
+      var page = LINK_PAGES[i];
+      var isCur = cur === page.toLowerCase();
+      h += "<a" + (isCur ? ' class="current" aria-current="page"' : "") + ' href="' + page + '">' + linkLabel(page) + "</a>";
+    }
+    h += "</nav></div>";
+
+    h += '<div class="controls-wrap">';
+
+    h += '<div class="control"><label class="control-label" for="kv-lang-select">' + i18n.t("common.language.fieldLabel") + "</label>";
+    h += '<select id="kv-lang-select" title="' + i18n.t("common.language.fieldTitle") + '">';
+    for (var l = 0; l < i18n.names.length; l++) {
+      var code = i18n.names[l];
+      h += '<option value="' + code + '"' + (code === i18n.locale() ? " selected" : "") + ">" + i18n.nativeName(code) + " " + i18n.flag(code) + "</option>";
+    }
+    h += "</select></div>";
+
+    h += '<div class="control"><label class="control-label" for="kv-palette-select">' + i18n.t("common.palette.fieldLabel") + "</label>";
+    h += '<select id="kv-palette-select" title="' + i18n.t("common.palette.fieldTitle") + '">';
+    for (var p = 0; p < window.KV_PALETTE.names.length; p++) {
+      var name = window.KV_PALETTE.names[p];
+      h += '<option value="' + name + '"' + (name === activeName ? " selected" : "") + ">" + PALETTES[name].label + "</option>";
+    }
+    h += "</select></div>";
+
+    h += "</div>";
+    return h;
+  }
+
+  var header;
   function mount() {
-    var header = document.createElement("header");
+    header = document.createElement("header");
     header.className = "kv-nav";
-    header.innerHTML = h;
+    header.innerHTML = render();
     document.body.insertBefore(header, document.body.firstChild);
+    attachListeners();
+  }
+  function attachListeners() {
+    document.getElementById("kv-lang-select").addEventListener("change", function () {
+      i18n.setLocale(this.value);
+    });
     document.getElementById("kv-palette-select").addEventListener("change", function () {
       applyPalette(this.value);
     });
   }
   if (document.body) mount();
   else document.addEventListener("DOMContentLoaded", mount);
+
+  // Rebuild the nav bar's own text (link labels, field labels/titles) when
+  // the language changes -- everything else on the page re-applies via
+  // i18n.js's own data-i18n scan.
+  i18n.onChange(function () {
+    header.innerHTML = render();
+    attachListeners();
+  });
 })();
