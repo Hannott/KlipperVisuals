@@ -23,17 +23,21 @@
 (function () {
   // Add a locale code here (and drop locales/<code>/*.js next to the
   // existing ones) to make a new language available in the dropdown.
-  var LOCALES = ["en", "no"];
+  var LOCALES = ["en", "no", "cs", "uk"];
   var FALLBACK = "en";
   var FLAGS = {
     en: "🇬🇧", // GB flag
-    no: "🇳🇴"
+    no: "🇳🇴",
+    cs: "🇨🇿",
+    uk: "🇺🇦"
   };
   // Each language's own name for itself, shown in the dropdown regardless
   // of the currently active locale (an English speaker still sees "日本語").
   var NATIVE_NAMES = {
     en: "English",
-    no: "Norsk"
+    no: "Norsk",
+    cs: "Čeština",
+    uk: "Українська"
   };
   var STORAGE_KEY = "kv-locale";
 
