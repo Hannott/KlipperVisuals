@@ -17,17 +17,17 @@
   // 8-color colorblind-safe qualitative set, minus black/yellow (poor as
   // thin chart lines against this site's surfaces).
   var PALETTES = {
-    okabe_ito: {
-      label: "Okabe & Ito",
-      light: { blue: "#0072B2", amber: "#E69F00", teal: "#009E73", purple: "#CC79A7", red: "#D55E00", cyan: "#56B4E9" },
-      dark:  { blue: "#5AA6D9", amber: "#F2B33D", teal: "#33C79A", purple: "#DDA3C4", red: "#E8874D", cyan: "#8AD0F5" }
-    },
     // Paul Tol's "Bright" qualitative palette (https://sronpersonalpages.nl/~pault/) --
     // designed for line/scatter charts, colorblind-safe and print-friendly.
     tol: {
       label: "Tol",
       light: { blue: "#4477AA", amber: "#CCBB44", teal: "#228833", purple: "#AA3377", red: "#EE6677", cyan: "#66CCEE" },
       dark:  { blue: "#6FA0D6", amber: "#DDCB66", teal: "#4CB864", purple: "#C868A0", red: "#F28794", cyan: "#8AD8F2" }
+    },
+    okabe_ito: {
+      label: "Okabe & Ito",
+      light: { blue: "#0072B2", amber: "#E69F00", teal: "#009E73", purple: "#CC79A7", red: "#D55E00", cyan: "#56B4E9" },
+      dark:  { blue: "#5AA6D9", amber: "#F2B33D", teal: "#33C79A", purple: "#DDA3C4", red: "#E8874D", cyan: "#8AD0F5" }
     }
   };
   var STORAGE_KEY = "kv-palette";
@@ -40,7 +40,7 @@
     return (saved && PALETTES[saved]) ? saved : "okabe_ito";
   }
   function applyPalette(name, silent) {
-    var pal = PALETTES[name] || PALETTES.okabe_ito;
+    var pal = PALETTES[name] || PALETTES.tol;
     var vars = media.matches ? pal.dark : pal.light;
     for (var role in vars) root.style.setProperty("--" + role, vars[role]);
     try { localStorage.setItem(STORAGE_KEY, name); } catch (e) {}
