@@ -51,14 +51,14 @@
   <h1>KlipperVisuals</h1>
   <p class="sub" data-i18n="index.subtitle">Interactive visualizations of motion-control internals in Klipper / Kalico — pressure advance, input shaping, and resonance compensation.</p>
 
-  <a class="card" href="nonlinear_pa_explorer.html">
-    <h2><span data-i18n="index.cards.nonlinearPa.title">Nonlinear pressure advance explorer</span><span class="tag" data-i18n="index.cards.nonlinearPa.tag">tanh vs recipr</span></h2>
-    <p data-i18n-html="index.cards.nonlinearPa.body">Compare the <code>tanh</code> and <code>recipr</code> nonlinear models against an upstream linear-PA line. Adjust ADVANCE, OFFSET, VELOCITY and a test move to see advance-vs-velocity, extruder flow rate, and acceleration demand, with the firmware's parabolic extruder smoother and a time-offset control.</p>
-  </a>
-
   <a class="card" href="shaper_tuning.html">
     <h2><span data-i18n="index.cards.shaperTuning.title">Shaper tuning</span><span class="tag" data-i18n="index.cards.shaperTuning.tag">Kalico feature</span></h2>
     <p data-i18n-html="index.cards.shaperTuning.body">Load a resonance capture (peak detection runs live, in-browser) and get the shaper <code>SHAPER_CALIBRATE</code> would recommend — the full <code>find_best_shaper</code> search ported to JS, including multimode with the dual-peak-cluster fix. Explore any shaper type by hand against your own data (smoothing, max_accel, per-resonance residual), then generate a ready-to-paste <code>[input_shaper]</code> config.</p>
+  </a>
+
+  <a class="card" href="nonlinear_pa_explorer.html">
+    <h2><span data-i18n="index.cards.nonlinearPa.title">Nonlinear pressure advance explorer</span><span class="tag" data-i18n="index.cards.nonlinearPa.tag">tanh vs recipr</span></h2>
+    <p data-i18n-html="index.cards.nonlinearPa.body">Compare the <code>tanh</code> and <code>recipr</code> nonlinear models against an upstream linear-PA line. Adjust ADVANCE, OFFSET, VELOCITY and a test move to see advance-vs-velocity, extruder flow rate, and acceleration demand, with the firmware's parabolic extruder smoother and a time-offset control.</p>
   </a>
 
   <a class="card" href="smoother_vs_shaper.html">

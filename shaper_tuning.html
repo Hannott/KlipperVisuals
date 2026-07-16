@@ -106,7 +106,7 @@
   </div>
 
   <h2 data-i18n="shaper_tuning.steps.recommended">2. Recommended shaper</h2>
-  <p class="sub" style="margin-bottom:.75rem;" data-i18n-html="shaper_tuning.recommended.intro">The same search <code>SHAPER_CALIBRATE</code> runs, on your capture: every <code>smooth_*</code> smoother and classic shaper, plus a 2-peak multimode search (with the dual-peak-cluster-widening fix), scored and selected with Kalico's formula and thresholds. Per-peak residual is shown for every resonance detected — including any beyond the top two the auto-tuner's search itself is limited to. The manual explorer below starts from this pick so you can tweak it.</p>
+  <p class="sub" style="margin-bottom:.75rem;" data-i18n-html="shaper_tuning.recommended.intro">The same search <code>SHAPER_CALIBRATE</code> runs, on your capture: every <code>smooth_*</code> smoother and classic shaper, plus a multimode search over the detected resonances (up to 4, with the peak-cluster-widening fix), scored and selected with Kalico's formula and thresholds. Per-peak residual is shown for every resonance detected. The manual explorer below starts from this pick so you can tweak it.</p>
   <div class="busybox" id="recoBox">
     <div class="busy-mute">
       <div class="note" id="recoStatus" data-i18n="shaper_tuning.recommended.statusDefault">Load a capture above to compute a recommendation.</div>
@@ -206,7 +206,7 @@
   </div>
   </div>
 
-  <p class="foot" data-i18n-html="shaper_tuning.footer">Everything is computed from the loaded capture. The recommendation ports Kalico's <code>find_best_shaper</code> (<code>shaper_calibrate.py</code>) — every smoother/shaper candidate plus a 2-peak multimode search with the dual-peak-cluster-widening fix, scored with Kalico's formula. Multimode shaper = convolution of a base shaper tuned to each configured peak (amplitudes multiply, times add). Peak detection and half-power damping estimation port <code>_detect_resonance_peaks</code> / <code>_estimate_damping_ratio</code>. The fitted extruder kernel reproduces <code>extruder_smoother.get_multi_mode_extruder_smoother</code> (Legendre basis, KKT-constrained least squares). Rendered with Chart.js.</p>
+  <p class="foot" data-i18n-html="shaper_tuning.footer">Everything is computed from the loaded capture. The recommendation ports Kalico's <code>find_best_shaper</code> (<code>shaper_calibrate.py</code>) — every smoother/shaper candidate plus a multimode search over the detected resonances (up to 4) with the peak-cluster-widening fix, scored with Kalico's formula. Multimode shaper = convolution of a base shaper tuned to each configured peak (amplitudes multiply, times add). Peak detection and half-power damping estimation port <code>_detect_resonance_peaks</code> / <code>_estimate_damping_ratio</code>. The fitted extruder kernel reproduces <code>extruder_smoother.get_multi_mode_extruder_smoother</code> (Legendre basis, KKT-constrained least squares). Rendered with Chart.js.</p>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
@@ -252,7 +252,7 @@
   function h3(f,z){return expShaper(f,z,T3,A3);}
 
   // All six are valid single-mode shaper_type_<axis> values (shaper_defs.INPUT_SHAPERS);
-  // only zv/mzv/ei are offered as multimode BASES below (see TWO_MODE_AUTOTUNE_BASES).
+  // only zv/mzv/ei are offered as multimode BASES below (see MULTIMODE_AUTOTUNE_BASES).
   var BASEFN={zv:zv,mzv:mzv,zvd:zvd,ei:ei,'2hump_ei':h2,'3hump_ei':h3};
   var PULSE_COUNT={zv:2,mzv:3,zvd:3,ei:3,'2hump_ei':4,'3hump_ei':5};
   var MAX_SHAPER_PULSES=32;
@@ -522,18 +522,35 @@
   // (_find_peak_cluster_bounds) the auto-tuner uses server-side. It reuses
   // zv/mzv/zvd/ei/h2/BASEFN/convolve/detectPeaks/estimateDampingRatio/
   // shaperOffset/shaperSmoothing already defined above.
-  var PULSE_COUNT2={zv:2,mzv:3,zvd:3,ei:3,'2hump_ei':4};
   var SHAPER_MIN_FREQ={zv:21.0,mzv:23.0,zvd:29.0,ei:29.0,'2hump_ei':39.0};
-  var TWO_MODE_AUTOTUNE_BASES=['zv','mzv','ei'];
+  // Bases the multimode auto-search considers, and the peak cap -- both
+  // match shaper_calibrate.py exactly (MULTIMODE_AUTOTUNE_BASES /
+  // MULTIMODE_MAX_PEAKS). zvd/2hump_ei/3hump_ei are excluded as bases
+  // because convolving copies of a high-impulse base smooths so much it can
+  // never win; the search caps at 4 detected peaks (manual configs may list
+  // more).
+  var MULTIMODE_AUTOTUNE_BASES=['zv','mzv','ei'];
+  var MULTIMODE_MAX_PEAKS=4;
   var AUTOTUNE_SHAPER_NAMES=['mzv','ei','2hump_ei'];
   var TEST_DAMPING_RATIOS=[0.075,0.1,0.15];
   var DEFAULT_DAMPING_RATIO=0.1;
   var MAX_SHAPER_FREQ=300.0;
   var MIN_FREQ=5.0;
+  // estimate_shaper time-resolution for the multimode fit. Python uses
+  // n_t=1000 on a 0.02-step unit grid; the unit-grid build is the dominant
+  // cost (rebuilt per base-combo x ratio-combo), so it runs at a reduced
+  // n_t tuned to still reproduce the auto-tuner's winner and design
+  // frequencies (validated against real Python on real captures). The
+  // small freq_bins-grid re-scores in the N>2 coordinate descent keep the
+  // full n_t=1000 since that grid is short.
+  var MULTIMODE_UNIT_STEP=0.02, MULTIMODE_UNIT_NT=600, MULTIMODE_FREQBINS_NT=1000;
 
-  function twoModeShaper(base1,f1,f2,d1,d2,base2){
-    base2=base2||base1;
-    return convolve(BASEFN[base1](f1,d1),BASEFN[base2](f2,d2));
+  // General N-mode shaper from parallel base/freq/damping arrays
+  // (== shaper_defs.get_multimode_shaper: convolve one base per peak).
+  function mmShaper(bases,freqs,dampings){
+    var arr=[];
+    for(var i=0;i<freqs.length;i++)arr.push({base:bases[i],freq:freqs[i],damping:dampings[i]});
+    return buildMultiMode(arr);
   }
 
   // ---- smoothers: shaper_defs.get_*_smoother / init_smoother ----
@@ -763,7 +780,10 @@
     }
     var fbClipped=[],psdClipped=[];
     for(i=0;i<freqBins.length;i++)if(freqBins[i]<=maxFreq){fbClipped.push(freqBins[i]);psdClipped.push(psd[i]);}
-    var freqEnd=MAX_SHAPER_FREQ,freqStart=Math.min(minFreq,freqEnd-1e-7);
+    // Cap the default sweep at max_freq: the PSD is truncated there, so a
+    // design frequency above it puts the notch entirely outside the scored
+    // data (matches fit_shaper's freq_end = min(MAX_SHAPER_FREQ, max_freq)).
+    var freqEnd=Math.min(MAX_SHAPER_FREQ,maxFreq),freqStart=Math.min(minFreq,freqEnd-1e-7);
     var results=[],bestRes=null;
     for(var f=freqStart;f<freqEnd;f+=freqStep){
       var scaledXp=testFreqBins.map(function(tf){return tf*f;});
@@ -774,7 +794,9 @@
       else{s=makeSmoother(name,f);smoothing=getSmootherSmoothing(s,5000,scv);}
       var maxAccel=kind==='shaper'?findMaxAccel(s,scv,shaperSmoothing):findMaxAccel(s,scv,getSmootherSmoothing);
       var score=shaperScore(smoothing,vibrations);
-      var res={name:name,freq:f,vibrs:vibrations,smoothing:smoothing,score:score,maxAccel:maxAccel,base:null,base2:null,freq2:null,dampingRatio:dampingRatio,dampingRatio2:null};
+      var res={name:name,freq:f,vibrs:vibrations,smoothing:smoothing,score:score,maxAccel:maxAccel,
+               bases:null,freqs:null,dampingRatios:null,
+               base:null,base2:null,freq2:null,dampingRatio:dampingRatio,dampingRatio2:null};
       results.push(res);
       if(bestRes===null||bestRes.vibrs>res.vibrs)bestRes=res;
     }
@@ -785,46 +807,114 @@
     }
     return selected;
   }
-  // ---- two-mode fit: port of fit_two_mode_shaper, including the dual-peak-cluster-widening fix ----
-  function fitTwoMode(base1,base2,freqBins,psd,peak1,peak2,damping1,damping2,scv,maxFreqIn){
-    damping1=damping1||DEFAULT_DAMPING_RATIO;damping2=damping2||damping1;
-    var testDampingRatios=TEST_DAMPING_RATIOS;
-    var name=base2===base1?base1:base1+'/'+base2;
-    var baseRatio=peak2/peak1;
-    var c2=findPeakClusterBounds(freqBins,psd,peak2),cluster2Lo=c2[0],cluster2Hi=c2[1];
-    var ratioLo=Math.min(baseRatio*0.94,cluster2Lo/peak1);
-    var ratioHi=Math.max(baseRatio*1.06,cluster2Hi/peak1);
-    var noWiden2=(ratioLo===baseRatio*0.94)&&(ratioHi===baseRatio*1.06);
-    var nRatios=noWiden2?5:9;
-    var ratios=linspace2(ratioLo,ratioHi,nRatios);
-    var c1=findPeakClusterBounds(freqBins,psd,peak1),cluster1Lo=c1[0],cluster1Hi=c1[1];
-    var freqStart=Math.max(SHAPER_MIN_FREQ[base1]||21.0,Math.min(peak1-4.0,cluster1Lo));
-    var freqEnd=Math.max(peak1+4.0,cluster1Hi);
-    var testFreqs1=[];for(var f=freqStart;f<freqEnd;f+=0.5)testFreqs1.push(f);
-    if(!testFreqs1.length)testFreqs1=[peak1];
-    var maxFreq=Math.max(maxFreqIn||200.0,peak2*1.2);
-    var fbClipped=[],psdClipped=[],i;
-    for(i=0;i<freqBins.length;i++)if(freqBins[i]<=maxFreq){fbClipped.push(freqBins[i]);psdClipped.push(psd[i]);}
-    var twoModeStep=0.05,twoModeNT=300;
-    var testFreqBins=[];for(var t=0.0;t<9.99;t+=twoModeStep)testFreqBins.push(t);
-    var bestRes=null,results=[];
-    for(var ri=0;ri<ratios.length;ri++){
-      var ratio=ratios[ri];
-      var unit=twoModeShaper(base1,1.0,ratio,damping1,damping2,base2);
-      var testVals=new Array(testFreqBins.length).fill(0);
-      for(var di=0;di<testDampingRatios.length;di++){
-        var dr=testDampingRatios[di];
-        for(i=0;i<testFreqBins.length;i++){var v=estimateShaperReal(unit,dr,testFreqBins[i],twoModeNT);if(v>testVals[i])testVals[i]=v;}
+  // ---- N-peak multimode fit: faithful port of fit_multimode_shaper ----
+  // bases/peaks/dampings are parallel arrays (length n>=2), peaks ascending.
+  // For n=2 it jointly sweeps the single freq ratio (screened to the best 3)
+  // then refines freq[0]; for n>2 it refines each ratio by coordinate
+  // descent (cheap-rank the grid, accurate top-2) then refines freq[0].
+  // Includes the peak-cluster-widening fix (_find_peak_cluster_bounds).
+  function fitMultiMode(bases,freqBins,psd,peaks,dampings,scv,maxFreqIn){
+    var n=peaks.length,i,k;
+    dampings=dampings.slice();
+    for(i=0;i<n;i++)if(!dampings[i])dampings[i]=(i>0?dampings[i-1]:DEFAULT_DAMPING_RATIO);
+    var allSame=bases.every(function(b){return b===bases[0];});
+    var name=allSame?bases[0]:bases.join('/');
+
+    var outMaxFreq=maxFreqIn||200.0;
+    var maxFreq=Math.max(outMaxFreq,peaks[n-1]*1.2);
+    var fb=[],pd=[];
+    for(i=0;i<freqBins.length;i++)if(freqBins[i]<=maxFreq){fb.push(freqBins[i]);pd.push(psd[i]);}
+
+    // accurate response pessimized over the test damping ratios (== estimate_shaper)
+    function pess(sh,freqs,nT){
+      var vals=new Array(freqs.length).fill(0);
+      for(var d=0;d<TEST_DAMPING_RATIOS.length;d++){var dr=TEST_DAMPING_RATIOS[d];
+        for(var j=0;j<freqs.length;j++){var v=estimateShaperReal(sh,dr,freqs[j],nT);if(v>vals[j])vals[j]=v;}}
+      return vals;
+    }
+    // cheap closed-form response (== estimate_shaper_old) for screening only
+    function cheap(sh,freqs){
+      var vals=new Array(freqs.length).fill(0);
+      for(var d=0;d<TEST_DAMPING_RATIOS.length;d++){var dr=TEST_DAMPING_RATIOS[d];
+        for(var j=0;j<freqs.length;j++){var v=residual(sh,freqs[j],dr);if(v>vals[j])vals[j]=v;}}
+      return vals;
+    }
+
+    // per-secondary-peak ratio grids, widened around any unresolved cluster
+    var ratioGrids=[],currentRatios=[];
+    for(i=1;i<n;i++){
+      var baseRatio=peaks[i]/peaks[0];
+      var cb=findPeakClusterBounds(freqBins,psd,peaks[i]);
+      var ratioLo=Math.min(baseRatio*0.94,cb[0]/peaks[0]);
+      var ratioHi=Math.max(baseRatio*1.06,cb[1]/peaks[0]);
+      var noWiden=(ratioLo===baseRatio*0.94)&&(ratioHi===baseRatio*1.06);
+      ratioGrids.push(linspace2(ratioLo,ratioHi,noWiden?5:9));
+      currentRatios.push(baseRatio);
+    }
+
+    var ratioCombos;
+    if(n>2){
+      for(var dim=0;dim<ratioGrids.length;dim++){
+        var grid=ratioGrids[dim],screened=[];
+        for(var g=0;g<grid.length;g++){
+          var trial=currentRatios.slice();trial[dim]=grid[g];
+          var tf=[peaks[0]];for(k=0;k<trial.length;k++)tf.push(peaks[0]*trial[k]);
+          var shc=mmShaper(bases,tf,dampings);
+          var vibrsC=estimateRemainingVibrations(fb,cheap(shc,fb),pd);
+          screened.push([vibrsC,grid[g],shc]);
+        }
+        if(!screened.length)continue;
+        screened.sort(function(a,b){return a[0]-b[0];});
+        var bestRatio=currentRatios[dim],bestVibrs=null;
+        for(var s=0;s<Math.min(2,screened.length);s++){
+          var vibrsA=estimateRemainingVibrations(fb,pess(screened[s][2],fb,MULTIMODE_FREQBINS_NT),pd);
+          if(bestVibrs===null||vibrsA<bestVibrs){bestVibrs=vibrsA;bestRatio=screened[s][1];}
+        }
+        currentRatios[dim]=bestRatio;
       }
-      for(var tfi=0;tfi<testFreqs1.length;tfi++){
-        var testFreq1=testFreqs1[tfi],testFreq2=testFreq1*ratio;
-        var sh=twoModeShaper(base1,testFreq1,testFreq2,damping1,damping2,base2);
+      ratioCombos=[currentRatios.slice()];
+    }else{
+      var cand=ratioGrids.length?ratioGrids[0].slice():[];
+      if(cand.length>3){
+        var scr=[];
+        for(var r=0;r<cand.length;r++){
+          var sh3=mmShaper(bases,[peaks[0],peaks[0]*cand[r]],dampings);
+          scr.push([estimateRemainingVibrations(fb,cheap(sh3,fb),pd),cand[r]]);
+        }
+        scr.sort(function(a,b){return a[0]-b[0];});
+        cand=scr.slice(0,3).map(function(x){return x[1];});
+      }
+      ratioCombos=cand.length?cand.map(function(rr){return [rr];}):[[]];
+    }
+
+    // freq[0] local-refinement window (also cluster-widened)
+    var cb1=findPeakClusterBounds(freqBins,psd,peaks[0]);
+    var minf=SHAPER_MIN_FREQ[bases[0]]||21.0;
+    var freqStart=Math.max(minf,Math.min(peaks[0]-4.0,cb1[0]));
+    var freqEnd=Math.max(peaks[0]+4.0,cb1[1]);
+    var testFreqs0=[];for(var f0=freqStart;f0<freqEnd;f0+=0.5)testFreqs0.push(f0);
+    if(!testFreqs0.length)testFreqs0=[peaks[0]];
+    var testFreqBins=[];for(var tb=0.0;tb<9.999;tb+=MULTIMODE_UNIT_STEP)testFreqBins.push(tb);
+
+    var bestRes=null,results=[];
+    for(var rc=0;rc<ratioCombos.length;rc++){
+      var combo=ratioCombos[rc];
+      var unitFreqs=[1.0];for(k=0;k<combo.length;k++)unitFreqs.push(combo[k]);
+      var unitShaper=mmShaper(bases,unitFreqs,dampings);
+      var testShaperVals=pess(unitShaper,testFreqBins,MULTIMODE_UNIT_NT);
+      for(var ti=0;ti<testFreqs0.length;ti++){
+        var tfreq0=testFreqs0[ti];
+        var testFreqs=unitFreqs.map(function(u){return tfreq0*u;});
+        var sh=mmShaper(bases,testFreqs,dampings);
         var smoothing=shaperSmoothing(sh,5000,scv);
-        var scaledXp=testFreqBins.map(function(tf){return tf*testFreq1;});
-        var shaperVals=interp2(fbClipped,scaledXp,testVals);
-        var vibrations=estimateRemainingVibrations(fbClipped,shaperVals,psdClipped);
+        var scaledXp=testFreqBins.map(function(x){return x*tfreq0;});
+        var shaperVals=interp2(fb,scaledXp,testShaperVals);
+        var vibrations=estimateRemainingVibrations(fb,shaperVals,pd);
         var score=shaperScore(smoothing,vibrations);
-        var res={name:'multimode_'+name,freq:testFreq1,vibrs:vibrations,smoothing:smoothing,score:score,maxAccel:0,base:base1,base2:base2,freq2:testFreq2,dampingRatio:damping1,dampingRatio2:damping2};
+        var res={name:'multimode_'+name,freq:tfreq0,vibrs:vibrations,smoothing:smoothing,score:score,maxAccel:0,
+                 bases:bases.slice(),freqs:testFreqs.slice(),dampingRatios:dampings.slice(),
+                 // legacy pairwise fields kept for any older consumer
+                 base:bases[0],base2:bases[1]||bases[0],freq2:testFreqs[1],dampingRatio:dampings[0],dampingRatio2:dampings[1]};
         results.push(res);
         if(bestRes===null||bestRes.vibrs>res.vibrs)bestRes=res;
       }
@@ -832,17 +922,19 @@
     if(bestRes===null)return null;
     var selected=bestRes;
     for(i=results.length-1;i>=0;i--){
-      var res2=results[i];
-      if(res2.score<selected.score&&(res2.vibrs<bestRes.vibrs*1.2||res2.vibrs<bestRes.vibrs+0.0075))selected=res2;
+      var r2=results[i];
+      if(r2.score<selected.score&&(r2.vibrs<bestRes.vibrs*1.2||r2.vibrs<bestRes.vibrs+0.0075))selected=r2;
     }
-    var finalShaper=twoModeShaper(base1,selected.freq,selected.freq2,damping1,damping2,base2);
-    selected.maxAccel=findMaxAccel(finalShaper,scv,shaperSmoothing);
+    selected.maxAccel=findMaxAccel(mmShaper(bases,selected.freqs,dampings),scv,shaperSmoothing);
     return selected;
   }
   // ---- top-level orchestration: port of find_best_shaper ----
   function findBestShaperReal(freqBins,psd,scv,maxFreq){
     scv=scv==null?5.0:scv;maxFreq=maxFreq||200.0;
-    var twoModeBias=1.3;
+    // Multimode must beat the best single-mode candidate by this margin
+    // before it is recommended. Matches shaper_calibrate's default
+    // multimode_bias=1.0: take multimode on ANY genuine score improvement.
+    var multimodeBias=1.0;
     var allShapers=[],best=null;
     function consider(res){
       allShapers.push(res);
@@ -851,7 +943,8 @@
     var i;
     for(i=0;i<AUTOTUNE_SMOOTHER_NAMES.length;i++)consider(fitSingleMode('smoother',AUTOTUNE_SMOOTHER_NAMES[i],freqBins,psd,scv,maxFreq));
     for(i=0;i<AUTOTUNE_SHAPER_NAMES.length;i++)consider(fitSingleMode('shaper',AUTOTUNE_SHAPER_NAMES[i],freqBins,psd,scv,maxFreq));
-    var peaks=detectPeaks(freqBins,psd,MIN_FREQ,maxFreq,0.12,8.0,2);
+    // Up to MULTIMODE_MAX_PEAKS peaks, most-significant first.
+    var peaks=detectPeaks(freqBins,psd,MIN_FREQ,maxFreq,0.12,8.0,MULTIMODE_MAX_PEAKS);
     var dampingEstimates=peaks.map(function(f,idx){
       var lower=peaks.filter(function(pf,j){return j!==idx&&pf<f;});
       var upper=peaks.filter(function(pf,j){return j!==idx&&pf>f;});
@@ -859,18 +952,37 @@
       var spanHi=upper.length?Math.max(5.0,(Math.min.apply(null,upper)-f)*0.4):null;
       return estimateDampingRatio(freqBins,psd,f,spanLo,spanHi);
     });
-    var twoModeResult=null;
+    var multimodeResult=null;
     if(peaks.length>=2){
-      var pair=[[peaks[0],dampingEstimates[0]],[peaks[1],dampingEstimates[1]]].sort(function(a,b){return a[0]-b[0];});
-      var peak1=pair[0][0],peak2=pair[1][0];
-      var damping1=pair[0][1]||DEFAULT_DAMPING_RATIO,damping2=pair[1][1]||damping1;
-      for(var b1i=0;b1i<TWO_MODE_AUTOTUNE_BASES.length;b1i++){
-        for(var b2i=0;b2i<TWO_MODE_AUTOTUNE_BASES.length;b2i++){
-          var res=fitTwoMode(TWO_MODE_AUTOTUNE_BASES[b1i],TWO_MODE_AUTOTUNE_BASES[b2i],freqBins,psd,peak1,peak2,damping1,damping2,scv,maxFreq);
-          if(res){allShapers.push(res);if(twoModeResult===null||res.score<twoModeResult.score)twoModeResult=res;}
+      // Order by ascending frequency; carry each peak's damping, filling a
+      // missing (null) estimate from the previous peak (seed = DEFAULT).
+      var ordered=peaks.map(function(f,idx){return [f,dampingEstimates[idx]];}).sort(function(a,b){return a[0]-b[0];});
+      var orderedPeaks=ordered.map(function(x){return x[0];});
+      var orderedDampings=[],prev=DEFAULT_DAMPING_RATIO;
+      for(i=0;i<ordered.length;i++){prev=ordered[i][1]||prev;orderedDampings.push(prev);}
+      var nModes=orderedPeaks.length;
+      // n=2: every base pair (9). n>2: a single shared base (3), since
+      // per-peak base combinations blow up as bases^n_modes.
+      var baseCombos=[];
+      if(nModes===2){
+        for(var a=0;a<MULTIMODE_AUTOTUNE_BASES.length;a++)
+          for(var bb=0;bb<MULTIMODE_AUTOTUNE_BASES.length;bb++)
+            baseCombos.push([MULTIMODE_AUTOTUNE_BASES[a],MULTIMODE_AUTOTUNE_BASES[bb]]);
+      }else{
+        for(var c=0;c<MULTIMODE_AUTOTUNE_BASES.length;c++){
+          var combo=[];for(var m=0;m<nModes;m++)combo.push(MULTIMODE_AUTOTUNE_BASES[c]);
+          baseCombos.push(combo);
         }
       }
-      if(twoModeResult&&(best===null||twoModeResult.score*twoModeBias<best.score))best=twoModeResult;
+      for(var ci=0;ci<baseCombos.length;ci++){
+        // Skip combos whose convolution exceeds the firmware pulse buffer:
+        // the config could never be saved, and it wastes the expensive fit.
+        var trial=mmShaper(baseCombos[ci],orderedPeaks,orderedDampings);
+        if(trial.A.length>MAX_SHAPER_PULSES)continue;
+        var res=fitMultiMode(baseCombos[ci],freqBins,psd,orderedPeaks,orderedDampings,scv,maxFreq);
+        if(res){allShapers.push(res);if(multimodeResult===null||res.score<multimodeResult.score)multimodeResult=res;}
+      }
+      if(multimodeResult&&(best===null||multimodeResult.score*multimodeBias<best.score))best=multimodeResult;
     }
     return {best:best,allShapers:allShapers,peaks:peaks,dampingEstimates:dampingEstimates};
   }
@@ -921,11 +1033,11 @@
     for(var i=0;i<peaks.length;i++){
       var p=peaks[i];
       // Restricted to zv/mzv/ei: Kalico's own multimode auto-search
-      // (TWO_MODE_AUTOTUNE_BASES) never considers zvd/2hump_ei/3hump_ei as
-      // bases -- a two-mode shaper convolves two copies of the base, so a
+      // (MULTIMODE_AUTOTUNE_BASES) never considers zvd/2hump_ei/3hump_ei as
+      // bases -- a multimode shaper convolves copies of the base, so a
       // higher-order base produces so much smoothing it can never win the
       // recommendation, and only clutters the search.
-      var opts=TWO_MODE_AUTOTUNE_BASES.map(function(b){return '<option value="'+b+'"'+(b===p.base?' selected':'')+'>'+BASE_LABEL[b]+'</option>';}).join('');
+      var opts=MULTIMODE_AUTOTUNE_BASES.map(function(b){return '<option value="'+b+'"'+(b===p.base?' selected':'')+'>'+BASE_LABEL[b]+'</option>';}).join('');
       html+='<div class="peakrow" data-idx="'+i+'">'+
         '<span class="swatch" style="background:'+PALETTE[i%PALETTE.length]+'"></span>'+
         '<select class="pk-base">'+opts+'</select>'+
@@ -1423,15 +1535,16 @@
     var cardsEl=document.getElementById('cardsReco');
     var noteEl=document.getElementById('noteReco');
     var best=lastReco.best, result=lastReco.result, allPeaks=lastReco.allPeaks;
-    var isMultimode=best.freq2!=null;
+    var isMultimode=best.freqs!=null;
     var isSmoother=!isMultimode&&AUTOTUNE_SMOOTHER_NAMES.indexOf(best.name)>=0;
-    var label=isMultimode?(best.base===best.base2?best.base:(best.base+'/'+best.base2))+' (multimode)':best.name;
-    var freqLabel=isMultimode?(best.freq.toFixed(1)+' / '+best.freq2.toFixed(1)+' Hz'):(best.freq.toFixed(1)+' Hz');
+    var mmAllSame=isMultimode&&best.bases.every(function(b){return b===best.bases[0];});
+    var label=isMultimode?(mmAllSame?best.bases[0]:best.bases.join('/'))+' (multimode)':best.name;
+    var freqLabel=isMultimode?best.freqs.map(function(f){return f.toFixed(1);}).join(' / ')+' Hz':(best.freq.toFixed(1)+' Hz');
+    var mmSh=isMultimode?mmShaper(best.bases,best.freqs,best.dampingRatios):null;
     var perPeakHtml=allPeaks.map(function(p){
       var r;
       if(isMultimode){
-        var sh=twoModeShaper(best.base,best.freq,best.freq2,best.dampingRatio,best.dampingRatio2,best.base2);
-        r=Math.max.apply(null,TEST_DAMPING_RATIOS.map(function(dr){return estimateShaperReal(sh,dr,p.freq,1000);}));
+        r=Math.max.apply(null,TEST_DAMPING_RATIOS.map(function(dr){return estimateShaperReal(mmSh,dr,p.freq,1000);}));
       }else if(isSmoother){
         var sm=makeSmoother(best.name,best.freq);
         r=Math.max.apply(null,TEST_DAMPING_RATIOS.map(function(dr){return estimateSmootherReal(sm,dr,p.freq,500);}));
@@ -1448,9 +1561,9 @@
       card(t('shaper_tuning.cards.smoothing'),best.smoothing.toFixed(4))+
       card(t('shaper_tuning.cards.maxAccel'),Math.round(best.maxAccel).toLocaleString()+' mm/s²',TEAL);
     var cfgHtml=isMultimode?
-      ('<code>shaper_type_&lt;axis&gt; = multimode</code> <code>shaper_base_&lt;axis&gt; = '+best.base+', '+best.base2+
-       '</code> <code>shaper_freq_&lt;axis&gt; = '+best.freq.toFixed(1)+', '+best.freq2.toFixed(1)+
-       '</code> <code>damping_ratio_&lt;axis&gt; = '+best.dampingRatio.toFixed(4)+', '+best.dampingRatio2.toFixed(4)+'</code>')
+      ('<code>shaper_type_&lt;axis&gt; = multimode</code> <code>shaper_base_&lt;axis&gt; = '+best.bases.join(', ')+
+       '</code> <code>shaper_freq_&lt;axis&gt; = '+best.freqs.map(function(f){return f.toFixed(1);}).join(', ')+
+       '</code> <code>damping_ratio_&lt;axis&gt; = '+best.dampingRatios.map(function(d){return d.toFixed(4);}).join(', ')+'</code>')
       :('<code>shaper_type_&lt;axis&gt; = '+best.name+'</code> <code>shaper_freq_&lt;axis&gt; = '+best.freq.toFixed(1)+'</code>');
     statusEl.innerHTML=t('shaper_tuning.status.basedOn',{
       n:result.peaks.length,
@@ -1458,16 +1571,18 @@
       total:allPeaks.length,
       cfgHtml:cfgHtml
     });
+    // The caveat only applies once the capture shows as many resonances as
+    // the auto-search caps at (MULTIMODE_MAX_PEAKS): beyond that, extra modes
+    // must be added by hand.
     noteEl.innerHTML=t('shaper_tuning.notes.recoNoteIntro')+'<br>'+perPeakHtml+
-      (allPeaks.length>2?'<br><span style="color:var(--amber)">'+t('shaper_tuning.notes.recoCaveat')+'</span>':'');
+      (allPeaks.length>=MULTIMODE_MAX_PEAKS?'<br><span style="color:var(--amber)">'+t('shaper_tuning.notes.recoCaveat')+'</span>':'');
   }
   // Seed the manual explorer from the recommendation so it starts on the
   // recommended shaper (the user can then change type / frequencies).
   function seedExplorerFromReco(best){
-    if(best.freq2!=null){
+    if(best.freqs!=null){
       explType='multimode';
-      peaks=[{base:best.base,freq:Math.round(best.freq*10)/10,damping:Math.round(best.dampingRatio*1000)/1000},
-             {base:best.base2,freq:Math.round(best.freq2*10)/10,damping:Math.round(best.dampingRatio2*1000)/1000}];
+      peaks=best.freqs.map(function(f,i){return {base:best.bases[i],freq:Math.round(f*10)/10,damping:Math.round(best.dampingRatios[i]*1000)/1000};});
       renderPeakRows();
     }else{
       explType=best.name;

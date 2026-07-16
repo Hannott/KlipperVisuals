@@ -41,7 +41,7 @@ window.KV_LOCALES.cs.shaper_tuning = {
     linear: "lineární"
   },
   recommended: {
-    intro: "Stejné hledání, které běží <code>SHAPER_CALIBRATE</code>, na vašem záznamu: každý <code>smooth_*</code> vyhlazovač a klasický tvořovač, plus 2-vrcholové multimode hledání (s opravou rozšíření dvouvrcholového shluku), bodované a vybírané podle Kalico vzorce a prahů. Zbytková vibrace na vrchol se zobrazuje pro každou detekovanou rezonanci — včetně všech nad těmi dvěma nejlepšími, na které je auto-tuner omezen. Ruční průzkumník níže začíná od tohoto výběru, aby jste ho mohli upravit.",
+    intro: "Stejné hledání, které běží <code>SHAPER_CALIBRATE</code>, na vašem záznamu: každý <code>smooth_*</code> vyhlazovač a klasický tvořovač, plus multimode hledání přes detekované rezonance (až 4, s opravou rozšíření vrcholového shluku), bodované a vybírané podle Kalico vzorce a prahů. Zbytková vibrace na vrchol se zobrazuje pro každou detekovanou rezonanci. Ruční průzkumník níže začíná od tohoto výběru, abyste ho mohli upravit.",
     statusDefault: "Načtěte záznam výše pro výpočet doporučení."
   },
   explorer: {
@@ -88,12 +88,12 @@ window.KV_LOCALES.cs.shaper_tuning = {
     residualPerPeak: "Zbytková vibrace, kterou tento tvořovač zanechává v každé detekované rezonanci (nejhorší případ přes ζ={{ratios}}):",
     loadCaptureForResidual: "Načtěte záznam, chcete-li vidět zbytky zbývající v každé detekované rezonanci.",
     deepNote: "<strong>Přesná</strong> konvoluce ({{impulses}} impulsů, základní {{base}}) je matematicky dokonalou shodu s tvarovaným pohybem hlavice, ale každý impuls je nespojitostí v derivaci rychlosti. <strong>Přizpůsobená</strong> vyhlazovač (řád {{order}}) obchoduje trochu přesnosti za spojité jádro, snižuje vrcholovou akceleraci extrudéru o <strong>{{reduction}}×</strong> v ostrém rohu 100&rarr;20&nbsp;mm/s. To portuje <code>extruder_smoother.get_multi_mode_extruder_smoother</code>, přizpůsobeno blízko každého vrcholu s vlastním poměrem tlumení tohoto vrcholu. Výše uvedený graf ukazuje, proč na vrchol tlumení záleží: u jedné sdílené předpokládané ζ má pouze vrchol, jehož skutečné ζ se shoduje, čistý zářez.",
-    recoNoteIntro: "Zbytková vibrace na vrchol pomocí doporučeného tvořovače výše, u <strong>každého</strong> vrcholu skutečně detekovaného v záznamu (ne jen těch, které vidělo 2vrcholové auto-tuner hledání):",
-    recoCaveat: "Auto-tuner vždy hledá pouze své 2 nejvyšší detekované vrcholy; 3./4. vrchol (jako výše) lze dobře potlačit pouze náhodou, nebo ručně konfigurací multimode tvarovače se všemi uvedenými (použijte níže průzkumník)."
+    recoNoteIntro: "Zbytková vibrace na vrchol pomocí doporučeného tvořovače výše, u <strong>každé</strong> rezonance detekované v záznamu:",
+    recoCaveat: "Auto-tuner hledá nejvýše 4 rezonanční vrcholy. Pokud jich vaše tiskárna vykazuje více, přidejte ty další ručně jako další multimode režimy (použijte průzkumník níže)."
   },
   status: {
     computing: "Výpočet doporučení pro {{label}} (find_best_shaper port, ~1-2s)…",
-    basedOn: "Založeno na {{n}} vrchol(ech) vlastního 2vrcholového hledání auto-tuneru ({{list}}), z {{total}} celkově detekovaných. Doporučená konfigurace: {{cfgHtml}}"
+    basedOn: "Založeno na {{n}} detekovaných rezonančních vrcholech ({{list}}). Doporučená konfigurace: {{cfgHtml}}"
   },
   capture: {
     xAxis: "záznam X-osy",
@@ -149,5 +149,5 @@ window.KV_LOCALES.cs.shaper_tuning = {
     tag: "Hlubší analýza — multimode synchronizace extrudéru",
     intro: "Jak se tento ručně postavený multimode tvořovač chová přes nesoulad tlumení na vrchol a přizpůsobené jádro extruder-smoother, které udržuje pressure advance v synchronizaci s ním. (Zobrazuje se pouze když je průzkumník nastaven na <strong>multimode</strong>.)"
   },
-  footer: "Vše se vypočítá z načteného záznamu. Doporučení portuje Kalico <code>find_best_shaper</code> (<code>shaper_calibrate.py</code>) — každý kandidát smoother/shaper plus 2vrcholové multimode hledání s opravou rozšíření dvouvrcholového shluku, bodované Kalico vzorcem. Multimode tvořovač = konvoluce základního tvořovače laděného na každý konfigurovaný vrchol (amplitudy se násobí, časy se sčítají). Detekce vrcholu a odhad tlumícího poměru přes metodu polovičního výkonu portují <code>_detect_resonance_peaks</code> / <code>_estimate_damping_ratio</code>. Přizpůsobené jádro extrudéru reprodukuje <code>extruder_smoother.get_multi_mode_extruder_smoother</code> (Legendreova báze, KKT-omezená metoda nejmenších čtverců). Vykresleno pomocí Chart.js."
+  footer: "Vše se vypočítá z načteného záznamu. Doporučení portuje Kalico <code>find_best_shaper</code> (<code>shaper_calibrate.py</code>) — každý kandidát smoother/shaper plus multimode hledání přes detekované rezonance (až 4) s opravou rozšíření vrcholového shluku, bodované Kalico vzorcem. Multimode tvořovač = konvoluce základního tvořovače laděného na každý konfigurovaný vrchol (amplitudy se násobí, časy se sčítají). Detekce vrcholu a odhad tlumícího poměru přes metodu polovičního výkonu portují <code>_detect_resonance_peaks</code> / <code>_estimate_damping_ratio</code>. Přizpůsobené jádro extrudéru reprodukuje <code>extruder_smoother.get_multi_mode_extruder_smoother</code> (Legendreova báze, KKT-omezená metoda nejmenších čtverců). Vykresleno pomocí Chart.js."
 };

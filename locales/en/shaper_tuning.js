@@ -41,7 +41,7 @@ window.KV_LOCALES.en.shaper_tuning = {
     linear: "linear"
   },
   recommended: {
-    intro: "The same search <code>SHAPER_CALIBRATE</code> runs, on your capture: every <code>smooth_*</code> smoother and classic shaper, plus a 2-peak multimode search (with the dual-peak-cluster-widening fix), scored and selected with Kalico's formula and thresholds. Per-peak residual is shown for every resonance detected — including any beyond the top two the auto-tuner's search itself is limited to. The manual explorer below starts from this pick so you can tweak it.",
+    intro: "The same search <code>SHAPER_CALIBRATE</code> runs, on your capture: every <code>smooth_*</code> smoother and classic shaper, plus a multimode search over the detected resonances (up to 4, with the peak-cluster-widening fix), scored and selected with Kalico's formula and thresholds. Per-peak residual is shown for every resonance detected. The manual explorer below starts from this pick so you can tweak it.",
     statusDefault: "Load a capture above to compute a recommendation."
   },
   explorer: {
@@ -88,12 +88,12 @@ window.KV_LOCALES.en.shaper_tuning = {
     residualPerPeak: "Residual vibration this shaper leaves at each detected resonance (worst case across ζ={{ratios}}):",
     loadCaptureForResidual: "Load a capture to see the residual left at each detected resonance.",
     deepNote: "The <strong>exact</strong> convolution ({{impulses}} impulses, base {{base}}) is a mathematically perfect match to the shaped toolhead motion, but each impulse is a velocity-derivative discontinuity. The <strong>fitted</strong> smoother (order {{order}}) trades a little exactness for a continuous kernel, cutting peak extruder acceleration by <strong>{{reduction}}×</strong> at a sharp 100&rarr;20&nbsp;mm/s corner. This ports <code>extruder_smoother.get_multi_mode_extruder_smoother</code>, fit near every peak with that peak's own damping ratio. The chart above it shows why per-peak damping matters: with one shared assumed ζ, only the peak whose true ζ matches gets a clean notch.",
-    recoNoteIntro: "Per-peak residual using the recommended shaper above, at <strong>every</strong> peak actually detected in the capture (not just the ones the 2-peak auto-tuner search saw):",
-    recoCaveat: "The auto-tuner only ever searches its top 2 detected peaks; a 3rd/4th peak (like above) can only be well-suppressed by coincidence, or by manually configuring a multimode shaper with all of them listed (use the explorer below)."
+    recoNoteIntro: "Per-peak residual using the recommended shaper above, at <strong>every</strong> resonance detected in the capture:",
+    recoCaveat: "The auto-tuner searches at most 4 resonance peaks. If your printer shows more, add the extras as additional multimode modes by hand (use the explorer below)."
   },
   status: {
     computing: "Computing recommendation for {{label}} (find_best_shaper port, ~1-2s)…",
-    basedOn: "Based on {{n}} peak(s) the auto-tuner's own 2-peak search considered ({{list}}), out of {{total}} detected overall. Recommended config: {{cfgHtml}}"
+    basedOn: "Based on the {{n}} resonance peak(s) detected ({{list}}). Recommended config: {{cfgHtml}}"
   },
   capture: {
     xAxis: "the X-axis capture",
@@ -149,5 +149,5 @@ window.KV_LOCALES.en.shaper_tuning = {
     tag: "Deeper analysis — multimode extruder synchronization",
     intro: "How this hand-built multimode shaper behaves across per-peak damping mismatch, and the fitted extruder-smoother kernel that keeps pressure advance synchronized with it. (Shown only while the explorer is set to <strong>multimode</strong>.)"
   },
-  footer: "Everything is computed from the loaded capture. The recommendation ports Kalico's <code>find_best_shaper</code> (<code>shaper_calibrate.py</code>) — every smoother/shaper candidate plus a 2-peak multimode search with the dual-peak-cluster-widening fix, scored with Kalico's formula. Multimode shaper = convolution of a base shaper tuned to each configured peak (amplitudes multiply, times add). Peak detection and half-power damping estimation port <code>_detect_resonance_peaks</code> / <code>_estimate_damping_ratio</code>. The fitted extruder kernel reproduces <code>extruder_smoother.get_multi_mode_extruder_smoother</code> (Legendre basis, KKT-constrained least squares). Rendered with Chart.js."
+  footer: "Everything is computed from the loaded capture. The recommendation ports Kalico's <code>find_best_shaper</code> (<code>shaper_calibrate.py</code>) — every smoother/shaper candidate plus a multimode search over the detected resonances (up to 4) with the peak-cluster-widening fix, scored with Kalico's formula. Multimode shaper = convolution of a base shaper tuned to each configured peak (amplitudes multiply, times add). Peak detection and half-power damping estimation port <code>_detect_resonance_peaks</code> / <code>_estimate_damping_ratio</code>. The fitted extruder kernel reproduces <code>extruder_smoother.get_multi_mode_extruder_smoother</code> (Legendre basis, KKT-constrained least squares). Rendered with Chart.js."
 };

@@ -41,7 +41,7 @@ window.KV_LOCALES.no.shaper_tuning = {
     linear: "lineær"
   },
   recommended: {
-    intro: "Det samme søket <code>SHAPER_CALIBRATE</code> kjører, på din måling: hver <code>smooth_*</code>-smoother og klassiske shaper, pluss et 2-topps multimode-søk (med fiksen for utvidelse av dobbel-topp-klynger), poengsatt og valgt med Kalicos formel og grenseverdier. Residual per topp vises for hver detekterte resonans — inkludert eventuelle utover de to øverste som selve auto-tunerens søk er begrenset til. Den manuelle utforskeren nedenfor starter fra dette valget, slik at du kan justere det.",
+    intro: "Det samme søket <code>SHAPER_CALIBRATE</code> kjører, på din måling: hver <code>smooth_*</code>-smoother og klassiske shaper, pluss et multimode-søk over de detekterte resonansene (opptil 4, med fiksen for utvidelse av topp-klynger), poengsatt og valgt med Kalicos formel og grenseverdier. Residual per topp vises for hver detekterte resonans. Den manuelle utforskeren nedenfor starter fra dette valget, slik at du kan justere det.",
     statusDefault: "Last inn en måling ovenfor for å beregne en anbefaling."
   },
   explorer: {
@@ -88,12 +88,12 @@ window.KV_LOCALES.no.shaper_tuning = {
     residualPerPeak: "Restvibrasjonen denne shaperen etterlater ved hver detekterte resonans (verste tilfelle over ζ={{ratios}}):",
     loadCaptureForResidual: "Last inn en måling for å se residualen som er igjen ved hver detekterte resonans.",
     deepNote: "Den <strong>eksakte</strong> konvolusjonen ({{impulses}} impulser, grunn {{base}}) er en matematisk perfekt match til den formede verktøyhode-bevegelsen, men hver impuls er en diskontinuitet i hastighetsderivatet. Den <strong>tilpassede</strong> smootheren (orden {{order}}) bytter litt eksakthet mot en kontinuerlig kjerne, og reduserer maks ekstruderakselerasjon med <strong>{{reduction}}×</strong> i et skarpt 100&rarr;20&nbsp;mm/s-hjørne. Dette er en portering av <code>extruder_smoother.get_multi_mode_extruder_smoother</code>, tilpasset nær hver topp med den toppens eget dempingsforhold. Diagrammet over viser hvorfor demping per topp betyr noe: med én delt antatt ζ er det bare toppen hvis sanne ζ stemmer som får en ren notch.",
-    recoNoteIntro: "Residual per topp med den anbefalte shaperen ovenfor, ved <strong>hver</strong> topp som faktisk er detektert i målingen (ikke bare de 2-topps auto-tuner-søket så):",
-    recoCaveat: "Auto-tuneren søker alltid bare gjennom sine 2 øverste detekterte topper; en 3./4. topp (som ovenfor) kan bare bli godt dempet ved en tilfeldighet, eller ved manuelt å konfigurere en multimode-shaper med alle listet opp (bruk utforskeren nedenfor)."
+    recoNoteIntro: "Residual per topp med den anbefalte shaperen ovenfor, ved <strong>hver</strong> resonans som er detektert i målingen:",
+    recoCaveat: "Auto-tuneren søker gjennom maksimalt 4 resonanstopper. Hvis printeren din har flere, legg til de ekstra som flere multimode-moduser manuelt (bruk utforskeren nedenfor)."
   },
   status: {
     computing: "Beregner anbefaling for {{label}} (find_best_shaper-port, ~1-2s)…",
-    basedOn: "Basert på {{n}} topp(er) som auto-tunerens eget 2-topps søk vurderte ({{list}}), av {{total}} totalt detektert. Anbefalt konfigurasjon: {{cfgHtml}}"
+    basedOn: "Basert på de {{n}} detekterte resonanstoppen(e) ({{list}}). Anbefalt konfigurasjon: {{cfgHtml}}"
   },
   capture: {
     xAxis: "X-akse-målingen",
@@ -149,5 +149,5 @@ window.KV_LOCALES.no.shaper_tuning = {
     tag: "Dypere analyse — multimode ekstrudersynkronisering",
     intro: "Hvordan denne håndbygde multimode-shaperen oppfører seg ved avvik i demping per topp, og den tilpassede ekstruder-smoother-kjernen som holder pressure advance synkronisert med den. (Vises bare når utforskeren er satt til <strong>multimode</strong>.)"
   },
-  footer: "Alt beregnes fra den innlastede målingen. Anbefalingen er en portering av Kalicos <code>find_best_shaper</code> (<code>shaper_calibrate.py</code>) — hver smoother-/shaper-kandidat pluss et 2-topps multimode-søk med fiksen for utvidelse av dobbel-topp-klynger, poengsatt med Kalicos formel. Multimode-shaper = konvolusjon av en grunn-shaper tilpasset hver konfigurerte topp (amplituder multipliseres, tider legges sammen). Toppdeteksjon og dempingsestimering via halveringspunktmetoden er en portering av <code>_detect_resonance_peaks</code> / <code>_estimate_damping_ratio</code>. Den tilpassede ekstruderkjernen reproduserer <code>extruder_smoother.get_multi_mode_extruder_smoother</code> (Legendre-basis, KKT-begrenset minste kvadraters metode). Rendret med Chart.js."
+  footer: "Alt beregnes fra den innlastede målingen. Anbefalingen er en portering av Kalicos <code>find_best_shaper</code> (<code>shaper_calibrate.py</code>) — hver smoother-/shaper-kandidat pluss et multimode-søk over de detekterte resonansene (opptil 4) med fiksen for utvidelse av topp-klynger, poengsatt med Kalicos formel. Multimode-shaper = konvolusjon av en grunn-shaper tilpasset hver konfigurerte topp (amplituder multipliseres, tider legges sammen). Toppdeteksjon og dempingsestimering via halveringspunktmetoden er en portering av <code>_detect_resonance_peaks</code> / <code>_estimate_damping_ratio</code>. Den tilpassede ekstruderkjernen reproduserer <code>extruder_smoother.get_multi_mode_extruder_smoother</code> (Legendre-basis, KKT-begrenset minste kvadraters metode). Rendret med Chart.js."
 };

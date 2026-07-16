@@ -64,8 +64,8 @@
   };
 
   var LINK_PAGES = [
-    "nonlinear_pa_explorer.html",
     "shaper_tuning.html",
+    "nonlinear_pa_explorer.html",
     "smoother_vs_shaper.html",
     "extruder_smoother_fit.html",
     "resonance_excitation.html",
