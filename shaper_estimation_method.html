@@ -7,11 +7,14 @@
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
 <style>
   html{overflow-y:scroll;}
+  /* --blue/--amber/--red (the chart "data colors") are owned by nav.js,
+     which applies the user's chosen colorblind-safe palette (Okabe & Ito /
+     Tol) as inline vars on <html> -- not redefined here. */
   :root{
     --text-primary:#0b0b0b; --text-secondary:#52514e; --text-muted:#898781;
     --surface-0:#f4f3ee; --surface-1:#faf9f5; --surface-2:#ffffff;
     --border:rgba(11,11,11,.12); --radius:8px;
-    --grid:#e1e0d9; --blue:#2a78d6; --amber:#c98500; --teal:#1d9e75; --red:#e24b4a;
+    --grid:#e1e0d9;
     --font-sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
     --font-mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
   }
@@ -19,7 +22,7 @@
     :root{
       --text-primary:#f2f1ea; --text-secondary:#c3c2b7; --text-muted:#898781;
       --surface-0:#191918; --surface-1:#1f1f1e; --surface-2:#262625;
-      --border:rgba(255,255,255,.14); --grid:#2c2c2a; --blue:#4f97e8; --amber:#eab308; --teal:#3fbf95; --red:#e66767;
+      --border:rgba(255,255,255,.14); --grid:#2c2c2a;
     }
   }
   *{box-sizing:border-box}
@@ -31,7 +34,7 @@
   code{font-family:var(--font-mono);font-size:.9em;}
   .types{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:1rem;}
   .types button{font-family:inherit;font-size:13px;padding:6px 12px;border-radius:var(--radius);border:.5px solid var(--border);background:var(--surface-2);color:var(--text-secondary);cursor:pointer;}
-  .types button.on{border-color:var(--blue);color:var(--blue);background:rgba(42,120,214,.08);font-weight:500;}
+  .types button.on{border-color:var(--blue);color:var(--blue);background:color-mix(in srgb, var(--blue) 8%, transparent);font-weight:500;}
   .row{display:flex;flex-wrap:wrap;gap:16px;margin-bottom:1rem;}
   .ctl{flex:1;min-width:160px;}
   .ctl .lbl{display:flex;justify-content:space-between;font-size:13px;color:var(--text-secondary);margin-bottom:4px;}
@@ -87,7 +90,7 @@
   var css=getComputedStyle(document.documentElement);
   function gv(n,f){return (css.getPropertyValue(n).trim())||f;}
   var muted=gv('--text-muted','#898781'), grid=gv('--grid','#e1e0d9');
-  var BLUE=gv('--blue','#2a78d6'), AMBER=gv('--amber','#c98500'), TEAL=gv('--teal','#1d9e75'), RED=gv('--red','#e24b4a');
+  var BLUE=gv('--blue','#2a78d6'), AMBER=gv('--amber','#c98500'), RED=gv('--red','#e24b4a');
 
   // shapers (shaper_defs.py)
   function zv(f,dr){var df=Math.sqrt(1-dr*dr),K=Math.exp(-dr*Math.PI/df),td=1/(f*df);return{A:[1,K],T:[0,0.5*td]};}
@@ -183,6 +186,24 @@
     b.onclick=function(){current=name;Array.prototype.forEach.call(tc.children,function(ch){ch.classList.remove('on');});b.classList.add('on');update();};tc.appendChild(b);});
   ['fr','dr','nt','fq'].forEach(function(id){document.getElementById(id).addEventListener('input',update);});
   update();
+
+  // ---- live palette repaint (nav.js "kv-palette-change" event) ----
+  if(window.KV_PALETTE)window.KV_PALETTE.onChange(function(){
+    css=getComputedStyle(document.documentElement);
+    muted=gv('--text-muted','#898781'); grid=gv('--grid','#e1e0d9');
+    BLUE=gv('--blue','#2a78d6'); AMBER=gv('--amber','#c98500'); RED=gv('--red','#e24b4a');
+    [c1,c2].forEach(function(c){
+      var o=c.options;
+      o.plugins.legend.labels.color=muted;
+      if(o.scales.x){if(o.scales.x.ticks)o.scales.x.ticks.color=muted;if(o.scales.x.title)o.scales.x.title.color=muted;}
+      if(o.scales.y){if(o.scales.y.ticks)o.scales.y.ticks.color=muted;if(o.scales.y.title)o.scales.y.title.color=muted;if(o.scales.y.grid)o.scales.y.grid.color=grid;}
+    });
+    c1.data.datasets[0].borderColor=BLUE; c1.data.datasets[1].borderColor=AMBER;
+    c2.data.datasets[0].borderColor=BLUE; c2.data.datasets[1].borderColor=AMBER;
+    c2.data.datasets[2].borderColor=RED; c2.data.datasets[2].backgroundColor=RED;
+    c1.update(); c2.update();
+    update(); // rebuilds the note/cards, which bake RED in as inline styles
+  });
 })();
 </script>
 </body>
