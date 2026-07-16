@@ -307,8 +307,10 @@
      around this for single-shaper users. Do not "fix" it by assuming the
      Klipper tab matches real Klipper; it doesn't, by design (one engine).
 
-   i18n: every user-facing string lives in locales/{en,no,cs,uk}/shaper_tuning.js
-   AND any string add/change MUST update all four (en is the fallback).
+   i18n: every user-facing string lives in a per-language shaper_tuning.js
+   under locales/ (en is the fallback; more languages get added over time).
+   Any string add/change MUST update EVERY locale dir present under locales/ --
+   enumerate the dirs, don't assume a fixed set.
    ===================================================================== */
 (function(){
   var t=window.KV_I18N.t;
