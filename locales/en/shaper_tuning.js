@@ -16,6 +16,7 @@ window.KV_LOCALES.en.shaper_tuning = {
     loadExX: "Example: X-axis capture",
     loadExY: "Example: Y-axis capture",
     or: "or",
+    upload: "Upload capture…",
     clear: "Clear"
   },
   detectStatus: {
@@ -104,6 +105,8 @@ window.KV_LOCALES.en.shaper_tuning = {
     csvParseError: "Could not parse \"{{filename}}\": {{error}}. Expected a Kalico resonance CSV with a \"freq\" column and a \"psd_x\"/\"psd_y\"/\"psd_z\"/\"psd_xyz\" column.",
     csvEmptyFile: "empty file",
     csvMissingColumns: "could not find a \"freq\" column and a \"psd_xyz\" (or \"psd\") column",
+    rawMissingColumns: "could not find \"time\" and \"accel_x\"/\"accel_y\"/\"accel_z\" columns",
+    rawTooShort: "raw capture is too short to compute a spectrum",
     resetConfirm: "Reset all data on this page? This clears the loaded capture, the recommendation, and the explorer."
   },
   chart: {

@@ -16,6 +16,7 @@ window.KV_LOCALES.cs.shaper_tuning = {
     loadExX: "Příklad: X-osový záznam",
     loadExY: "Příklad: Y-osový záznam",
     or: "nebo",
+    upload: "Nahrát záznam…",
     clear: "Vymazat"
   },
   detectStatus: {
@@ -104,6 +105,8 @@ window.KV_LOCALES.cs.shaper_tuning = {
     csvParseError: "Nelze analyzovat \"{{filename}}\": {{error}}. Očekávám Kalico rezonanční CSV se sloupcem \"freq\" a sloupcem \"psd_x\"/\"psd_y\"/\"psd_z\"/\"psd_xyz\".",
     csvEmptyFile: "prázdný soubor",
     csvMissingColumns: "nelze nalézt sloupec \"freq\" a sloupec \"psd_xyz\" (nebo \"psd\")",
+    rawMissingColumns: "nelze nalézt sloupce \"time\" a \"accel_x\"/\"accel_y\"/\"accel_z\"",
+    rawTooShort: "surový záznam je příliš krátký pro výpočet spektra",
     resetConfirm: "Resetovat všechna data na této stránce? Tím se vymaže načtený záznam, doporučení a průzkumník."
   },
   chart: {

@@ -70,6 +70,7 @@
   .budget{font-size:12.5px;color:var(--text-muted);margin:.4rem 0 1rem;}
   .databar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:.6rem;}
   .databar input[type=file]{font-size:12.5px;max-width:220px;}
+  .databar .fname{font-size:12.5px;color:var(--text-muted);font-family:var(--font-mono);max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
   .aspectbox{position:relative;width:100%;overflow:hidden;border-radius:var(--radius);border:.5px solid var(--border);background:var(--surface-1);}
   .aspectbox canvas{position:absolute;inset:0;width:100%!important;height:100%!important;}
   .bandhdr{margin:3rem 0 .25rem;padding-top:1.25rem;border-top:1px solid var(--border);}
@@ -90,10 +91,19 @@
     <button class="btn" id="loadExX" data-i18n="shaper_tuning.databar.loadExX">Example: X-axis capture</button>
     <button class="btn" id="loadExY" data-i18n="shaper_tuning.databar.loadExY">Example: Y-axis capture</button>
     <span style="color:var(--text-muted);font-size:13px;" data-i18n="shaper_tuning.databar.or">or</span>
-    <input type="file" id="csvFile" accept=".csv,text/csv">
+    <!-- Native file input is hidden; the styled button below triggers it, so
+         the label matches the site's buttons and is localizable (the browser's
+         own "Choose File" text can't be styled or translated). -->
+    <input type="file" id="csvFile" accept=".csv,text/csv" style="display:none">
+    <button class="btn" id="uploadBtn" data-i18n="shaper_tuning.databar.upload">Upload capture…</button>
+    <span id="uploadName" class="fname"></span>
     <button class="btn" id="clearData" data-i18n="shaper_tuning.databar.clear">Clear</button>
   </div>
-  <div class="note" id="detectStatus" data-i18n-html="shaper_tuning.detectStatus.default">No capture loaded. Load an example, or upload a Kalico <code>calibration_data_*.csv</code> / <code>resonances_*.csv</code> (a <code>freq</code> column plus <code>psd_x</code>/<code>psd_y</code>/<code>psd_z</code>/<code>psd_xyz</code>). Peak detection and half-power damping-ratio estimation run live in your browser — nothing is uploaded anywhere.</div>
+  <!-- No data-i18n here on purpose: renderDetectStatus() owns this text (it
+       reflects live detection state, not a static string) and re-runs on
+       locale change, so i18n's apply() must not overwrite it -- doing so
+       clobbered a session-restored capture's "detected peaks" line. -->
+  <div class="note" id="detectStatus">No capture loaded. Load an example, or upload a Kalico <code>calibration_data_*.csv</code> / <code>resonances_*.csv</code> (a <code>freq</code> column plus <code>psd_x</code>/<code>psd_y</code>/<code>psd_z</code>/<code>psd_xyz</code>). Peak detection and half-power damping-ratio estimation run live in your browser — nothing is uploaded anywhere.</div>
   <div class="cap"><span data-i18n="shaper_tuning.captions.measuredSpectrum">measured resonance spectrum</span> <span style="color:var(--text-muted)" data-i18n="shaper_tuning.captions.measuredSpectrumNote">(the loaded capture; dashed verticals mark the detected resonances; click a legend entry to toggle it)</span>
     <span style="float:right;font-size:12.5px;color:var(--text-muted);"><span data-i18n="shaper_tuning.scale.label">scale:</span>
       <button class="btn" id="inpLog" style="padding:2px 8px;" data-i18n="shaper_tuning.scale.log">log</button>
@@ -1004,6 +1014,98 @@
   function card(k,val,color){return '<div class="card"><div class="k">'+k+'</div><div class="v"'+(color?' style="color:'+color+'"':'')+'>'+val+'</div></div>';}
   function pct(x){return (Math.round(x*1000)/10).toFixed(1)+'%';}
 
+  // ================= raw accelerometer capture -> PSD =================
+  // Faithful port of shaper_calibrate._psd / calc_freq_response and
+  // CalibrationData.normalize_to_frequencies, so a raw Klipper/Kalico
+  // accelerometer log ("#time,accel_x,accel_y,accel_z") can be dropped in
+  // and turned into the same normalized PSD the pre-computed
+  // calibration_data_*.csv files already contain. Welch's method with a
+  // Kaiser(beta=6) window, nfft = next power of two of fs*WINDOW_T_SEC,
+  // 50% overlap, per-window mean detrend.
+  var WINDOW_T_SEC=0.5;
+  function bitLength(k){return k<=0?0:(Math.floor(Math.log(k)/Math.LN2+1e-9)+1);}
+  function besselI0(x){ // series; converges fast for the beta*... range here
+    var sum=1.0,term=1.0,k=1,half=x*0.5;
+    while(k<60){term*=(half/k)*(half/k);sum+=term;if(term<1e-12*sum)break;k++;}
+    return sum;
+  }
+  function kaiserWindow(n,beta){
+    var w=new Array(n),denom=besselI0(beta),N1=n-1;
+    for(var i=0;i<n;i++){var r=(2*i/N1)-1;w[i]=besselI0(beta*Math.sqrt(Math.max(0,1-r*r)))/denom;}
+    return w;
+  }
+  // In-place iterative radix-2 Cooley-Tukey FFT (re/im arrays, length = pow2).
+  function fftInPlace(re,im){
+    var n=re.length,i,j=0,k;
+    for(i=1;i<n;i++){var bit=n>>1;for(;j&bit;bit>>=1)j^=bit;j^=bit;if(i<j){var tr=re[i];re[i]=re[j];re[j]=tr;var ti=im[i];im[i]=im[j];im[j]=ti;}}
+    for(var len=2;len<=n;len<<=1){
+      var ang=-2*Math.PI/len,wr=Math.cos(ang),wi=Math.sin(ang);
+      for(i=0;i<n;i+=len){
+        var cr=1,ci=0;
+        for(k=0;k<len/2;k++){
+          var ar=re[i+k],ai=im[i+k];
+          var br=re[i+k+len/2],bi=im[i+k+len/2];
+          var xr=br*cr-bi*ci,xi=br*ci+bi*cr;
+          re[i+k]=ar+xr;im[i+k]=ai+xi;
+          re[i+k+len/2]=ar-xr;im[i+k+len/2]=ai-xi;
+          var ncr=cr*wr-ci*wi;ci=cr*wi+ci*wr;cr=ncr;
+        }
+      }
+    }
+  }
+  // Welch PSD of a single axis -> one-sided psd of length nfft/2+1.
+  function welchPsd(x,fs,nfft){
+    var win=kaiserWindow(nfft,6.0),i,k;
+    var wsum2=0;for(i=0;i<nfft;i++)wsum2+=win[i]*win[i];
+    var scale=1.0/wsum2;
+    var overlap=nfft>>1,step=nfft-overlap;
+    var nWin=Math.floor((x.length-overlap)/step);
+    var half=(nfft>>1)+1;
+    var psd=new Array(half).fill(0);
+    var re=new Array(nfft),im=new Array(nfft);
+    for(var wI=0;wI<nWin;wI++){
+      var off=wI*step,mean=0;
+      for(i=0;i<nfft;i++)mean+=x[off+i];
+      mean/=nfft;
+      for(i=0;i<nfft;i++){re[i]=(x[off+i]-mean)*win[i];im[i]=0;}
+      fftInPlace(re,im);
+      for(k=0;k<half;k++){
+        var mag2=re[k]*re[k]+im[k]*im[k];
+        var v=mag2*scale/fs;
+        if(k>0&&k<half-1)v*=2.0; // one-sided doubling (except DC & Nyquist)
+        psd[k]+=v;
+      }
+    }
+    if(nWin>0)for(k=0;k<half;k++)psd[k]/=nWin;
+    return psd;
+  }
+  // raw rows [[t,ax,ay,az],...] -> {freq,x,y,z,xyz} (un-normalized), or null
+  // if the capture is too short for even a single window (matches
+  // calc_freq_response returning None).
+  function calcFreqResponse(time,ax,ay,az){
+    var N=time.length;
+    if(N<4)return null;
+    var T=time[N-1]-time[0];
+    if(!(T>0))return null;
+    var fs=N/T;
+    var nfft=1<<bitLength(Math.floor(fs*WINDOW_T_SEC)-1);
+    if(N<=nfft)return null;
+    var px=welchPsd(ax,fs,nfft),py=welchPsd(ay,fs,nfft),pz=welchPsd(az,fs,nfft);
+    var half=px.length,freq=new Array(half),xyz=new Array(half);
+    for(var k=0;k<half;k++){freq[k]=k*fs/nfft;xyz[k]=px[k]+py[k]+pz[k];}
+    return {freq:freq,x:px,y:py,z:pz,xyz:xyz,fs:fs,nfft:nfft};
+  }
+  // Port of CalibrationData.normalize_to_frequencies: the same per-bin factor
+  // multiplies every PSD column (so the summed xyz stays consistent).
+  function normalizeToFrequencies(cap){
+    var f=cap.freq,n=f.length;
+    for(var i=0;i<n;i++){
+      var factor=Math.tanh(0.5/MIN_FREQ*f[i])/(f[i]+0.1);
+      cap.x[i]*=factor;cap.y[i]*=factor;cap.z[i]*=factor;cap.xyz[i]*=factor;
+    }
+    return cap;
+  }
+
   // ================= state =================
   // Default is NO data: peaks empty, no capture loaded. Loading an example
   // or a file (or the manual "+ add peak") fills these in.
@@ -1178,6 +1280,52 @@
     renderRecommendation();
     update();
     var co=document.getElementById('cfgOut');co.style.display='none';co.textContent='';
+    uploadNameEl.textContent='';
+    persistState(true); // no capture -> clears the stored state
+  }
+  // ---- cross-page persistence (sessionStorage) ----------------------------
+  // Keep the loaded capture, axis selection, explorer selection and the
+  // recommendation alive while navigating between pages in the same tab, so
+  // the user doesn't lose their data (or wait for the ~2s search again) just
+  // by clicking to another visualization and back. Session-scoped on purpose:
+  // it survives navigation but not closing the tab, so stale captures don't
+  // silently reappear days later.
+  var STORE_KEY='kv-shaper-tuning-state', _lastPersist=0;
+  function persistState(force){
+    try{
+      if(!loadedCapture){sessionStorage.removeItem(STORE_KEY);return;}
+      var now=Date.now();
+      if(!force && now-_lastPersist<300)return;
+      _lastPersist=now;
+      var d=loadedCapture;
+      var blob={cap:{freq:d.freq,x:d.x,y:d.y,z:d.z,xyz:d.xyz,label:d.label},
+        axisHidden:axisHidden,
+        expl:{explType:explType,peaks:peaks,explFreq:explFreq,explDamp:explDamp,fname:uploadNameEl.textContent}};
+      if(lastReco)blob.reco={best:lastReco.best,peaks:lastReco.result.peaks,allPeaks:lastReco.allPeaks,label:lastReco.label};
+      sessionStorage.setItem(STORE_KEY,JSON.stringify(blob));
+    }catch(e){/* storage full/disabled: persistence just no-ops */}
+  }
+  function restoreState(){
+    var raw;try{raw=sessionStorage.getItem(STORE_KEY);}catch(e){return false;}
+    if(!raw)return false;
+    var blob;try{blob=JSON.parse(raw);}catch(e){return false;}
+    if(!blob||!blob.cap||!blob.cap.freq)return false;
+    var c=blob.cap;
+    loadedCapture={freq:c.freq,x:c.x,y:c.y,z:c.z,xyz:c.xyz,psd:c.xyz,label:c.label};
+    axisHidden=blob.axisHidden||{x:false,y:false,z:false};
+    if(blob.expl){
+      explType=blob.expl.explType;peaks=blob.expl.peaks||[];
+      explFreq=blob.expl.explFreq;explDamp=blob.expl.explDamp;
+      if(blob.expl.fname)uploadNameEl.textContent=blob.expl.fname;
+    }
+    if(blob.reco)lastReco={best:blob.reco.best,result:{peaks:blob.reco.peaks},allPeaks:blob.reco.allPeaks,label:blob.reco.label};
+    renderDetectStatus();
+    renderInput();
+    renderPeakRows();
+    syncExplorerControls();
+    update();
+    if(lastReco)paintRecommendation(); else renderRecommendation(); // recompute only if reco wasn't stored
+    return true;
   }
   document.getElementById('loadExX').addEventListener('click',function(){
     var d=unflatten(EXAMPLE_X_FLAT);
@@ -1188,14 +1336,42 @@
     loadCapture(d.freq,d.x,d.y,d.z,d.xyz,t('shaper_tuning.capture.yAxis'));
   });
   document.getElementById('clearData').addEventListener('click',clearAll);
+  // The styled button just proxies to the hidden native file input.
+  var uploadNameEl=document.getElementById('uploadName');
+  document.getElementById('uploadBtn').addEventListener('click',function(){
+    document.getElementById('csvFile').click();
+  });
+  // Parse either a pre-computed PSD CSV (freq,psd_*) or a raw accelerometer
+  // log (#time,accel_x,accel_y,accel_z). Raw logs are turned into a
+  // normalized PSD in-browser, exactly as the host would (calc_freq_response
+  // + normalize_to_frequencies), so everything downstream is identical.
   document.getElementById('csvFile').addEventListener('change',function(e){
     var file=e.target.files[0]; if(!file)return;
+    uploadNameEl.textContent=file.name;
     var reader=new FileReader();
     reader.onload=function(ev){
       try{
         var lines=ev.target.result.split(/\r?\n/).filter(function(l){return l.trim().length;});
         if(!lines.length)throw new Error(t('shaper_tuning.capture.csvEmptyFile'));
         var header=lines[0].split(',').map(function(s){return s.trim().toLowerCase();});
+        var isRaw=header.indexOf('freq')<0&&header.indexOf('accel_x')>=0;
+        if(isRaw){
+          var tIdx=header.findIndex(function(h){return h.replace(/^#/,'')==='time';});
+          var axi=header.indexOf('accel_x'),ayi=header.indexOf('accel_y'),azi=header.indexOf('accel_z');
+          if(tIdx<0||axi<0||ayi<0||azi<0)throw new Error(t('shaper_tuning.capture.rawMissingColumns'));
+          var tt=[],ax=[],ay=[],az=[];
+          for(var r=1;r<lines.length;r++){
+            var c=lines[r].split(',');
+            var tv=parseFloat(c[tIdx]),xv=parseFloat(c[axi]),yv=parseFloat(c[ayi]),zv=parseFloat(c[azi]);
+            if(!isFinite(tv)||!isFinite(xv)||!isFinite(yv)||!isFinite(zv))continue;
+            tt.push(tv);ax.push(xv);ay.push(yv);az.push(zv);
+          }
+          var cap=calcFreqResponse(tt,ax,ay,az);
+          if(!cap)throw new Error(t('shaper_tuning.capture.rawTooShort'));
+          normalizeToFrequencies(cap);
+          loadCapture(cap.freq,cap.x,cap.y,cap.z,cap.xyz,'"'+file.name+'"');
+          return;
+        }
         var freqIdx=header.indexOf('freq');
         var xIdx=header.indexOf('psd_x'),yIdx=header.indexOf('psd_y'),zIdx=header.indexOf('psd_z');
         var xyzIdx=header.indexOf('psd_xyz');
@@ -1213,6 +1389,7 @@
         }
         loadCapture(freqArr,xArr,yArr,zArr,xyzArr,'"'+file.name+'"');
       }catch(err){
+        uploadNameEl.textContent='';
         detectStatus.innerHTML=t('shaper_tuning.capture.csvParseError',{filename:file.name,error:err.message});
       }
     };
@@ -1320,6 +1497,7 @@
   // + the residual-vs-frequency chart. Deeper (multimode-only) analysis is
   // delegated to renderDeep().
   function update(){
+    persistState(); // throttled; keeps explorer selection in sessionStorage
     var scv=+document.getElementById('SCV').value;
     var accel=+document.getElementById('accl').value;
     document.getElementById('o-SCV').textContent=scv.toFixed(1);
@@ -1524,6 +1702,7 @@
       paintRecommendation();
       setBusy('inputChartBox',false);setBusy('recoBox',false);
       seedExplorerFromReco(result.best);
+      persistState(true); // capture + recommendation now settled; save the full state
     },10);
   }
   // Repaints the recommendation cards/status/note from the cached lastReco --
@@ -1689,12 +1868,16 @@
     [c1,cInput,c2,c3,c4].forEach(function(ch){ch.update();});
   });
 
-  // ---- initial state: empty ----
-  renderInput();
-  renderRecommendation();
-  renderPeakRows();
-  syncExplorerControls();
-  update();
+  // ---- initial state: restore a capture from this session if present,
+  // otherwise start empty ----
+  if(!restoreState()){
+    renderDetectStatus(); // localize the "no capture loaded" default
+    renderInput();
+    renderRecommendation();
+    renderPeakRows();
+    syncExplorerControls();
+    update();
+  }
 })();
 </script>
 </body>

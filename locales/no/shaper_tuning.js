@@ -16,6 +16,7 @@ window.KV_LOCALES.no.shaper_tuning = {
     loadExX: "Eksempel: X-akse-måling",
     loadExY: "Eksempel: Y-akse-måling",
     or: "eller",
+    upload: "Last opp måling…",
     clear: "Tøm"
   },
   detectStatus: {
@@ -104,6 +105,8 @@ window.KV_LOCALES.no.shaper_tuning = {
     csvParseError: "Kunne ikke tolke \"{{filename}}\": {{error}}. Forventet en Kalico-resonans-CSV med en \"freq\"-kolonne og en \"psd_x\"/\"psd_y\"/\"psd_z\"/\"psd_xyz\"-kolonne.",
     csvEmptyFile: "tom fil",
     csvMissingColumns: "fant ikke en \"freq\"-kolonne og en \"psd_xyz\"-kolonne (eller \"psd\")",
+    rawMissingColumns: "fant ikke kolonnene \"time\" og \"accel_x\"/\"accel_y\"/\"accel_z\"",
+    rawTooShort: "råmålingen er for kort til å beregne et spekter",
     resetConfirm: "Nullstille all data på denne siden? Dette tømmer den innlastede målingen, anbefalingen og utforskeren."
   },
   chart: {

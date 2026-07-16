@@ -16,6 +16,7 @@ window.KV_LOCALES.uk.shaper_tuning = {
     loadExX: "Приклад: запис осі X",
     loadExY: "Приклад: запис осі Y",
     or: "або",
+    upload: "Завантажити запис…",
     clear: "Очистити"
   },
   detectStatus: {
@@ -104,6 +105,8 @@ window.KV_LOCALES.uk.shaper_tuning = {
     csvParseError: "Не вдалося розібрати \"{{filename}}\": {{error}}. Очікується Kalico резонансна CSV з колоною \"freq\" та колоною \"psd_x\"/\"psd_y\"/\"psd_z\"/\"psd_xyz\".",
     csvEmptyFile: "пустий файл",
     csvMissingColumns: "не вдалося знайти колону \"freq\" та колону \"psd_xyz\" (або \"psd\")",
+    rawMissingColumns: "не вдалося знайти колони \"time\" та \"accel_x\"/\"accel_y\"/\"accel_z\"",
+    rawTooShort: "необроблений запис занадто короткий для обчислення спектра",
     resetConfirm: "Скинути всі дані на цій сторінці? Це очищує завантажений запис, рекомендацію та дослідник."
   },
   chart: {
