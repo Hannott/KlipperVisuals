@@ -262,6 +262,54 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script>
+/* =====================================================================
+   PORTING MAP & PROVENANCE  (read this first if you're an AI editing this file)
+
+   This page reproduces Kalico/Klipper firmware DSP in browser JS. The
+   ground-truth source it mirrors lives in a SEPARATE repo, not here:
+     - Fork (what this tool actually implements):
+         Hannott/kalico @ branch bleeding-edge-v2  -> klippy/extras/shaper_calibrate.py
+                                                       klippy/extras/shaper_defs.py
+                                                       klippy/extras/extruder_smoother.py
+       Locally that's the `kalico-be` repo next to this one.
+     - Vanilla references (for comparison only; NOT implemented here):
+         Klipper3d/klipper @ master, KalicoCrew/kalico.
+   To verify behavior, run the fork's real .py against a capture with a
+   Python harness (stub `klippy`/`klippy.extras` via types.ModuleType,
+   load the .py with importlib.util.spec_from_file_location, build the
+   helper with ShaperCalibrate.__new__ and manually set .numpy/.error/
+   .printer=None/._smoother_integrals_cache={}/._vibr_threshold_cache=None,
+   and pass scv=5.0 -- find_best_shaper crashes on scv=None).
+
+   Function -> firmware source (grep the .py by NAME, not line number --
+   line numbers drift and the old comments' :NNN-NNN refs were already stale):
+     fitSingleMode            <- fit_shaper
+     fitMultiMode             <- fit_multimode_shaper
+     findBestShaperReal       <- find_best_shaper
+     estimateShaperReal       <- estimate_shaper        (accurate time-domain)
+     estimateSmootherReal     <- estimate_smoother
+     estimateRemainingVibrations <- _estimate_remaining_vibrations + _calc_vibr_threshold
+     shaperSmoothing          <- _get_shaper_smoothing
+     getSmootherSmoothing     <- _get_smoother_smoothing / _calc_smoother_integrals
+     detectPeaks/estimateDampingRatio <- _detect_resonance_peaks / _estimate_damping_ratio
+     zv/mzv/zvd/ei/h2/h3, convolve, buildMultiMode <- shaper_defs.get_*_shaper / convolve_shapers / get_multimode_shaper
+     makeSmoother, multiModeExtruderSmoother <- extruder_smoother.get_multi_mode_extruder_smoother
+
+   BIG GOTCHA -- fork scoring is NOT vanilla Klipper's (cost this session a lot):
+     The scoring here is the FORK's: estimateRemainingVibrations f^2-weights
+     each bin (`... * freq^2`) and lowers the threshold near secondary peaks.
+     Vanilla Klipper instead uses a FLAT threshold (psd.max()/20) with NO f^2
+     weight and a slightly different score formula. Consequence: a single
+     shaper can be pushed toward a MINOR high-frequency peak over the dominant
+     low one (f^2 over-weights high freq). The "Klipper"/"Kalico BE" tier tabs
+     ONLY filter the candidate list -- they do NOT swap in vanilla math. The
+     peak-exclusion (click a marker) + tier-scoped auto-deselect exist to work
+     around this for single-shaper users. Do not "fix" it by assuming the
+     Klipper tab matches real Klipper; it doesn't, by design (one engine).
+
+   i18n: every user-facing string lives in locales/{en,no,cs,uk}/shaper_tuning.js
+   AND any string add/change MUST update all four (en is the fallback).
+   ===================================================================== */
 (function(){
   var t=window.KV_I18N.t;
   var css=getComputedStyle(document.documentElement);
@@ -653,6 +701,11 @@
   var AUTOTUNE_SHAPER_NAMES=['mzv','ei','2hump_ei'];
   var TEST_DAMPING_RATIOS=[0.075,0.1,0.15];
   var DEFAULT_DAMPING_RATIO=0.1;
+  // 300 matches the fork (vanilla Klipper is 150). Mostly a no-op in practice:
+  // fitSingleMode caps the sweep at min(MAX_SHAPER_FREQ, maxFreq), and maxFreq
+  // is 200 for a normal capture -> min(300,200)=200. It only bites if a
+  // capture actually measured above 200 Hz. Don't expect changing it to move
+  // a recommendation on a standard 0-200 Hz capture.
   var MAX_SHAPER_FREQ=300.0;
   var MIN_FREQ=5.0;
   // estimate_shaper time-resolution for the multimode fit. Python uses
@@ -699,10 +752,11 @@
     var phase=Math.acos(z);
     return Math.exp(-dr*t)*(dr*Math.sin(t+phase)-Math.cos(t+phase));
   }
-  // Faithful port of the real estimate_shaper (shaper_calibrate.py:176-212) --
-  // used server-side by both fit_shaper's classic-shaper branch and
-  // fit_two_mode_shaper, NOT estimate_shaper_old / this page's own residual()
-  // (which is used elsewhere on this page purely for the manual peak charts).
+  // Faithful port of the real `estimate_shaper` in shaper_calibrate.py (the
+  // ACCURATE time-domain step-response version, NOT `estimate_shaper_old`).
+  // Used by fit_shaper's classic-shaper branch and fit_multimode_shaper. This
+  // page's own residual() below is a separate, cheaper closed form used ONLY
+  // for the manual peak-mismatch charts -- do not conflate the two.
   function estimateShaperReal(sh,testDampingRatio,f,nT){
     if(!(f>0))return 1.0;
     nT=nT||1000;
@@ -733,7 +787,7 @@
     var minV=-stepResponseMinVelocity(testDampingRatio);
     return -velocityMin/minV;
   }
-  // Faithful port of the real estimate_smoother (shaper_calibrate.py:238-288)
+  // Faithful port of the real `estimate_smoother` in shaper_calibrate.py
   // -- a windowed convolution of the smoother against the analytic step
   // response, materially more accurate for wide smoothers (e.g.
   // smooth_zvd_ei) than the closed-form estimate_smoother_old approximation.
@@ -845,7 +899,15 @@
     if(sub.length<2)return [centerFreq,centerFreq];
     return [Math.min(sub[0],sub[1]),Math.max(sub[0],sub[1])];
   }
-  // port of _estimate_remaining_vibrations (shaper_calibrate.py:423-461)
+  // Ports the FORK's _estimate_remaining_vibrations + _calc_vibr_threshold.
+  // Two fork-specific traits that differ from vanilla Klipper and drive the
+  // whole tier/peak-exclusion design (see PORTING MAP header):
+  //   1. each bin is weighted by freq^2 (`...*freqBins[i]*freqBins[i]`), so a
+  //      modest HIGH-frequency peak can outweigh a much taller low one;
+  //   2. the threshold is lowered near secondary peaks (the per-peak loop),
+  //      not a single flat psd.max()/20 like vanilla.
+  // Returns remaining/all, both f^2-weighted -- a relative score, not physical
+  // vibration. Vanilla Klipper: flat threshold, no f^2, different score.
   function estimateRemainingVibrations(freqBins,vals,psd){
     var n=freqBins.length,i,j;
     var ratio=new Array(n).fill(0),globalRatio=0;
@@ -1204,8 +1266,16 @@
     for(var k=0;k<half;k++){freq[k]=k*fs/nfft;xyz[k]=px[k]+py[k]+pz[k];}
     return {freq:freq,x:px,y:py,z:pz,xyz:xyz,fs:fs,nfft:nfft};
   }
-  // Port of CalibrationData.normalize_to_frequencies: the same per-bin factor
-  // multiplies every PSD column (so the summed xyz stays consistent).
+  // Port of CalibrationData.normalize_to_frequencies (fork variant). Same
+  // per-bin factor multiplies every PSD column so the summed xyz stays
+  // consistent. NOTE the factor ~ 1/f: it ATTENUATES high frequencies. Two
+  // consequences that have burned time before:
+  //   - a raw-tall high-freq peak can drop below detectPeaks' 12%-of-max
+  //     prominence after this and stop being detected (to synthesize test
+  //     data that reproduces a real capture's *normalized* shape, pre-divide
+  //     your target amplitudes by this factor);
+  //   - the f^2 weighting in estimateRemainingVibrations then re-inflates
+  //     high freq, which is why a small high peak can still dominate the score.
   function normalizeToFrequencies(cap){
     var f=cap.freq,n=f.length;
     for(var i=0;i<n;i++){
