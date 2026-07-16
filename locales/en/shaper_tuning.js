@@ -84,7 +84,7 @@ window.KV_LOCALES.en.shaper_tuning = {
     smoothingScv: "smoothing<br>(SCV {{scv}}, {{accel}} mm/s²)",
     smoothing: "smoothing",
     projectedMaxAccel: "projected max_accel",
-    residualVibrations: "residual vibrations (worst case)",
+    residualVibrations: "residual vibrations<br>(worst case)",
     extruderKernelOrder: "extruder kernel order",
     peakExtruderAccelExact: "peak extruder accel — exact",
     peakExtruderAccelFitted: "peak extruder accel — fitted",

@@ -84,7 +84,7 @@ window.KV_LOCALES.no.shaper_tuning = {
     smoothingScv: "glatting<br>(SCV {{scv}}, {{accel}} mm/s²)",
     smoothing: "glatting",
     projectedMaxAccel: "forventet max_accel",
-    residualVibrations: "restvibrasjoner (verste tilfelle)",
+    residualVibrations: "restvibrasjoner<br>(verste tilfelle)",
     extruderKernelOrder: "orden på ekstruderkjerne",
     peakExtruderAccelExact: "maks ekstruderakselerasjon — eksakt",
     peakExtruderAccelFitted: "maks ekstruderakselerasjon — tilpasset",

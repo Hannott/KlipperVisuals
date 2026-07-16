@@ -84,7 +84,7 @@ window.KV_LOCALES.cs.shaper_tuning = {
     smoothingScv: "vyhlazení<br>(SCV {{scv}}, {{accel}} mm/s²)",
     smoothing: "vyhlazení",
     projectedMaxAccel: "projektovaný max_accel",
-    residualVibrations: "zbytkové vibrace (nejhorší případ)",
+    residualVibrations: "zbytkové vibrace<br>(nejhorší případ)",
     extruderKernelOrder: "řád jádra extrudéru",
     peakExtruderAccelExact: "vrcholová akcelerace extrudéru — přesná",
     peakExtruderAccelFitted: "vrcholová akcelerace extrudéru — přizpůsobená",

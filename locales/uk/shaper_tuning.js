@@ -84,7 +84,7 @@ window.KV_LOCALES.uk.shaper_tuning = {
     smoothingScv: "заокруглення<br>(SCV {{scv}}, {{accel}} мм/с²)",
     smoothing: "заокруглення",
     projectedMaxAccel: "прогнозована max_accel",
-    residualVibrations: "залишкові вібрації (найгірший випадок)",
+    residualVibrations: "залишкові вібрації<br>(найгірший випадок)",
     extruderKernelOrder: "порядок ядра екструдера",
     peakExtruderAccelExact: "піковане прискорення екструдера — точне",
     peakExtruderAccelFitted: "піковане прискорення екструдера — підібране",
