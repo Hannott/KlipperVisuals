@@ -28,7 +28,9 @@ window.KV_LOCALES.cs.shaper_tuning = {
       klipper: "Pouze klasické impulsní tvořovače (Klipper mainline a Kalico).",
       kalicobe: "+ smooth_* vyhlazovače (Kalico bleeding-edge).",
       multimode: "+ multimode, tvarování s více vrcholy (bleeding-edge-v2 této fork)."
-    }
+    },
+    info: "Na úrovních <strong>Klipper</strong> a <strong>Kalico BE</strong> každý tvořovač (nebo vyhlazovač) cílí na jednu rezonanci, takže nedokáže potlačit několik vrcholů najednou. Tento nástroj ponechá váš nejvyšší vrchol a ostatní odloží — kliknutím na značku vrcholu v legendě naměřeného spektra níže ji zahrnete nebo vyloučíte. Chcete-li tvarovat více rezonancí najednou, použijte úroveň <strong>Multimode</strong>.",
+    dismiss: "Zavřít"
   },
   library: {
     label: "Dříve nahráno",

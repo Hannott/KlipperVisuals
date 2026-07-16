@@ -28,7 +28,9 @@ window.KV_LOCALES.no.shaper_tuning = {
       klipper: "Kun klassiske impuls-shapere (Klipper mainline og Kalico).",
       kalicobe: "+ smooth_*-smoothers (Kalico bleeding-edge).",
       multimode: "+ multimode, N-topps forming (denne fork'ens bleeding-edge-v2)."
-    }
+    },
+    info: "På <strong>Klipper</strong>- og <strong>Kalico BE</strong>-nivåene retter hver shaper (eller smoother) seg mot én enkelt resonans, så den kan ikke dempe flere topper samtidig. Dette verktøyet beholder den høyeste toppen din og legger resten til side — klikk en toppmarkør i forklaringen til det målte spekteret nedenfor for å ta den med eller utelate den. For å dempe flere resonanser samtidig, bruk <strong>Multimode</strong>-nivået.",
+    dismiss: "Lukk"
   },
   library: {
     label: "Tidligere opplastet",

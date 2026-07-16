@@ -28,7 +28,9 @@ window.KV_LOCALES.uk.shaper_tuning = {
       klipper: "Лише класичні імпульсні шейпери (Klipper mainline та Kalico).",
       kalicobe: "+ згладжувачі smooth_* (Kalico bleeding-edge).",
       multimode: "+ multimode, формування за кількома піками (bleeding-edge-v2 цього форку)."
-    }
+    },
+    info: "На рівнях <strong>Klipper</strong> та <strong>Kalico BE</strong> кожен шейпер (чи згладжувач) націлений на один резонанс, тож він не може погасити кілька піків одночасно. Цей інструмент залишає ваш найвищий пік, а решту відкладає — клацніть маркер піку в легенді виміряного спектра нижче, щоб додати або виключити його. Щоб гасити кілька резонансів одночасно, скористайтеся рівнем <strong>Multimode</strong>.",
+    dismiss: "Закрити"
   },
   library: {
     label: "Раніше завантажено",

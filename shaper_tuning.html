@@ -91,6 +91,9 @@
   .cfgbar{display:flex;flex-wrap:wrap;gap:14px;align-items:center;}
   .cfgbar label{font-size:13px;color:var(--text-secondary);display:flex;align-items:center;gap:6px;}
   .axis-badge{font-size:13px;color:var(--text-secondary);padding:4px 10px;border-radius:6px;background:var(--surface-2);border:.5px solid var(--border);}
+  .tierinfo{display:flex;align-items:flex-start;gap:12px;margin:0 0 1.25rem;padding:.7rem 1rem;border-radius:var(--radius);border:.5px solid var(--border);background:var(--surface-1);color:var(--text-secondary);font-size:13px;line-height:1.5;}
+  .tierinfo-close{flex:none;background:none;border:none;color:var(--text-muted);font-size:20px;line-height:1;padding:0 2px;cursor:pointer;}
+  .tierinfo-close:hover{color:var(--text-primary);}
   .val.editable{cursor:pointer;border-bottom:1px dashed var(--text-muted);}
   input.val-edit{font:inherit;width:5.5em;background:var(--surface-2);color:var(--text-primary);border:.5px solid var(--blue);border-radius:4px;padding:0 4px;}
 </style>
@@ -104,11 +107,18 @@
   <!-- Firmware tier: gates which shaper types are offered/searched, since
        smooth_* smoothers and multimode aren't on every firmware. The math
        itself never changes per tier -- only the candidate list does. -->
-  <div class="row" style="gap:8px;align-items:center;margin:.75rem 0 1.25rem;">
+  <div class="row" style="gap:8px;align-items:center;margin:.75rem 0 .75rem;">
     <button type="button" class="btn" id="tierKlipper" data-i18n="shaper_tuning.tier.klipper">Klipper</button>
     <button type="button" class="btn" id="tierKalicoBE" data-i18n="shaper_tuning.tier.kalicobe">Kalico BE</button>
     <button type="button" class="btn" id="tierMultimode" data-i18n="shaper_tuning.tier.multimode">Multimode</button>
     <span id="tierNote" style="font-size:12.5px;color:var(--text-muted);"></span>
+  </div>
+  <!-- Dismissible info box for the single-shaper tiers: a single shaper (or
+       smoother) can only target one resonance, so the tool keeps the tallest
+       peak and sets the rest aside. Dismissal persists (localStorage). -->
+  <div class="tierinfo" id="tierInfo" style="display:none;">
+    <span data-i18n-html="shaper_tuning.tier.info">On the <strong>Klipper</strong> and <strong>Kalico BE</strong> tiers each shaper (or smoother) targets a single resonance, so it can't cancel several peaks at once. This tool keeps your tallest peak and sets the rest aside — click any peak marker in the measured-spectrum legend below to include or exclude it. To shape multiple resonances at once, use the <strong>Multimode</strong> tier.</span>
+    <button type="button" class="tierinfo-close" id="tierInfoClose" title="Dismiss" aria-label="Dismiss" data-i18n-attr="title:shaper_tuning.tier.dismiss">&times;</button>
   </div>
 
   <h2 data-i18n="shaper_tuning.steps.load">1. Load a resonance capture</h2>
@@ -554,10 +564,16 @@
     withDamp.sort(function(a,b){return a.freq-b.freq;});
     return withDamp;
   }
-  // A detected peak is "excluded" if the user deselected a marker within a
-  // few Hz of it (detection can shift slightly between recomputes).
+  // The effective excluded set = the user's manual exclusions PLUS the
+  // tier-scoped auto-exclusions (all-but-tallest, applied only on the
+  // single-shaper Klipper/Kalico BE tiers -- see recomputeAutoExclude). Both
+  // are masked out of everything the recommendation analyzes.
+  function effectiveExcluded(){return excludedPeaks.concat(autoExcluded);}
+  function isManualExcluded(f){return excludedPeaks.some(function(pf){return Math.abs(pf-f)<3.0;});}
+  // A detected peak is "excluded" if a marker within a few Hz of it is in the
+  // effective set (detection can shift slightly between recomputes).
   function isPeakExcluded(f){
-    return excludedPeaks.some(function(pf){return Math.abs(pf-f)<3.0;});
+    return effectiveExcluded().some(function(pf){return Math.abs(pf-f)<3.0;});
   }
   // Returns a copy of psdArr with the band around each excluded peak zeroed,
   // walking outward from the peak center to the surrounding valleys so the
@@ -566,9 +582,10 @@
   // peak detection, the single-shaper score, and the multimode search all
   // run on this masked spectrum.
   function maskExcludedPeaks(freqArr,psdArr){
-    if(!excludedPeaks.length)return psdArr.slice();
+    var ex=effectiveExcluded();
+    if(!ex.length)return psdArr.slice();
     var out=psdArr.slice(),n=psdArr.length;
-    excludedPeaks.forEach(function(pf){
+    ex.forEach(function(pf){
       var i0=0,bd=Infinity;
       for(var i=0;i<n;i++){var d=Math.abs(freqArr[i]-pf);if(d<bd){bd=d;i0=i;}}
       // Only mask if there's actually a local peak here (guards stale entries).
@@ -583,6 +600,27 @@
       for(var j=lo;j<=hi;j++)out[j]=0;
     });
     return out;
+  }
+  // Tier-scoped auto-exclusion. On the single-shaper tiers (Klipper / Kalico
+  // BE) a shaper can only target one resonance, so we keep the tallest
+  // detected peak and set the rest aside by default; the user can still click
+  // any marker to override. On Multimode this clears (every peak stays in
+  // play). Manual exclusions are never touched here. Recomputed on load, axis
+  // change, and tier change -- NOT persisted (it's derived from tier + data).
+  function recomputeAutoExclude(){
+    autoExcluded=[];
+    if(!loadedCapture||tierAllowsMultimode())return;
+    var freqArr=loadedCapture.freq,psdArr=loadedCapture.psd;
+    var detected=detectAndEstimate(freqArr,psdArr,4)
+      .filter(function(p){return !isManualExcluded(p.freq);});
+    if(detected.length<2)return; // 0-1 active peaks: nothing to set aside
+    var tallest=null,bestV=-1;
+    detected.forEach(function(p){
+      var i0=0,bd=Infinity;
+      for(var i=0;i<freqArr.length;i++){var d=Math.abs(freqArr[i]-p.freq);if(d<bd){bd=d;i0=i;}}
+      if(psdArr[i0]>bestV){bestV=psdArr[i0];tallest=p.freq;}
+    });
+    detected.forEach(function(p){if(Math.abs(p.freq-tallest)>=3.0)autoExcluded.push(p.freq);});
   }
 
   // ================= real find_best_shaper recommendation =================
@@ -1189,6 +1227,15 @@
   // single-shaper pick away from a peak you don't care about (e.g. a minor
   // high-frequency one the f^2-weighted score would otherwise chase).
   var excludedPeaks=[];
+  // Tier-scoped auto-exclusions (all-but-tallest on single-shaper tiers).
+  // Derived from tier + data by recomputeAutoExclude(); NOT persisted.
+  var autoExcluded=[];
+  // In-memory cache of find_best_shaper results keyed by recoKey() (capture +
+  // active axes + effective exclusions + tier). Lets toggling an axis off and
+  // back on, flipping between two library files, re-including a peak, or
+  // switching to an already-computed tier return instantly instead of
+  // re-running the ~1-2s search. Page-session lifetime; cleared on Clear.
+  var recoCache={};
   var lastReco=null;        // most recent findBestShaperReal() result, for the config generator
   // Bumped by every renderRecommendation() call; its ~1-2s async search
   // checks this before painting so an older, still-in-flight search (e.g.
@@ -1326,6 +1373,7 @@
     excludedPeaks=[]; // a fresh capture starts with every detected peak in play
     var detected=detectAndEstimate(freq,xyz,4);
     applyDetected(detected);
+    recomputeAutoExclude(); // single-shaper tiers: set aside all but the tallest peak
     // sensible pre-recommendation default for the single-mode freq field
     if(detected.length)explFreq=Math.round(detected[0].freq*10)/10;
     renderInput();
@@ -1370,12 +1418,13 @@
     d.xyz=newXyz; d.psd=newXyz;
     var detected=detectAndEstimate(d.freq,d.xyz,4);
     applyDetected(detected);
+    recomputeAutoExclude(); // the peak set changed; re-seed the tier default
     renderInput();
     renderRecommendation();  // async; re-seeds the explorer when it finishes
   }
   function clearAll(){
     if(loadedCapture && !window.confirm(t('shaper_tuning.capture.resetConfirm')))return;
-    loadedCapture=null;lastReco=null;peaks=[];axisHidden={x:false,y:false,z:false};excludedPeaks=[];
+    loadedCapture=null;lastReco=null;peaks=[];axisHidden={x:false,y:false,z:false};excludedPeaks=[];autoExcluded=[];recoCache={};
     explType='smooth_si';explFreq=50.0;explDamp=0.1;
     acclInput.min='3000';acclInput.max='30000';setAccel(6000,true);
     syncExplorerControls();
@@ -1421,6 +1470,7 @@
     loadedCapture={freq:c.freq,x:c.x,y:c.y,z:c.z,xyz:c.xyz,psd:c.xyz,label:c.label,testAxis:c.testAxis||null};
     axisHidden=blob.axisHidden||{x:false,y:false,z:false};
     excludedPeaks=blob.excludedPeaks||[];
+    recomputeAutoExclude(); // transient (tier-derived); rebuild from the restored tier + peaks
     if(blob.expl){
       explType=blob.expl.explType;peaks=blob.expl.peaks||[];
       explFreq=blob.expl.explFreq;explDamp=blob.expl.explDamp;
@@ -1610,11 +1660,19 @@
       recombineAndCascade();
       return;
     }
-    // Peak marker -> toggle that resonance in/out of the analysis.
+    // Peak marker -> toggle that resonance in/out of the analysis. A peak may
+    // be excluded manually or by the tier auto-default; clicking an excluded
+    // peak (either kind) includes it, clicking an active peak excludes it.
     var pf=peakMarkerFreq[idx];
     if(pf!=null){
-      var i=excludedPeaks.findIndex(function(x){return Math.abs(x-pf)<3.0;});
-      if(i>=0)excludedPeaks.splice(i,1);else excludedPeaks.push(pf);
+      var mi=excludedPeaks.findIndex(function(x){return Math.abs(x-pf)<3.0;});
+      var ai=autoExcluded.findIndex(function(x){return Math.abs(x-pf)<3.0;});
+      if(mi>=0||ai>=0){                 // currently excluded -> include it
+        if(mi>=0)excludedPeaks.splice(mi,1);
+        if(ai>=0)autoExcluded.splice(ai,1);
+      }else{                            // currently active -> exclude it (manual)
+        excludedPeaks.push(pf);
+      }
       renderInput();            // restyle the marker
       renderRecommendation();   // re-search on the newly masked spectrum
       persistState(true);
@@ -1709,16 +1767,32 @@
   function renderTierNote(){
     document.getElementById('tierNote').textContent=t('shaper_tuning.tier.note.'+firmwareTier);
   }
+  // The dismissible info box below the tier tabs, shown on the single-shaper
+  // tiers (Klipper / Kalico BE) to explain why they target only one peak.
+  // Once closed it stays closed (localStorage), so the text covers both tiers.
+  var TIERINFO_KEY='kv-shaper-tuning-tierinfo-dismissed';
+  function renderTierInfo(){
+    var box=document.getElementById('tierInfo');
+    var dismissed=false;try{dismissed=localStorage.getItem(TIERINFO_KEY)==='1';}catch(e){}
+    box.style.display=(!tierAllowsMultimode()&&!dismissed)?'':'none';
+  }
   function setFirmwareTier(tier){
     firmwareTier=tier;
     try{localStorage.setItem(FIRMWARE_TIER_KEY,tier);}catch(e){}
     ['tierKlipper','tierKalicoBE','tierMultimode'].forEach(function(id){document.getElementById(id).classList.remove('primary');});
     document.getElementById(tier==='klipper'?'tierKlipper':tier==='kalicobe'?'tierKalicoBE':'tierMultimode').classList.add('primary');
     renderTierNote();
+    renderTierInfo();
     applyTierToExplorerOptions();
+    recomputeAutoExclude(); // single tier: set aside all but tallest; multimode: clear
+    renderInput();          // restyle peak markers for the new effective exclusions
     update();
     renderRecommendation(); // candidate list changed -- must re-search
   }
+  document.getElementById('tierInfoClose').addEventListener('click',function(){
+    try{localStorage.setItem(TIERINFO_KEY,'1');}catch(e){}
+    document.getElementById('tierInfo').style.display='none';
+  });
   document.getElementById('tierKlipper').addEventListener('click',function(){setFirmwareTier('klipper');});
   document.getElementById('tierKalicoBE').addEventListener('click',function(){setFirmwareTier('kalicobe');});
   document.getElementById('tierMultimode').addEventListener('click',function(){setFirmwareTier('multimode');});
@@ -1995,6 +2069,18 @@
     // call yet) -- snapshotting means this search always scores the data it
     // was actually asked to score.
     var b=loadedCapture, bFreq=b.freq, bPsd=maskExcludedPeaks(b.freq,b.psd), bLabel=b.label;
+    // Cache hit: the exact same (capture + active axes + exclusions + tier)
+    // was already searched -- paint instantly, no spinner, no re-run.
+    var key=recoKey();
+    var hit=recoCache[key];
+    if(hit){
+      lastReco={best:hit.result.best,label:bLabel,result:hit.result,allPeaks:hit.allPeaks};
+      paintRecommendation();
+      setBusy('inputChartBox',false);setBusy('recoBox',false);
+      seedExplorerFromReco(hit.result.best);
+      persistState(true);
+      return;
+    }
     statusEl.innerHTML=t('shaper_tuning.status.computing',{label:bLabel});
     setBusy('inputChartBox',true);setBusy('recoBox',true);
     setTimeout(function(){
@@ -2003,12 +2089,22 @@
       var result=findBestShaperReal(bFreq,bPsd,scv,maxFreq);
       var allPeaks=detectAndEstimate(bFreq,bPsd,4);
       if(myGen!==recomputeGen)return; // superseded while computing; don't paint over newer results
+      recoCache[key]={result:result,allPeaks:allPeaks};
       lastReco={best:result.best,label:bLabel,result:result,allPeaks:allPeaks};
       paintRecommendation();
       setBusy('inputChartBox',false);setBusy('recoBox',false);
       seedExplorerFromReco(result.best);
       persistState(true); // capture + recommendation now settled; save the full state
     },10);
+  }
+  // Cache key: everything that determines the search result -- the capture
+  // identity (label), which raw axes feed Combined, the effective exclusions,
+  // and the firmware tier (which gates the candidate list).
+  function recoKey(){
+    if(!loadedCapture)return '';
+    var active=['x','y','z'].filter(function(a){return loadedCapture[a]&&!axisHidden[a];}).join(',');
+    var ex=effectiveExcluded().map(function(f){return Math.round(f);}).sort(function(a,b){return a-b;}).join(',');
+    return (loadedCapture.label||'')+'|'+active+'|'+ex+'|'+firmwareTier;
   }
   // Repaints the recommendation cards/status/note from the cached lastReco --
   // no re-search. Used after a fresh computation, and on a palette change
@@ -2181,6 +2277,7 @@
   // ---- restore the firmware tier (persists across reloads/navigation) ----
   document.getElementById(firmwareTier==='klipper'?'tierKlipper':firmwareTier==='kalicobe'?'tierKalicoBE':'tierMultimode').classList.add('primary');
   renderTierNote();
+  renderTierInfo();
   applyTierToExplorerOptions();
 
   // ---- initial state: restore a capture from this session if present,
