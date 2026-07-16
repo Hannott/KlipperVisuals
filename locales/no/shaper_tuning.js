@@ -20,6 +20,16 @@ window.KV_LOCALES.no.shaper_tuning = {
     clear: "Tøm",
     tryExample: "Ingen data ennå? Prøv et eksempel:"
   },
+  tier: {
+    klipper: "Klipper",
+    kalicobe: "Kalico BE",
+    multimode: "Multimode",
+    note: {
+      klipper: "Kun klassiske impuls-shapere (Klipper mainline og Kalico).",
+      kalicobe: "+ smooth_*-smoothers (Kalico bleeding-edge).",
+      multimode: "+ multimode, N-topps forming (denne fork'ens bleeding-edge-v2)."
+    }
+  },
   library: {
     label: "Tidligere opplastet",
     loadTitle: "Last inn denne målingen",

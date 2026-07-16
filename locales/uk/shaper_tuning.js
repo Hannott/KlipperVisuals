@@ -20,6 +20,16 @@ window.KV_LOCALES.uk.shaper_tuning = {
     clear: "Очистити",
     tryExample: "Ще немає даних? Спробуйте приклад:"
   },
+  tier: {
+    klipper: "Klipper",
+    kalicobe: "Kalico BE",
+    multimode: "Multimode",
+    note: {
+      klipper: "Лише класичні імпульсні шейпери (Klipper mainline та Kalico).",
+      kalicobe: "+ згладжувачі smooth_* (Kalico bleeding-edge).",
+      multimode: "+ multimode, формування за кількома піками (bleeding-edge-v2 цього форку)."
+    }
+  },
   library: {
     label: "Раніше завантажено",
     loadTitle: "Завантажити цей запис",

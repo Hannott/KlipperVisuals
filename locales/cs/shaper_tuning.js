@@ -20,6 +20,16 @@ window.KV_LOCALES.cs.shaper_tuning = {
     clear: "Vymazat",
     tryExample: "Zatím žádná data? Vyzkoušejte příklad:"
   },
+  tier: {
+    klipper: "Klipper",
+    kalicobe: "Kalico BE",
+    multimode: "Multimode",
+    note: {
+      klipper: "Pouze klasické impulsní tvořovače (Klipper mainline a Kalico).",
+      kalicobe: "+ smooth_* vyhlazovače (Kalico bleeding-edge).",
+      multimode: "+ multimode, tvarování s více vrcholy (bleeding-edge-v2 této fork)."
+    }
+  },
   library: {
     label: "Dříve nahráno",
     loadTitle: "Načíst tento záznam",

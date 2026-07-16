@@ -101,6 +101,16 @@
   <h1 data-i18n="shaper_tuning.heading">Shaper tuning</h1>
   <p class="sub" data-i18n-html="shaper_tuning.intro">Load a resonance capture and everything on this page is computed from <em>your</em> data: the measured spectrum, the shaper <code>SHAPER_CALIBRATE</code> would recommend (the full <code>find_best_shaper</code> search ported to your browser), a hands-on explorer for any shaper type, and a ready-to-paste <code>[input_shaper]</code> config. Nothing is uploaded anywhere — peak detection, damping estimation, and the whole shaper search run locally.</p>
 
+  <!-- Firmware tier: gates which shaper types are offered/searched, since
+       smooth_* smoothers and multimode aren't on every firmware. The math
+       itself never changes per tier -- only the candidate list does. -->
+  <div class="row" style="gap:8px;align-items:center;margin:.75rem 0 1.25rem;">
+    <button type="button" class="btn" id="tierKlipper" data-i18n="shaper_tuning.tier.klipper">Klipper</button>
+    <button type="button" class="btn" id="tierKalicoBE" data-i18n="shaper_tuning.tier.kalicobe">Kalico BE</button>
+    <button type="button" class="btn" id="tierMultimode" data-i18n="shaper_tuning.tier.multimode">Multimode</button>
+    <span id="tierNote" style="font-size:12.5px;color:var(--text-muted);"></span>
+  </div>
+
   <h2 data-i18n="shaper_tuning.steps.load">1. Load a resonance capture</h2>
   <div class="databar">
     <!-- Native file input is hidden; the styled button below triggers it, so
@@ -159,7 +169,7 @@
     <div class="ctl" style="max-width:260px;">
       <div class="lbl"><span data-i18n="shaper_tuning.explorer.shaperType">shaper type</span></div>
       <select id="explType">
-        <optgroup label="smoothers (no damping input)" data-i18n-attr="label:shaper_tuning.explorer.optgroupSmoothers">
+        <optgroup id="optgroupSmoothers" label="smoothers (no damping input)" data-i18n-attr="label:shaper_tuning.explorer.optgroupSmoothers">
           <option value="smooth_zv">smooth_zv</option>
           <option value="smooth_mzv">smooth_mzv</option>
           <option value="smooth_ei">smooth_ei</option>
@@ -175,7 +185,7 @@
           <option value="2hump_ei">2hump_ei</option>
           <option value="3hump_ei">3hump_ei</option>
         </optgroup>
-        <optgroup label="multimode (per-peak)" data-i18n-attr="label:shaper_tuning.explorer.optgroupMultimode">
+        <optgroup id="optgroupMultimode" label="multimode (per-peak)" data-i18n-attr="label:shaper_tuning.explorer.optgroupMultimode">
           <option value="multimode">multimode</option>
         </optgroup>
       </select>
@@ -562,6 +572,16 @@
   // more).
   var MULTIMODE_AUTOTUNE_BASES=['zv','mzv','ei'];
   var MULTIMODE_MAX_PEAKS=4;
+  // Firmware tier: gates which shaper types are offered/searched, since
+  // smooth_* smoothers and multimode aren't on every firmware build. The
+  // calculations never change per tier -- only which candidates are allowed.
+  var FIRMWARE_TIER_KEY='kv-shaper-tuning-tier';
+  var firmwareTier=(function(){
+    try{var v=localStorage.getItem(FIRMWARE_TIER_KEY);}catch(e){}
+    return(v==='kalicobe'||v==='multimode')?v:'klipper';
+  })();
+  function tierAllowsSmoothers(){return firmwareTier==='kalicobe'||firmwareTier==='multimode';}
+  function tierAllowsMultimode(){return firmwareTier==='multimode';}
   var AUTOTUNE_SHAPER_NAMES=['mzv','ei','2hump_ei'];
   var TEST_DAMPING_RATIOS=[0.075,0.1,0.15];
   var DEFAULT_DAMPING_RATIO=0.1;
@@ -972,7 +992,7 @@
       if(best===null||res.score*1.2<best.score||(res.score*1.03<best.score&&res.smoothing*1.01<best.smoothing))best=res;
     }
     var i;
-    for(i=0;i<AUTOTUNE_SMOOTHER_NAMES.length;i++)consider(fitSingleMode('smoother',AUTOTUNE_SMOOTHER_NAMES[i],freqBins,psd,scv,maxFreq));
+    if(tierAllowsSmoothers())for(i=0;i<AUTOTUNE_SMOOTHER_NAMES.length;i++)consider(fitSingleMode('smoother',AUTOTUNE_SMOOTHER_NAMES[i],freqBins,psd,scv,maxFreq));
     for(i=0;i<AUTOTUNE_SHAPER_NAMES.length;i++)consider(fitSingleMode('shaper',AUTOTUNE_SHAPER_NAMES[i],freqBins,psd,scv,maxFreq));
     // Up to MULTIMODE_MAX_PEAKS peaks, most-significant first.
     var peaks=detectPeaks(freqBins,psd,MIN_FREQ,maxFreq,0.12,8.0,MULTIMODE_MAX_PEAKS);
@@ -984,7 +1004,7 @@
       return estimateDampingRatio(freqBins,psd,f,spanLo,spanHi);
     });
     var multimodeResult=null;
-    if(peaks.length>=2){
+    if(peaks.length>=2&&tierAllowsMultimode()){
       // Order by ascending frequency; carry each peak's damping, filling a
       // missing (null) estimate from the previous peak (seed = DEFAULT).
       var ordered=peaks.map(function(f,idx){return [f,dampingEstimates[idx]];}).sort(function(a,b){return a[0]-b[0];});
@@ -1615,6 +1635,33 @@
     document.getElementById('explFreqWrap').style.display=mm?'none':'';
     document.getElementById('explDampWrap').style.display=(mm||sm)?'none':'';
   }
+  // Applies the current firmwareTier to the explorer's type <select> (hides
+  // optgroups the tier doesn't support) and falls back explType to a classic
+  // shaper if the previous selection is no longer valid.
+  function applyTierToExplorerOptions(){
+    document.getElementById('optgroupSmoothers').style.display=tierAllowsSmoothers()?'':'none';
+    document.getElementById('optgroupMultimode').style.display=tierAllowsMultimode()?'':'none';
+    if((isSmootherType(explType)&&!tierAllowsSmoothers())||(isMultimodeType(explType)&&!tierAllowsMultimode())){
+      explType='mzv';
+    }
+    syncExplorerControls();
+  }
+  function renderTierNote(){
+    document.getElementById('tierNote').textContent=t('shaper_tuning.tier.note.'+firmwareTier);
+  }
+  function setFirmwareTier(tier){
+    firmwareTier=tier;
+    try{localStorage.setItem(FIRMWARE_TIER_KEY,tier);}catch(e){}
+    ['tierKlipper','tierKalicoBE','tierMultimode'].forEach(function(id){document.getElementById(id).classList.remove('primary');});
+    document.getElementById(tier==='klipper'?'tierKlipper':tier==='kalicobe'?'tierKalicoBE':'tierMultimode').classList.add('primary');
+    renderTierNote();
+    applyTierToExplorerOptions();
+    update();
+    renderRecommendation(); // candidate list changed -- must re-search
+  }
+  document.getElementById('tierKlipper').addEventListener('click',function(){setFirmwareTier('klipper');});
+  document.getElementById('tierKalicoBE').addEventListener('click',function(){setFirmwareTier('kalicobe');});
+  document.getElementById('tierMultimode').addEventListener('click',function(){setFirmwareTier('multimode');});
 
   // The explorer renderer: evaluates the SELECTED shaper type against the
   // loaded capture and shows smoothing / max_accel / per-resonance residual
@@ -2033,10 +2080,16 @@
     renderPeakRows();
     renderLibrary(); // re-translate the row titles (load/remove) baked in at render time
     renderCfgAxisBadge();
+    renderTierNote();
     update();               // rebuilds c1 + cards/note, and c2/c3/c4 (via renderDeep) when multimode is selected
     if(lastReco)paintRecommendation(); else document.getElementById('recoStatus').innerHTML=t('shaper_tuning.recommended.statusDefault');
     [c1,cInput,c2,c3,c4].forEach(function(ch){ch.update();});
   });
+
+  // ---- restore the firmware tier (persists across reloads/navigation) ----
+  document.getElementById(firmwareTier==='klipper'?'tierKlipper':firmwareTier==='kalicobe'?'tierKalicoBE':'tierMultimode').classList.add('primary');
+  renderTierNote();
+  applyTierToExplorerOptions();
 
   // ---- initial state: restore a capture from this session if present,
   // otherwise start empty ----

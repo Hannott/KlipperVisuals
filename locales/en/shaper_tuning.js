@@ -20,6 +20,16 @@ window.KV_LOCALES.en.shaper_tuning = {
     clear: "Clear",
     tryExample: "No data yet? Try an example:"
   },
+  tier: {
+    klipper: "Klipper",
+    kalicobe: "Kalico BE",
+    multimode: "Multimode",
+    note: {
+      klipper: "Classic impulse shapers only (Klipper mainline & Kalico).",
+      kalicobe: "+ smooth_* smoothers (Kalico bleeding-edge).",
+      multimode: "+ multimode, N-peak shaping (this fork's bleeding-edge-v2)."
+    }
+  },
   library: {
     label: "Previously uploaded",
     loadTitle: "Load this capture",
