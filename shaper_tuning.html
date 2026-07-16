@@ -1369,7 +1369,7 @@
       var blob={cap:{freq:d.freq,x:d.x,y:d.y,z:d.z,xyz:d.xyz,label:d.label,testAxis:d.testAxis},
         axisHidden:axisHidden,
         expl:{explType:explType,peaks:peaks,explFreq:explFreq,explDamp:explDamp,explAccel:explAccel,fname:uploadNameEl.textContent}};
-      if(lastReco)blob.reco={best:lastReco.best,peaks:lastReco.result.peaks,allPeaks:lastReco.allPeaks,label:lastReco.label};
+      if(lastReco)blob.reco={best:lastReco.best,peaks:lastReco.result.peaks,allShapers:lastReco.result.allShapers,allPeaks:lastReco.allPeaks,label:lastReco.label};
       sessionStorage.setItem(STORE_KEY,JSON.stringify(blob));
     }catch(e){/* storage full/disabled: persistence just no-ops */}
   }
@@ -1387,7 +1387,7 @@
       if(blob.expl.explAccel>0)setAccel(blob.expl.explAccel,true);
       if(blob.expl.fname)uploadNameEl.textContent=blob.expl.fname;
     }
-    if(blob.reco)lastReco={best:blob.reco.best,result:{peaks:blob.reco.peaks},allPeaks:blob.reco.allPeaks,label:blob.reco.label};
+    if(blob.reco)lastReco={best:blob.reco.best,result:{peaks:blob.reco.peaks,allShapers:blob.reco.allShapers},allPeaks:blob.reco.allPeaks,label:blob.reco.label};
     renderDetectStatus();
     renderInput();
     renderPeakRows();
@@ -1838,8 +1838,30 @@
   });
 
   // ---- explorer control wiring ----
+  // When the user picks a different shaper type, load that type's OWN
+  // recommended freq/damping from the last search (lastReco.result.allShapers
+  // holds the best result per candidate the auto-tuner evaluated) instead of
+  // leaving the previous type's numbers in place.
+  function seedExplorerFromCandidate(type){
+    var allShapers=lastReco&&lastReco.result&&lastReco.result.allShapers;
+    if(!allShapers)return;
+    if(isMultimodeType(type)){
+      var mm=allShapers.find(function(r){return r.freqs!=null;});
+      if(mm){
+        peaks=mm.freqs.map(function(f,i){return {base:mm.bases[i],freq:Math.round(f*10)/10,damping:Math.round(mm.dampingRatios[i]*1000)/1000};});
+        renderPeakRows();
+      }
+      return;
+    }
+    var cand=allShapers.find(function(r){return r.freqs==null&&r.name===type;});
+    if(!cand)return;
+    explFreq=Math.round(cand.freq*10)/10;
+    if(SINGLE_SHAPERS.indexOf(type)>=0)explDamp=Math.round((cand.dampingRatio||0.1)*1000)/1000;
+  }
   document.getElementById('explType').addEventListener('change',function(){
-    explType=this.value;syncExplorerControls();update();
+    explType=this.value;
+    seedExplorerFromCandidate(explType);
+    syncExplorerControls();update();
   });
   document.getElementById('explFreq').addEventListener('input',function(){explFreq=Math.max(0.1,+this.value||0);update();});
   document.getElementById('explDamp').addEventListener('input',function(){explDamp=Math.min(0.5,Math.max(0.005,+this.value||0.1));update();});
@@ -1977,7 +1999,7 @@
     // the auto-search caps at (MULTIMODE_MAX_PEAKS): beyond that, extra modes
     // must be added by hand.
     noteEl.innerHTML=t('shaper_tuning.notes.recoNoteIntro')+'<br>'+perPeakHtml+
-      (allPeaks.length>=MULTIMODE_MAX_PEAKS?'<br><span style="color:var(--amber)">'+t('shaper_tuning.notes.recoCaveat')+'</span>':'');
+      (tierAllowsMultimode()&&allPeaks.length>=MULTIMODE_MAX_PEAKS?'<br><span style="color:var(--amber)">'+t('shaper_tuning.notes.recoCaveat')+'</span>':'');
   }
   // Seed the manual explorer from the recommendation so it starts on the
   // recommended shaper (the user can then change type / frequencies).
