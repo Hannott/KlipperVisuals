@@ -1142,7 +1142,7 @@
     var f=cap.freq,n=f.length;
     for(var i=0;i<n;i++){
       var factor=Math.tanh(0.5/MIN_FREQ*f[i])/(f[i]+0.1);
-      cap.x[i]*=factor;cap.y[i]*=factor;cap.z[i]*=factor;cap.xyz[i]*=factor;
+      if(cap.x)cap.x[i]*=factor;if(cap.y)cap.y[i]*=factor;if(cap.z)cap.z[i]*=factor;cap.xyz[i]*=factor;
     }
     return cap;
   }
@@ -1522,6 +1522,15 @@
           if(yArr)yArr.push(parseFloat(cols[yIdx]));
           if(zArr)zArr.push(parseFloat(cols[zIdx]));
         }
+        // Matches calibrate_shaper.py's parse_log: a PSD CSV with no shaper
+        // name in the header (e.g. "freq,psd_x,psd_y,psd_z,psd_xyz,accel_per_hz")
+        // is raw, un-normalized frequency-response data and must go through
+        // normalize_to_frequencies() -- only a CSV that already has a
+        // "psd_<shapername>" column (as recorded, e.g., after SHAPER_CALIBRATE
+        // itself ran) is pre-normalized. Skipping this made every candidate's
+        // scored vibrations wrong, occasionally recommending a shaper tuned
+        // to a minor high-frequency ripple instead of the true dominant peak.
+        if(header.join(',').indexOf('mzv')<0)normalizeToFrequencies({freq:freqArr,x:xArr,y:yArr,z:zArr,xyz:xyzArr});
         var testAxis2=detectAxisFromFilename(file.name);
         addToLibrary(file.name,{freq:freqArr,x:xArr,y:yArr,z:zArr,xyz:xyzArr},testAxis2);
         loadCapture(freqArr,xArr,yArr,zArr,xyzArr,'"'+file.name+'"',testAxis2);
