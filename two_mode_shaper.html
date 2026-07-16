@@ -63,6 +63,11 @@
   .databar input[type=file]{font-size:12.5px;max-width:220px;}
   .aspectbox{position:relative;width:100%;overflow:hidden;border-radius:var(--radius);border:.5px solid var(--border);background:var(--surface-1);}
   .aspectbox canvas{position:absolute;inset:0;width:100%!important;height:100%!important;}
+  .bandhdr{margin:3rem 0 .25rem;padding-top:1.25rem;border-top:1px solid var(--border);}
+  .bandhdr .tag{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted);}
+  pre.cfgout{font-family:var(--font-mono);font-size:12.5px;line-height:1.5;background:var(--surface-2);border:.5px solid var(--border);border-radius:var(--radius);padding:.85rem 1rem;overflow-x:auto;white-space:pre;color:var(--text-primary);margin:.75rem 0 0;}
+  .cfgbar{display:flex;flex-wrap:wrap;gap:14px;align-items:center;}
+  .cfgbar label{font-size:13px;color:var(--text-secondary);display:flex;align-items:center;gap:6px;}
 </style>
 </head>
 <body>
@@ -71,7 +76,7 @@
   <h1>Multimode input shaper <span style="font-size:13px;color:var(--text-muted);font-weight:400;">(prototype / concept)</span></h1>
   <p class="sub">When an axis has <em>multiple</em> separated resonances, a standard shaper forces a choice: tune to one peak and leave the rest ringing, or use a broadband smoother wide enough to blanket the whole span. A <strong>multimode</strong> shaper — the convolution of a single-mode shaper tuned to each peak — places a notch at <em>every</em> configured frequency; the residual is the product of each component's residual, so it drives all of them toward zero at once. This is Kalico's real <code>shaper_type = multimode</code> (config keys <code>shaper_base_&lt;axis&gt;</code> / <code>shaper_freq_&lt;axis&gt;</code> / <code>damping_ratio_&lt;axis&gt;</code>, each a comma-separated list). Base shapers below are restricted to the six impulse shapers <code>shaper_base_&lt;axis&gt;</code> actually accepts.</p>
 
-  <h2>Load resonance data</h2>
+  <h2>Load a resonance capture</h2>
   <div class="databar">
     <button class="btn" id="loadExX">Example: real X-axis capture</button>
     <button class="btn" id="loadExY">Example: real Y-axis capture</button>
@@ -83,10 +88,51 @@
       <option value="psd_y">Y</option>
       <option value="psd_z">Z</option>
     </select>
+    <button class="btn" id="clearData">Clear</button>
   </div>
-  <div class="note" id="detectStatus">Defaults below are peak 1 and peak 2 as fitted by Kalico's real <code>SHAPER_CALIBRATE</code> on a genuine X-axis capture (2026-07-15): <code>ei/mzv</code> at 61.2&nbsp;/&nbsp;100.5&nbsp;Hz, ζ&nbsp;=&nbsp;0.113&nbsp;/&nbsp;0.117. The example buttons and file upload run the <em>same</em> peak-detection and half-power damping-ratio estimation Kalico uses (including the asymmetric-span fix), live, in your browser — nothing is uploaded anywhere.</div>
+  <div class="note" id="detectStatus">No capture loaded. Load an example, or upload a Kalico <code>calibration_data_*.csv</code> / <code>resonances_*.csv</code> (a <code>freq</code> column plus <code>psd_x</code>/<code>psd_y</code>/<code>psd_z</code>/<code>psd_xyz</code>). Peak detection and half-power damping-ratio estimation run live in your browser — nothing is uploaded anywhere.</div>
 
-  <h2>Peaks (each convolved with its own base shaper)</h2>
+  <h2>Recommended shaper</h2>
+  <p class="sub" style="margin-bottom:.75rem;">Runs the same search <code>SHAPER_CALIBRATE</code> does on the loaded capture: every <code>smooth_*</code> smoother and classic shaper, plus a 2-peak multimode search (with the dual-peak-cluster-widening fix), scored and selected with Kalico's real formula and thresholds. Per-peak residual is shown for every peak detected — including any beyond the top two the auto-tuner's search itself is limited to.</p>
+  <div class="note" id="recoStatus">Load a capture above to compute a recommendation.</div>
+  <div class="cards" id="cardsReco"></div>
+  <div class="note" id="noteReco"></div>
+
+  <h2>Generate <code>[input_shaper]</code> config</h2>
+  <div class="cfgbar">
+    <button class="btn primary" id="genCfg">Generate config</button>
+    <label>axis
+      <select id="cfgAxis">
+        <option value="x" selected>x</option>
+        <option value="y">y</option>
+        <option value="both">both (x &amp; y)</option>
+      </select>
+    </label>
+    <label><input type="checkbox" id="cfgPrefix"> apply save_config prefix (<code>#*#</code>)</label>
+  </div>
+  <pre class="cfgout" id="cfgOut" style="display:none;"></pre>
+
+  <h2>Measured on a real printer: before vs after <span style="font-size:13px;color:var(--text-muted);font-weight:400;">(actual accelerometer data)</span></h2>
+  <p class="sub" style="margin-bottom:.75rem;">The same physical machine measured twice: a <code>SHAPER_CALIBRATE</code> capture with <strong>no shaper</strong>, against a raw accelerometer capture from the identical resonance sweep with the tuned <strong>multimode shaper active</strong>. The raw capture is processed with Kalico's exact pipeline (Welch PSD: Kaiser(6) window, 50% overlap, per-window detrend — <code>shaper_calibrate.calc_freq_response</code>) and put in the same normalized units as the calibration file (<code>normalize_to_frequencies</code>). Sanity check: at 1–2&nbsp;Hz, far below any resonance, the two captures agree within a few percent — so the excitation was equivalent and the comparison is apples-to-apples.</p>
+  <div class="databar">
+    <button class="btn" id="measX">Example X before/after</button>
+    <button class="btn" id="measY">Example Y before/after</button>
+    <span style="color:var(--text-muted);font-size:13px;">scale:</span>
+    <button class="btn primary" id="measLog">log</button>
+    <button class="btn" id="measLin">linear</button>
+    <span style="color:var(--text-muted);font-size:13px;">or upload your own:</span>
+    <label style="font-size:12.5px;color:var(--text-secondary);">before <input type="file" id="measBeforeFile" accept=".csv,text/csv" style="max-width:190px;"></label>
+    <label style="font-size:12.5px;color:var(--text-secondary);">after <input type="file" id="measAfterFile" accept=".csv,text/csv" style="max-width:190px;"></label>
+  </div>
+  <div class="note" id="measStatus">No before/after data loaded. Click an example, or upload a <code>calibration_data_*.csv</code>/<code>resonances_*.csv</code> as the unshaped "before" and either a <code>raw_data_*.csv</code> (time/accel samples — full Welch PSD runs in your browser) or a shaped <code>resonances_*.csv</code> as the "after". Nothing leaves your machine.</div>
+  <div class="cap">vibration power spectral density, unshaped vs shaped <span style="color:var(--text-muted)">(on the log scale every gridline is 10&times;; the linear scale shows how completely the peaks vanish at true proportions; dashed verticals mark the peaks detected in the unshaped data)</span></div>
+  <div class="chart"><canvas id="cMeas"></canvas></div>
+  <div class="cards" id="cardsMeas"></div>
+  <div class="note" id="noteMeas"></div>
+
+  <div class="bandhdr"><span class="tag">Exploratory — build a shaper by hand</span></div>
+  <h2>Manual multimode explorer</h2>
+  <p class="sub" style="margin-bottom:.75rem;">Loading a capture above fills these peaks with what its detector found; edit them, change base shapers, or add more (up to the firmware's 32-impulse budget) to see how a hand-built multimode shaper would perform. This is the manual counterpart to the automatic recommendation.</p>
   <div class="peakctl-head"><span></span><span>base shaper</span><span>freq (Hz)</span><span>damping ζ</span><span></span></div>
   <div class="peakrows" id="peakRows"></div>
   <div class="row" style="margin-bottom:.25rem;">
@@ -104,11 +150,14 @@
   <div class="cap">residual vibration vs frequency <span style="color:var(--text-muted)">(dashed verticals mark each configured peak; lower = better)</span></div>
   <div class="chart"><canvas id="c1"></canvas></div>
 
-  <div class="cap" style="margin-top:1.5rem;">corner smoothing vs last peak's frequency <span style="color:var(--text-muted)">(Kalico's smoothing metric at the accel/SCV above; lower = less corner rounding, higher usable max_accel. Single-mode &amp; broadband are tuned to peak 1, so they stay flat)</span></div>
-  <div class="chart" style="height:250px;"><canvas id="c5"></canvas></div>
-
   <div class="cards" id="cards"></div>
   <div class="note" id="note"></div>
+
+  <div class="bandhdr"><span class="tag">Deeper analysis — theory &amp; extruder synchronization</span></div>
+  <h2>Deeper analysis</h2>
+
+  <div class="cap">corner smoothing vs last peak's frequency <span style="color:var(--text-muted)">(Kalico's smoothing metric at the accel/SCV above; lower = less corner rounding, higher usable max_accel. Single-mode &amp; broadband are tuned to peak 1, so they stay flat)</span></div>
+  <div class="chart" style="height:250px;"><canvas id="c5"></canvas></div>
 
   <div class="cap" style="margin-top:1.5rem;">notch depth vs a uniformly-assumed damping ratio <span style="color:var(--text-muted)">(what if the design used ONE shared ζ for every peak instead of each peak's own measured value? True ζ per peak marked with a matching vertical)</span></div>
   <div class="chart" style="height:270px;"><canvas id="c2"></canvas></div>
@@ -121,24 +170,6 @@
 
   <div class="cards" id="cards2"></div>
   <div class="note" id="note2"></div>
-
-  <h2>Measured on a real printer: before vs after <span style="font-size:13px;color:var(--text-muted);font-weight:400;">(actual accelerometer data)</span></h2>
-  <p class="sub" style="margin-bottom:.75rem;">No simulation here — this is the same physical machine measured twice: the <code>SHAPER_CALIBRATE</code> capture with <strong>no shaper</strong> (the run that found the multimode parameters), against a raw accelerometer capture from the identical resonance sweep with the tuned <strong>multimode shaper active</strong>. The raw capture is processed with Kalico's exact pipeline (Welch PSD: Kaiser(6) window, 50% overlap, per-window detrend — <code>shaper_calibrate.calc_freq_response</code>) and put in the same normalized units as the calibration file (<code>normalize_to_frequencies</code>). Sanity check: at 1–2&nbsp;Hz, far below any resonance, the two captures agree within a few percent — so the excitation was equivalent and the comparison is apples-to-apples.</p>
-  <div class="databar">
-    <button class="btn primary" id="measX">Real X-axis data</button>
-    <button class="btn" id="measY">Real Y-axis data</button>
-    <span style="color:var(--text-muted);font-size:13px;">scale:</span>
-    <button class="btn primary" id="measLog">log</button>
-    <button class="btn" id="measLin">linear</button>
-    <span style="color:var(--text-muted);font-size:13px;">or upload your own:</span>
-    <label style="font-size:12.5px;color:var(--text-secondary);">before <input type="file" id="measBeforeFile" accept=".csv,text/csv" style="max-width:190px;"></label>
-    <label style="font-size:12.5px;color:var(--text-secondary);">after <input type="file" id="measAfterFile" accept=".csv,text/csv" style="max-width:190px;"></label>
-  </div>
-  <div class="note" id="measStatus">Upload a <code>calibration_data_*.csv</code> (or <code>resonances_*.csv</code>) as the unshaped "before", and either a <code>raw_data_*.csv</code> (time/accel samples — the full Welch PSD runs live in your browser) or a shaped <code>resonances_*.csv</code> as the "after". Nothing leaves your machine.</div>
-  <div class="cap">vibration power spectral density, unshaped vs shaped <span style="color:var(--text-muted)">(on the log scale every gridline is 10&times;; the linear scale shows how completely the peaks vanish at true proportions; dashed verticals mark the peaks detected in the unshaped data)</span></div>
-  <div class="chart"><canvas id="cMeas"></canvas></div>
-  <div class="cards" id="cardsMeas"></div>
-  <div class="note" id="noteMeas"></div>
 
   <p class="foot">Multimode shaper = convolution of a base shaper tuned to each configured peak (amplitudes multiply, times add); residual computed with the classic amplitude formula (see the <a href="input_shaper_response.html">input shaper page</a>). The broadband reference is <code>smooth_zvd_ei</code> tuned to peak&nbsp;1, the widest existing smoother. Manual config (<code>shaper_freq_&lt;axis&gt; = f1, f2, f3</code>) supports any N&nbsp;≥&nbsp;2 up to the firmware's 32-impulse pulse buffer; <code>SHAPER_CALIBRATE</code>'s own automatic search still only tests the top two detected peaks. The fitted extruder kernel reproduces Kalico's real fitting procedure (Legendre-basis, KKT-constrained least squares with a soft non-negativity penalty, evaluated near every peak with that peak's own damping) &mdash; the same algorithm as <code>extruder_smoother.get_multi_mode_extruder_smoother</code>. Rendered with Chart.js.</p>
 </div>
@@ -449,6 +480,350 @@
     return withDamp;
   }
 
+  // ================= real find_best_shaper recommendation =================
+  // Everything below ports klippy/extras/shaper_calibrate.py's find_best_shaper
+  // as faithfully as is practical client-side: the same candidate shapers and
+  // smoothers, the same scoring formula, the same single-mode/multimode
+  // selection thresholds, and the same dual-peak-cluster-widening fix
+  // (_find_peak_cluster_bounds) the auto-tuner uses server-side. It reuses
+  // zv/mzv/zvd/ei/h2/BASEFN/convolve/detectPeaks/estimateDampingRatio/
+  // shaperOffset/shaperSmoothing already defined above.
+  var PULSE_COUNT2={zv:2,mzv:3,zvd:3,ei:3,'2hump_ei':4};
+  var SHAPER_MIN_FREQ={zv:21.0,mzv:23.0,zvd:29.0,ei:29.0,'2hump_ei':39.0};
+  var TWO_MODE_AUTOTUNE_BASES=['zv','mzv','ei'];
+  var AUTOTUNE_SHAPER_NAMES=['mzv','ei','2hump_ei'];
+  var TEST_DAMPING_RATIOS=[0.075,0.1,0.15];
+  var DEFAULT_DAMPING_RATIO=0.1;
+  var MAX_SHAPER_FREQ=300.0;
+  var MIN_FREQ=5.0;
+
+  function twoModeShaper(base1,f1,f2,d1,d2,base2){
+    base2=base2||base1;
+    return convolve(BASEFN[base1](f1,d1),BASEFN[base2](f2,d2));
+  }
+
+  // ---- smoothers: shaper_defs.get_*_smoother / init_smoother ----
+  var SMOOTHER_TABLE={
+    smooth_zv:{coeffs:[-118.4265334338076,5.861885495127615,29.52796003014231,-1.465471373781904,0.01966833207740377],k:0.8025,minFreq:18.0},
+    smooth_mzv:{coeffs:[-1906.717580206364,125.8892756660212,698.0200035767849,-37.75923018121473,-62.18762409216703,1.57172781617736,1.713117990217123],k:0.95625,minFreq:20.0},
+    smooth_ei:{coeffs:[-1797.048868963208,120.5310596109878,669.6653197989012,-35.71975707450795,-62.49388325512682,1.396748042940248,1.848276903900512],k:1.06625,minFreq:21.0},
+    smooth_2hump_ei:{coeffs:[-22525.88434486782,2524.826047114184,10554.22832043971,-1051.778387878068,-1475.914693073253,121.2177946817349,57.95603221424528,-4.018706414213658,0.8375784787864095],k:1.14875,minFreq:21.5},
+    smooth_zvd_ei:{coeffs:[-18835.07746719777,1914.349309746547,8786.608981369287,-807.3061869131075,-1209.429748155012,96.48879052981883,43.1595785340444,-3.577268915175282,1.083220648523371],k:1.475,minFreq:26.0},
+    smooth_si:{coeffs:[-6186.76006449789,1206.747198930197,2579.985143622855,-476.8554763069169,-295.546608490564,52.69679971161049,4.234582468800491,-2.226157642004671,1.267781046297883],k:1.245,minFreq:30.0}
+  };
+  var AUTOTUNE_SMOOTHER_NAMES=['smooth_zv','smooth_mzv','smooth_ei','smooth_2hump_ei','smooth_zvd_ei','smooth_si'];
+  function makeSmoother(name,freq){
+    var def=SMOOTHER_TABLE[name],coeffs=def.coeffs,tSm=def.k/freq,n=coeffs.length;
+    var invT=1/tSm,invTn=invT,C=new Array(n);
+    for(var i=n-1;i>=0;i--){C[n-i-1]=coeffs[i]*invTn;invTn*=invT;}
+    return {C:C,t_sm:tSm};
+  }
+
+  function stepResponseVelocity(t,omega,z){
+    var tt=Math.max(t,0),df=Math.sqrt(1-z*z);
+    return Math.exp(-z*omega*tt)*Math.sin(omega*df*tt)*(omega/df);
+  }
+  function stepResponseMinVelocity(z){
+    var d2=z*z,dr=z/Math.sqrt(1-d2);
+    var t=0.5*Math.atan2(2*d2,(2*d2-1)*dr)+Math.PI;
+    var phase=Math.acos(z);
+    return Math.exp(-dr*t)*(dr*Math.sin(t+phase)-Math.cos(t+phase));
+  }
+  // Faithful port of the real estimate_shaper (shaper_calibrate.py:176-212) --
+  // used server-side by both fit_shaper's classic-shaper branch and
+  // fit_two_mode_shaper, NOT estimate_shaper_old / this page's own residual()
+  // (which is used elsewhere on this page purely for the manual peak charts).
+  function estimateShaperReal(sh,testDampingRatio,f,nT){
+    if(!(f>0))return 1.0;
+    nT=nT||1000;
+    var A=sh.A,T=sh.T,n=A.length,i,k;
+    var sA=0;for(i=0;i<n;i++)sA+=A[i];
+    var invD=1/sA;
+    var tS=T[n-1]-T[0],tStart=T[0],tEnd=T[n-1]+2.0*Math.max(1.0/f,tS);
+    var omega=2*Math.PI*f;
+    var time=new Array(nT);
+    for(i=0;i<nT;i++)time[i]=tStart+(tEnd-tStart)*i/(nT-1);
+    var velocity=new Array(nT).fill(0);
+    for(k=0;k<n;k++)for(i=0;i<nT;i++)velocity[i]+=A[k]*stepResponseVelocity(time[i]-T[k],omega,testDampingRatio);
+    for(i=0;i<nT;i++)velocity[i]*=invD/omega;
+    var kinkMin=Infinity;
+    for(var j=0;j<n;j++){
+      var kv=0;for(k=0;k<n;k++)kv+=A[k]*stepResponseVelocity(T[j]-T[k],omega,testDampingRatio);
+      kv*=invD/omega;if(kv<kinkMin)kinkMin=kv;
+    }
+    var vmin=Infinity,vminIdx=-1;
+    for(i=0;i<nT;i++)if(velocity[i]<vmin){vmin=velocity[i];vminIdx=i;}
+    var refined=vmin;
+    var jc=Math.min(Math.max(vminIdx,1),nT-2);
+    if(jc>=1&&jc<=nT-2&&vminIdx===jc){
+      var vM=velocity[jc-1],v0=velocity[jc],vP=velocity[jc+1],denom=vM-2*v0+vP;
+      if(denom>0)refined=velocity[vminIdx]-(vP-vM)*(vP-vM)/(8*denom);
+    }
+    var velocityMin=Math.min(refined,kinkMin);
+    var minV=-stepResponseMinVelocity(testDampingRatio);
+    return -velocityMin/minV;
+  }
+  // Faithful port of the real estimate_smoother (shaper_calibrate.py:238-288)
+  // -- a windowed convolution of the smoother against the analytic step
+  // response, materially more accurate for wide smoothers (e.g.
+  // smooth_zvd_ei) than the closed-form estimate_smoother_old approximation.
+  // nT defaults lower than Python's 1000 as a deliberate browser-performance
+  // tradeoff; validated against the real Python to still pick the same
+  // overall winner on real capture data.
+  function estimateSmootherReal(sm,testDampingRatio,f,nT){
+    if(!(f>0))return 1.0;
+    nT=nT||250;
+    var C=sm.C,tSm=sm.t_sm,hst=tSm*0.5,i,k;
+    var omega=2*Math.PI*f,tStart=-tSm,tEnd=hst+Math.max(1.5/f,2.0*tSm);
+    var time=new Array(nT);
+    for(i=0;i<nT;i++)time[i]=tStart+(tEnd-tStart)*i/(nT-1);
+    var dt=(time[nT-1]-time[0])/nT;
+    var w=new Array(nT);
+    for(i=0;i<nT;i++){
+      var inWin=time[i]<=hst&&time[i]>=-hst,tau=inWin?time[i]:0,wv=0;
+      for(k=C.length-1;k>=0;k--)wv=wv*tau+C[k];
+      w[i]=inWin?wv:0;
+    }
+    var norm=0;for(i=0;i<nT;i++)norm+=w[i]*dt;
+    var df=Math.sqrt(1-testDampingRatio*testDampingRatio);
+    var sV=new Array(nT);
+    for(i=0;i<nT;i++){
+      var t=Math.max(time[i],0);
+      sV[i]=Math.exp(-testDampingRatio*omega*t)*Math.sin(omega*df*t)*(omega/df)/omega;
+    }
+    var wm=0;for(i=0;i<nT;i++)if(time[i]<-hst)wm++;
+    var wp=0;for(i=0;i<nT;i++)if(time[i]<=hst)wp++;
+    var wl=wp-wm;
+    var wdtRev=new Array(wl);
+    for(k=0;k<wl;k++)wdtRev[wl-1-k]=w[wm+k]*dt/norm;
+    var nOut=nT-wl+1,vmin=Infinity,vminIdx=-1;
+    var velocity=new Array(nOut);
+    for(var jj=0;jj<nOut;jj++){
+      var s=0;for(k=0;k<wl;k++)s+=sV[jj+k]*wdtRev[k];
+      velocity[jj]=s;if(s<vmin){vmin=s;vminIdx=jj;}
+    }
+    var refined=vmin;
+    var jc=Math.min(Math.max(vminIdx,1),nOut-2);
+    if(jc>=1&&jc<=nOut-2&&vminIdx===jc){
+      var vM=velocity[jc-1],v0=velocity[jc],vP=velocity[jc+1],denom=vM-2*v0+vP;
+      if(denom>0)refined=velocity[vminIdx]-(vP-vM)*(vP-vM)/(8*denom);
+    }
+    var minV=-stepResponseMinVelocity(testDampingRatio);
+    return -refined/minV;
+  }
+  // port of _calc_smoother_integrals + _get_smoother_smoothing
+  var smootherIntegralsCache={};
+  function smootherIntegrals(sm){
+    var key=sm.t_sm+'|'+sm.C.join(','),cached=smootherIntegralsCache[key];
+    if(cached)return cached;
+    var C=sm.C,tSm=sm.t_sm,hst=0.5*tSm,nT=100,dt=(2*hst)/(nT-1),i,k;
+    var t=new Array(nT),w=new Array(nT);
+    for(i=0;i<nT;i++)t[i]=-hst+i*dt;
+    for(i=0;i<nT;i++){var ww=0;for(k=C.length-1;k>=0;k--)ww=ww*(-t[i])+C[k];w[i]=ww;}
+    function trapz(arr){var s=0;for(var ii=0;ii<arr.length;ii++){var wgt=(ii===0||ii===arr.length-1)?0.5:1.0;s+=wgt*arr[ii];}return s*dt;}
+    var wnorm=trapz(w);for(i=0;i<nT;i++)w[i]/=wnorm;
+    var tw0=[];for(i=0;i<nT;i++)tw0.push(t[i]*w[i]);
+    var tmean=trapz(tw0);for(i=0;i<nT;i++)t[i]-=tmean;
+    var tw=[],t2w=[];for(i=0;i<nT;i++){tw.push(t[i]*w[i]);t2w.push(t[i]*tw[i]);}
+    var posIdx=[],negIdx=[];for(i=0;i<nT;i++){if(t[i]>=0)posIdx.push(i);else negIdx.push(i);}
+    function trapzSub(arr,idxs){if(!idxs.length)return 0;var s=0;for(var ii=0;ii<idxs.length;ii++){var idx=idxs[ii],wgt=(idx===0||idx===nT-1)?0.5:1.0;s+=wgt*arr[idx];}return s*dt;}
+    var result={i180:trapz(t2w),jp1:trapzSub(tw,posIdx),jp2:trapzSub(t2w,posIdx),jn1:trapzSub(tw,negIdx),jn2:trapzSub(t2w,negIdx)};
+    smootherIntegralsCache[key]=result;
+    return result;
+  }
+  function getSmootherSmoothing(sm,accel,scv){
+    accel=accel||5000;scv=(scv==null?5.0:scv);
+    var integ=smootherIntegrals(sm),halfAccel=accel*0.5;
+    var offset180=halfAccel*integ.i180;
+    var offset90x=scv*integ.jp1+halfAccel*integ.jp2;
+    var offset90y=scv*integ.jn1-halfAccel*integ.jn2;
+    var offset90=Math.sqrt(offset90x*offset90x+offset90y*offset90y);
+    return Math.max(offset90,Math.abs(offset180));
+  }
+  function bisect(func,eps){
+    eps=eps||1e-8;var left=1.0,right=1.0;
+    if(!func(eps))return 0.0;
+    while(!func(left)){right=left;left*=0.5;}
+    if(right===left){while(func(right))right*=2.0;}
+    while(right-left>eps){var mid=(left+right)*0.5;if(func(mid))left=mid;else right=mid;}
+    return left;
+  }
+  function findMaxAccel(s,scv,getSmoothingFn){
+    var TARGET=0.12;
+    return bisect(function(testAccel){return getSmoothingFn(s,testAccel,scv)<=TARGET;},1e-2);
+  }
+  function findPeakClusterBounds(freqBins,psd,centerFreq,window){
+    window=window||10.0;
+    var sub=detectPeaks(freqBins,psd,Math.max(0,centerFreq-window),centerFreq+window,0.12,4.0,2);
+    if(sub.length<2)return [centerFreq,centerFreq];
+    return [Math.min(sub[0],sub[1]),Math.max(sub[0],sub[1])];
+  }
+  // port of _estimate_remaining_vibrations (shaper_calibrate.py:423-461)
+  function estimateRemainingVibrations(freqBins,vals,psd){
+    var n=freqBins.length,i,j;
+    var ratio=new Array(n).fill(0),globalRatio=0;
+    for(i=0;i<n;i++){if(freqBins[i]>0){ratio[i]=psd[i]/freqBins[i];if(ratio[i]>globalRatio)globalRatio=ratio[i];}}
+    var threshRatio=new Array(n).fill(globalRatio);
+    var psdMax=0;for(i=0;i<n;i++)if(psd[i]>psdMax)psdMax=psd[i];
+    for(i=1;i<n-1;i++){
+      if(!(psd[i]>psd[i-1]&&psd[i]>=psd[i+1]&&psd[i]>0.05*psdMax))continue;
+      if(!(freqBins[i]>0))continue;
+      if(ratio[i]>=globalRatio)continue;
+      for(j=0;j<n;j++)if(Math.abs(freqBins[j]-freqBins[i])<=12.0)threshRatio[j]=Math.min(threshRatio[j],ratio[i]);
+    }
+    var remaining=0,all=0;
+    for(i=0;i<n;i++){
+      var vibrThreshold=threshRatio[i]*(freqBins[i]+MIN_FREQ)*(1.0/33.3);
+      remaining+=Math.max(vals[i]*psd[i]-vibrThreshold,0)*freqBins[i]*freqBins[i];
+      all+=psd[i]*freqBins[i]*freqBins[i];
+    }
+    return remaining/all;
+  }
+  function linspace2(a,b,n){var out=new Array(n),step=(b-a)/(n-1);for(var i=0;i<n;i++)out[i]=a+step*i;return out;}
+  function interp2(xs,xp,fp){
+    var out=new Array(xs.length),j=0;
+    for(var i=0;i<xs.length;i++){
+      var x=xs[i];
+      if(x<=xp[0]){out[i]=fp[0];continue;}
+      if(x>=xp[xp.length-1]){out[i]=fp[fp.length-1];continue;}
+      while(j<xp.length-2&&xp[j+1]<x)j++;
+      var t=(x-xp[j])/(xp[j+1]-xp[j]);
+      out[i]=fp[j]*(1-t)+fp[j+1]*t;
+    }
+    return out;
+  }
+  function shaperScore(smoothing,vibrations){
+    return smoothing*(2.0*Math.pow(vibrations,1.5)+vibrations*0.2+0.001+smoothing*0.002);
+  }
+  // ---- single-mode fit: port of fit_shaper, for either an impulse shaper or a smoother ----
+  function fitSingleMode(kind,name,freqBins,psd,scv,maxFreq,freqStep){
+    var dampingRatio=DEFAULT_DAMPING_RATIO,testDampingRatios=TEST_DAMPING_RATIOS;
+    freqStep=freqStep||0.2;maxFreq=maxFreq||200.0;
+    var minFreq=kind==='shaper'?SHAPER_MIN_FREQ[name]:SMOOTHER_TABLE[name].minFreq;
+    var nUnitPts=kind==='smoother'?300:1000;
+    var smootherNT=250;
+    var testFreqBins=linspace2(0.0,9.99,nUnitPts);
+    var testVals=new Array(nUnitPts).fill(0),dr,i,vals,unit;
+    for(var di=0;di<testDampingRatios.length;di++){
+      dr=testDampingRatios[di];
+      if(kind==='shaper'){unit=BASEFN[name](1.0,dampingRatio);vals=testFreqBins.map(function(f){return estimateShaperReal(unit,dr,f,1000);});}
+      else{unit=makeSmoother(name,1.0);vals=testFreqBins.map(function(f){return estimateSmootherReal(unit,dr,f,smootherNT);});}
+      for(i=0;i<nUnitPts;i++)if(vals[i]>testVals[i])testVals[i]=vals[i];
+    }
+    var fbClipped=[],psdClipped=[];
+    for(i=0;i<freqBins.length;i++)if(freqBins[i]<=maxFreq){fbClipped.push(freqBins[i]);psdClipped.push(psd[i]);}
+    var freqEnd=MAX_SHAPER_FREQ,freqStart=Math.min(minFreq,freqEnd-1e-7);
+    var results=[],bestRes=null;
+    for(var f=freqStart;f<freqEnd;f+=freqStep){
+      var scaledXp=testFreqBins.map(function(tf){return tf*f;});
+      var shaperVals=interp2(fbClipped,scaledXp,testVals);
+      var vibrations=estimateRemainingVibrations(fbClipped,shaperVals,psdClipped);
+      var smoothing,s;
+      if(kind==='shaper'){s=BASEFN[name](f,dampingRatio);smoothing=shaperSmoothing(s,5000,scv);}
+      else{s=makeSmoother(name,f);smoothing=getSmootherSmoothing(s,5000,scv);}
+      var maxAccel=kind==='shaper'?findMaxAccel(s,scv,shaperSmoothing):findMaxAccel(s,scv,getSmootherSmoothing);
+      var score=shaperScore(smoothing,vibrations);
+      var res={name:name,freq:f,vibrs:vibrations,smoothing:smoothing,score:score,maxAccel:maxAccel,base:null,base2:null,freq2:null,dampingRatio:dampingRatio,dampingRatio2:null};
+      results.push(res);
+      if(bestRes===null||bestRes.vibrs>res.vibrs)bestRes=res;
+    }
+    var selected=bestRes;
+    for(i=results.length-1;i>=0;i--){
+      var res2=results[i];
+      if(res2.score<selected.score&&(res2.vibrs<bestRes.vibrs*1.2||res2.vibrs<bestRes.vibrs+0.0075))selected=res2;
+    }
+    return selected;
+  }
+  // ---- two-mode fit: port of fit_two_mode_shaper, including the dual-peak-cluster-widening fix ----
+  function fitTwoMode(base1,base2,freqBins,psd,peak1,peak2,damping1,damping2,scv,maxFreqIn){
+    damping1=damping1||DEFAULT_DAMPING_RATIO;damping2=damping2||damping1;
+    var testDampingRatios=TEST_DAMPING_RATIOS;
+    var name=base2===base1?base1:base1+'/'+base2;
+    var baseRatio=peak2/peak1;
+    var c2=findPeakClusterBounds(freqBins,psd,peak2),cluster2Lo=c2[0],cluster2Hi=c2[1];
+    var ratioLo=Math.min(baseRatio*0.94,cluster2Lo/peak1);
+    var ratioHi=Math.max(baseRatio*1.06,cluster2Hi/peak1);
+    var noWiden2=(ratioLo===baseRatio*0.94)&&(ratioHi===baseRatio*1.06);
+    var nRatios=noWiden2?5:9;
+    var ratios=linspace2(ratioLo,ratioHi,nRatios);
+    var c1=findPeakClusterBounds(freqBins,psd,peak1),cluster1Lo=c1[0],cluster1Hi=c1[1];
+    var freqStart=Math.max(SHAPER_MIN_FREQ[base1]||21.0,Math.min(peak1-4.0,cluster1Lo));
+    var freqEnd=Math.max(peak1+4.0,cluster1Hi);
+    var testFreqs1=[];for(var f=freqStart;f<freqEnd;f+=0.5)testFreqs1.push(f);
+    if(!testFreqs1.length)testFreqs1=[peak1];
+    var maxFreq=Math.max(maxFreqIn||200.0,peak2*1.2);
+    var fbClipped=[],psdClipped=[],i;
+    for(i=0;i<freqBins.length;i++)if(freqBins[i]<=maxFreq){fbClipped.push(freqBins[i]);psdClipped.push(psd[i]);}
+    var twoModeStep=0.05,twoModeNT=300;
+    var testFreqBins=[];for(var t=0.0;t<9.99;t+=twoModeStep)testFreqBins.push(t);
+    var bestRes=null,results=[];
+    for(var ri=0;ri<ratios.length;ri++){
+      var ratio=ratios[ri];
+      var unit=twoModeShaper(base1,1.0,ratio,damping1,damping2,base2);
+      var testVals=new Array(testFreqBins.length).fill(0);
+      for(var di=0;di<testDampingRatios.length;di++){
+        var dr=testDampingRatios[di];
+        for(i=0;i<testFreqBins.length;i++){var v=estimateShaperReal(unit,dr,testFreqBins[i],twoModeNT);if(v>testVals[i])testVals[i]=v;}
+      }
+      for(var tfi=0;tfi<testFreqs1.length;tfi++){
+        var testFreq1=testFreqs1[tfi],testFreq2=testFreq1*ratio;
+        var sh=twoModeShaper(base1,testFreq1,testFreq2,damping1,damping2,base2);
+        var smoothing=shaperSmoothing(sh,5000,scv);
+        var scaledXp=testFreqBins.map(function(tf){return tf*testFreq1;});
+        var shaperVals=interp2(fbClipped,scaledXp,testVals);
+        var vibrations=estimateRemainingVibrations(fbClipped,shaperVals,psdClipped);
+        var score=shaperScore(smoothing,vibrations);
+        var res={name:'multimode_'+name,freq:testFreq1,vibrs:vibrations,smoothing:smoothing,score:score,maxAccel:0,base:base1,base2:base2,freq2:testFreq2,dampingRatio:damping1,dampingRatio2:damping2};
+        results.push(res);
+        if(bestRes===null||bestRes.vibrs>res.vibrs)bestRes=res;
+      }
+    }
+    if(bestRes===null)return null;
+    var selected=bestRes;
+    for(i=results.length-1;i>=0;i--){
+      var res2=results[i];
+      if(res2.score<selected.score&&(res2.vibrs<bestRes.vibrs*1.2||res2.vibrs<bestRes.vibrs+0.0075))selected=res2;
+    }
+    var finalShaper=twoModeShaper(base1,selected.freq,selected.freq2,damping1,damping2,base2);
+    selected.maxAccel=findMaxAccel(finalShaper,scv,shaperSmoothing);
+    return selected;
+  }
+  // ---- top-level orchestration: port of find_best_shaper ----
+  function findBestShaperReal(freqBins,psd,scv,maxFreq){
+    scv=scv==null?5.0:scv;maxFreq=maxFreq||200.0;
+    var twoModeBias=1.3;
+    var allShapers=[],best=null;
+    function consider(res){
+      allShapers.push(res);
+      if(best===null||res.score*1.2<best.score||(res.score*1.03<best.score&&res.smoothing*1.01<best.smoothing))best=res;
+    }
+    var i;
+    for(i=0;i<AUTOTUNE_SMOOTHER_NAMES.length;i++)consider(fitSingleMode('smoother',AUTOTUNE_SMOOTHER_NAMES[i],freqBins,psd,scv,maxFreq));
+    for(i=0;i<AUTOTUNE_SHAPER_NAMES.length;i++)consider(fitSingleMode('shaper',AUTOTUNE_SHAPER_NAMES[i],freqBins,psd,scv,maxFreq));
+    var peaks=detectPeaks(freqBins,psd,MIN_FREQ,maxFreq,0.12,8.0,2);
+    var dampingEstimates=peaks.map(function(f,idx){
+      var lower=peaks.filter(function(pf,j){return j!==idx&&pf<f;});
+      var upper=peaks.filter(function(pf,j){return j!==idx&&pf>f;});
+      var spanLo=lower.length?Math.max(5.0,(f-Math.max.apply(null,lower))*0.4):null;
+      var spanHi=upper.length?Math.max(5.0,(Math.min.apply(null,upper)-f)*0.4):null;
+      return estimateDampingRatio(freqBins,psd,f,spanLo,spanHi);
+    });
+    var twoModeResult=null;
+    if(peaks.length>=2){
+      var pair=[[peaks[0],dampingEstimates[0]],[peaks[1],dampingEstimates[1]]].sort(function(a,b){return a[0]-b[0];});
+      var peak1=pair[0][0],peak2=pair[1][0];
+      var damping1=pair[0][1]||DEFAULT_DAMPING_RATIO,damping2=pair[1][1]||damping1;
+      for(var b1i=0;b1i<TWO_MODE_AUTOTUNE_BASES.length;b1i++){
+        for(var b2i=0;b2i<TWO_MODE_AUTOTUNE_BASES.length;b2i++){
+          var res=fitTwoMode(TWO_MODE_AUTOTUNE_BASES[b1i],TWO_MODE_AUTOTUNE_BASES[b2i],freqBins,psd,peak1,peak2,damping1,damping2,scv,maxFreq);
+          if(res){allShapers.push(res);if(twoModeResult===null||res.score<twoModeResult.score)twoModeResult=res;}
+        }
+      }
+      if(twoModeResult&&(best===null||twoModeResult.score*twoModeBias<best.score))best=twoModeResult;
+    }
+    return {best:best,allShapers:allShapers,peaks:peaks,dampingEstimates:dampingEstimates};
+  }
+
   // ---- real capture examples (freq, psd_xyz), from the user's own resonance tests ----
   // Captures from 2026-07-15 16:57 -- the latest, cleanest run (both axes
   // captured back-to-back, higher SNR than the earlier 16:18/16:35 pair).
@@ -596,10 +971,11 @@
   function pct(x){return (Math.round(x*1000)/10).toFixed(1)+'%';}
 
   // ================= state =================
-  var peaks=[
-    {base:'ei',freq:61.2,damping:0.113},
-    {base:'mzv',freq:100.5,damping:0.117}
-  ];
+  // Default is NO data: peaks empty, no capture loaded. Loading an example
+  // or a file (or the manual "+ add peak") fills these in.
+  var peaks=[];
+  var loadedCapture=null;   // {freq,psd,label} unshaped capture for the recommendation
+  var lastReco=null;        // most recent findBestShaperReal() result, for the config generator
 
   // ================= peak-row UI =================
   var peakRowsEl=document.getElementById('peakRows');
@@ -616,13 +992,18 @@
         '<select class="pk-base">'+opts+'</select>'+
         '<input type="number" class="pk-freq" step="0.1" min="1" value="'+p.freq+'">'+
         '<input type="number" class="pk-damp" step="0.001" min="0.005" max="0.5" value="'+p.damping+'">'+
-        '<button class="btn pk-remove" type="button" title="remove peak"'+(peaks.length<=2?' disabled':'')+'>&times;</button>'+
+        '<button class="btn pk-remove" type="button" title="remove peak">&times;</button>'+
       '</div>';
     }
     peakRowsEl.innerHTML=html;
     refreshBudget();
   }
   function refreshBudget(){
+    if(!peaks.length){
+      budgetEl.innerHTML='No peaks &mdash; load a capture above, or add peaks manually.';
+      addPeakBtn.disabled=false;
+      return;
+    }
     var pulses=pulseCount(peaks);
     var over=pulses>MAX_SHAPER_PULSES;
     budgetEl.innerHTML=(over?'<strong style="color:var(--red)">':'')+
@@ -645,20 +1026,20 @@
   peakRowsEl.addEventListener('click',function(e){
     if(!e.target.classList.contains('pk-remove'))return;
     var row=e.target.closest('.peakrow'); var idx=+row.dataset.idx;
-    if(peaks.length<=2)return;
     peaks.splice(idx,1); renderPeakRows(); update();
   });
   addPeakBtn.addEventListener('click',function(){
-    var last=peaks[peaks.length-1];
-    peaks.push({base:last.base, freq:Math.round(last.freq*1.5*10)/10, damping:0.1});
+    if(!peaks.length){peaks.push({base:'mzv',freq:50.0,damping:0.1});}
+    else{var last=peaks[peaks.length-1];peaks.push({base:last.base, freq:Math.round(last.freq*1.5*10)/10, damping:0.1});}
     renderPeakRows(); update();
   });
 
   // ================= data loading =================
   var detectStatus=document.getElementById('detectStatus');
   function applyDetected(pairs,sourceLabel){
-    if(pairs.length<2){
-      detectStatus.innerHTML='Only '+pairs.length+' peak detected in '+sourceLabel+' &mdash; multimode needs at least 2, keeping the current peak list.';
+    if(pairs.length<1){
+      peaks=[];renderPeakRows();update();
+      detectStatus.innerHTML='No peaks detected in '+sourceLabel+'.';
       return;
     }
     var prevBases=peaks.map(function(p){return p.base;});
@@ -668,14 +1049,35 @@
       pairs.map(function(p){return p.freq.toFixed(1)+'&nbsp;Hz (&zeta;='+p.damping.toFixed(3)+')';}).join(', ')+'.';
     update();
   }
+  // Loading a capture drives everything: the manual peak explorer's detected
+  // peaks, AND the automatic recommendation below.
+  function loadCapture(freq,psd,label){
+    loadedCapture={freq:freq,psd:psd,label:label};
+    applyDetected(detectAndEstimate(freq,psd,4),label);
+    renderRecommendation();
+  }
+  function clearAll(){
+    loadedCapture=null;lastReco=null;peaks=[];
+    renderPeakRows();update();
+    detectStatus.innerHTML='No capture loaded. Load an example, or upload a Kalico <code>calibration_data_*.csv</code> / <code>resonances_*.csv</code> (a <code>freq</code> column plus <code>psd_x</code>/<code>psd_y</code>/<code>psd_z</code>/<code>psd_xyz</code>). Peak detection and half-power damping-ratio estimation run live in your browser — nothing is uploaded anywhere.';
+    renderRecommendation();
+    var co=document.getElementById('cfgOut');co.style.display='none';co.textContent='';
+    // Also clear the measured before/after section.
+    measState={before:null,after:null,beforeLabel:'',afterLabel:''};
+    document.getElementById('measX').classList.remove('primary');
+    document.getElementById('measY').classList.remove('primary');
+    document.getElementById('measStatus').innerHTML='No before/after data loaded. Click an example, or upload a <code>calibration_data_*.csv</code>/<code>resonances_*.csv</code> as the unshaped "before" and either a <code>raw_data_*.csv</code> (time/accel samples — full Welch PSD runs in your browser) or a shaped <code>resonances_*.csv</code> as the "after". Nothing leaves your machine.';
+    renderMeasured();
+  }
   document.getElementById('loadExX').addEventListener('click',function(){
     var d=unflatten(EXAMPLE_X_FLAT);
-    applyDetected(detectAndEstimate(d.freq,d.psd,4),'the real X-axis capture');
+    loadCapture(d.freq,d.psd,'the real X-axis capture');
   });
   document.getElementById('loadExY').addEventListener('click',function(){
     var d=unflatten(EXAMPLE_Y_FLAT);
-    applyDetected(detectAndEstimate(d.freq,d.psd,4),'the real Y-axis capture');
+    loadCapture(d.freq,d.psd,'the real Y-axis capture');
   });
+  document.getElementById('clearData').addEventListener('click',clearAll);
   document.getElementById('csvFile').addEventListener('change',function(e){
     var file=e.target.files[0]; if(!file)return;
     var axisCol=document.getElementById('csvAxis').value;
@@ -695,7 +1097,7 @@
           var f=parseFloat(cols[freqIdx]), v=parseFloat(cols[colIdx]);
           if(isFinite(f)&&isFinite(v)){freqArr.push(f);psdArr.push(v);}
         }
-        applyDetected(detectAndEstimate(freqArr,psdArr,4),'"'+file.name+'"');
+        loadCapture(freqArr,psdArr,'"'+file.name+'"');
       }catch(err){
         detectStatus.innerHTML='Could not parse "'+file.name+'": '+err.message+'. Expected a Kalico resonance CSV with a "freq" column and a "psd_x"/"psd_y"/"psd_z"/"psd_xyz" column.';
       }
@@ -768,7 +1170,9 @@
       [c1,c5,c2,c3,c4].forEach(function(c){c.data.datasets.forEach(function(d){d.data=[];});c.update();});
       document.getElementById('cards').innerHTML='';
       document.getElementById('cards2').innerHTML='';
-      document.getElementById('note').innerHTML='<span style="color:var(--red)">Configuration invalid (need &ge;2 peaks with positive frequencies, within the 32-impulse budget) &mdash; fix the peak list above.</span>';
+      document.getElementById('note').innerHTML= peaks.length===0
+        ? '<span style="color:var(--text-muted)">No peaks configured &mdash; load a capture above, or add peaks with &ldquo;+ add peak&rdquo;.</span>'
+        : '<span style="color:var(--red)">Configuration invalid (need &ge;2 peaks with positive frequencies, within the 32-impulse budget) &mdash; fix the peak list above.</span>';
       document.getElementById('note2').innerHTML='';
       return;
     }
@@ -871,12 +1275,8 @@
   ['SCV','accl'].forEach(function(id){document.getElementById(id).addEventListener('input',update);});
   window.addEventListener('resize',update);
   // ================= measured before/after wiring =================
-  var measState={
-    before:unflatten(EXAMPLE_X_FLAT),
-    after:unflatten(SHAPED_X_FLAT),
-    beforeLabel:'unshaped (SHAPER_CALIBRATE X, 16:57)',
-    afterLabel:'shaped (raw X capture, 17:06)'
-  };
+  // Default: no before/after loaded. Example buttons or uploads populate it.
+  var measState={before:null,after:null,beforeLabel:'',afterLabel:''};
   function interpAt(d,f0){
     var f=d.freq,p=d.psd;
     if(f0<=f[0])return p[0];
@@ -897,6 +1297,12 @@
   var measScale='log';
   function renderMeasured(){
     var b=measState.before,a=measState.after;
+    if(!b||!a){
+      cMeas.data.datasets=[];cMeas.update();
+      document.getElementById('cardsMeas').innerHTML='';
+      document.getElementById('noteMeas').innerHTML='';
+      return;
+    }
     var isLog=measScale==='log';
     // On the log axis zero values are undrawable and must be skipped; on
     // the linear axis they are perfectly fine (and skipping them would
@@ -937,6 +1343,93 @@
       'The dashed verticals are the peaks Kalico\'s own detector finds in the unshaped data; each card is the measured PSD reduction at that peak. Consistency check at 1.6&nbsp;Hz (far below any resonance, where a shaper cannot matter): before/after ratio = <strong>'+cons.toFixed(2)+'</strong> &mdash; '+(cons>0.7&&cons<1.4?'the captures are directly comparable.':'<span style="color:var(--red)">the captures differ in excitation or units; treat the ratios with caution.</span>')+
       ' Note the 135&ndash;200&nbsp;Hz band: a shaper only notches its configured frequencies, so structure above the covered peaks is reduced far less &mdash; and can even grow if the machine\'s resonances drift between runs.';
   }
+  function renderRecommendation(){
+    var statusEl=document.getElementById('recoStatus');
+    var cardsEl=document.getElementById('cardsReco');
+    var noteEl=document.getElementById('noteReco');
+    cardsEl.innerHTML='';noteEl.innerHTML='';
+    if(!loadedCapture){
+      lastReco=null;
+      statusEl.innerHTML='Load a capture above to compute a recommendation.';
+      return;
+    }
+    var b=loadedCapture;
+    statusEl.innerHTML='Computing recommendation for '+b.label+' (real find_best_shaper port, ~1-2s)…';
+    setTimeout(function(){
+      var scv=5.0,maxFreq=200.0;
+      var result=findBestShaperReal(b.freq,b.psd,scv,maxFreq);
+      var best=result.best;
+      lastReco={best:best,label:b.label};
+      var allPeaks=detectAndEstimate(b.freq,b.psd,4);
+      var isMultimode=best.freq2!=null;
+      var isSmoother=!isMultimode&&AUTOTUNE_SMOOTHER_NAMES.indexOf(best.name)>=0;
+      var label=isMultimode?(best.base===best.base2?best.base:(best.base+'/'+best.base2))+' (multimode)':best.name;
+      var freqLabel=isMultimode?(best.freq.toFixed(1)+' / '+best.freq2.toFixed(1)+' Hz'):(best.freq.toFixed(1)+' Hz');
+      var perPeakHtml=allPeaks.map(function(p){
+        var r;
+        if(isMultimode){
+          var sh=twoModeShaper(best.base,best.freq,best.freq2,best.dampingRatio,best.dampingRatio2,best.base2);
+          r=Math.max.apply(null,TEST_DAMPING_RATIOS.map(function(dr){return estimateShaperReal(sh,dr,p.freq,1000);}));
+        }else if(isSmoother){
+          var sm=makeSmoother(best.name,best.freq);
+          r=Math.max.apply(null,TEST_DAMPING_RATIOS.map(function(dr){return estimateSmootherReal(sm,dr,p.freq,500);}));
+        }else{
+          var sh2=BASEFN[best.name](best.freq,best.dampingRatio);
+          r=Math.max.apply(null,TEST_DAMPING_RATIOS.map(function(dr){return estimateShaperReal(sh2,dr,p.freq,1000);}));
+        }
+        return '<div>'+p.freq.toFixed(1)+'&nbsp;Hz: <strong>'+(Math.round(r*1000)/10).toFixed(1)+'%</strong></div>';
+      }).join('');
+      cardsEl.innerHTML=
+        card('recommended',label,BLUE)+
+        card('frequency',freqLabel)+
+        card('vibrations (search score)',(Math.round(best.vibrs*1000)/10).toFixed(1)+'%')+
+        card('smoothing',best.smoothing.toFixed(4))+
+        card('max_accel',Math.round(best.maxAccel).toLocaleString()+' mm/s²',TEAL);
+      var cfgHtml=isMultimode?
+        ('<code>shaper_type_&lt;axis&gt; = multimode</code> <code>shaper_base_&lt;axis&gt; = '+best.base+', '+best.base2+
+         '</code> <code>shaper_freq_&lt;axis&gt; = '+best.freq.toFixed(1)+', '+best.freq2.toFixed(1)+
+         '</code> <code>damping_ratio_&lt;axis&gt; = '+best.dampingRatio.toFixed(4)+', '+best.dampingRatio2.toFixed(4)+'</code>')
+        :('<code>shaper_type_&lt;axis&gt; = '+best.name+'</code> <code>shaper_freq_&lt;axis&gt; = '+best.freq.toFixed(1)+'</code>');
+      statusEl.innerHTML='Based on '+result.peaks.length+' peak(s) the auto-tuner\'s own 2-peak search considered ('+
+        result.peaks.map(function(f){return f.toFixed(1)+'&nbsp;Hz';}).join(', ')+
+        '), out of '+allPeaks.length+' detected overall. Recommended config: '+cfgHtml;
+      noteEl.innerHTML='Per-peak residual using the recommended shaper above, at <strong>every</strong> peak actually detected in the capture (not just the ones the 2-peak auto-tuner search saw):<br>'+perPeakHtml+
+        (allPeaks.length>2?'<br><span style="color:var(--amber)">The auto-tuner only ever searches its top 2 detected peaks; a 3rd/4th peak (like above) can only be well-suppressed by coincidence, or by manually configuring a multimode shaper with all of them listed (see the manual multimode explorer lower down this page).</span>':'');
+    },10);
+  }
+  // ---- config generator ----
+  function shaperConfigLines(best,axis){
+    var lines=[];
+    if(best.freq2!=null){
+      lines.push('shaper_type_'+axis+' = multimode');
+      lines.push('shaper_base_'+axis+' = '+best.base+', '+best.base2);
+      lines.push('shaper_freq_'+axis+' = '+best.freq.toFixed(1)+', '+best.freq2.toFixed(1));
+      lines.push('damping_ratio_'+axis+' = '+best.dampingRatio.toFixed(6)+', '+best.dampingRatio2.toFixed(6));
+    }else{
+      lines.push('shaper_type_'+axis+' = '+best.name);
+      lines.push('shaper_freq_'+axis+' = '+best.freq.toFixed(1));
+    }
+    return lines;
+  }
+  function generateConfig(){
+    var outEl=document.getElementById('cfgOut');
+    if(!lastReco){
+      outEl.style.display='block';
+      outEl.textContent='# Load a capture and wait for the recommendation first.';
+      return;
+    }
+    var axisSel=document.getElementById('cfgAxis').value;
+    var prefix=document.getElementById('cfgPrefix').checked;
+    var axes=axisSel==='both'?['x','y']:[axisSel];
+    var body=['[input_shaper]'];
+    axes.forEach(function(ax){body=body.concat(shaperConfigLines(lastReco.best,ax));});
+    // save_config prefix: Klipper's autosave block writes every line as "#*# <line>"
+    var text=prefix?body.map(function(l){return '#*# '+l;}).join('\n'):body.join('\n');
+    outEl.style.display='block';
+    outEl.textContent=text;
+  }
+  document.getElementById('genCfg').addEventListener('click',generateConfig);
+
   document.getElementById('measLog').addEventListener('click',function(){
     measScale='log';
     document.getElementById('measLog').classList.add('primary');
@@ -949,19 +1442,28 @@
     document.getElementById('measLog').classList.remove('primary');
     renderMeasured();
   });
+  // The measured example buttons load a before+after pair AND feed the before
+  // into the top loader (loadCapture) so the recommendation / manual explorer
+  // stay consistent with what's shown in the before/after chart.
   document.getElementById('measX').addEventListener('click',function(){
-    measState={before:unflatten(EXAMPLE_X_FLAT),after:unflatten(SHAPED_X_FLAT),
+    var before=unflatten(EXAMPLE_X_FLAT);
+    measState={before:before,after:unflatten(SHAPED_X_FLAT),
       beforeLabel:'unshaped (SHAPER_CALIBRATE X, 16:57)',afterLabel:'shaped (raw X capture, 17:06)'};
     document.getElementById('measX').classList.add('primary');
     document.getElementById('measY').classList.remove('primary');
+    document.getElementById('measStatus').innerHTML='Example X-axis before/after loaded: an unshaped <code>SHAPER_CALIBRATE</code> capture vs a raw capture with the tuned shaper active.';
     renderMeasured();
+    loadCapture(before.freq,before.psd,'the example X-axis before-capture');
   });
   document.getElementById('measY').addEventListener('click',function(){
-    measState={before:unflatten(EXAMPLE_Y_FLAT),after:unflatten(SHAPED_Y_FLAT),
+    var before=unflatten(EXAMPLE_Y_FLAT);
+    measState={before:before,after:unflatten(SHAPED_Y_FLAT),
       beforeLabel:'unshaped (SHAPER_CALIBRATE Y, 16:57)',afterLabel:'shaped (raw Y capture, 17:09)'};
     document.getElementById('measY').classList.add('primary');
     document.getElementById('measX').classList.remove('primary');
+    document.getElementById('measStatus').innerHTML='Example Y-axis before/after loaded: an unshaped <code>SHAPER_CALIBRATE</code> capture vs a raw capture with the tuned shaper active.';
     renderMeasured();
+    loadCapture(before.freq,before.psd,'the example Y-axis before-capture');
   });
   function hookMeasUpload(inputId,slot){
     document.getElementById(inputId).addEventListener('change',function(e){
@@ -977,6 +1479,8 @@
           document.getElementById('measY').classList.remove('primary');
           status.innerHTML='Loaded "'+file.name+'" as the '+slot+' data ('+res.kind+').';
           renderMeasured();
+          // Uploading the unshaped "before" also drives the recommendation.
+          if(slot==='before')loadCapture(res.data.freq,res.data.psd,'"'+file.name+'"');
         }catch(err){
           status.innerHTML='Could not process "'+file.name+'": '+err.message+'.';
         }
@@ -987,6 +1491,7 @@
   hookMeasUpload('measBeforeFile','before');
   hookMeasUpload('measAfterFile','after');
   renderMeasured();
+  renderRecommendation();
 
   renderPeakRows();
   update();
