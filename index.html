@@ -52,14 +52,9 @@
     <p>Compare the <code>tanh</code> and <code>recipr</code> nonlinear models against an upstream linear-PA line. Adjust ADVANCE, OFFSET, VELOCITY and a test move to see advance-vs-velocity, extruder flow rate, and acceleration demand, with the firmware's parabolic extruder smoother and a time-offset control.</p>
   </a>
 
-  <a class="card" href="input_shaper_response.html">
-    <h2>Input shaper response explorer<span class="tag">3hump_ei fix</span></h2>
-    <p>Residual-vibration curves for every input shaper (ZV, MZV, ZVD, EI, 2hump/3hump EI), reproduced from <code>shaper_defs.py</code>. Overlays a corrected <code>3hump_ei</code> against upstream for the coefficient bug, with an impulse view and a damping-ratio sweep showing where upstream's truncated polynomial degrades.</p>
-  </a>
-
-  <a class="card" href="two_mode_shaper.html">
-    <h2>Multimode input shaper<span class="tag">Kalico feature</span></h2>
-    <p>Kalico's real <code>shaper_type = multimode</code>: convolve a base shaper tuned to each of N&nbsp;≥&nbsp;2 resonance peaks so every one gets its own notch. Configure peaks/bases directly, load real capture CSVs (peak-detection runs live, in-browser), and see the measured before/after on a real printer — a 30&times; drop in vibration power, computed from actual accelerometer captures with Kalico's own Welch pipeline.</p>
+  <a class="card" href="shaper_tuning.html">
+    <h2>Shaper tuning<span class="tag">Kalico feature</span></h2>
+    <p>Load a real resonance capture (peak detection runs live, in-browser) and get the shaper <code>SHAPER_CALIBRATE</code> would recommend — the full <code>find_best_shaper</code> search ported to JS, including multimode with the dual-peak-cluster fix. Explore any shaper type by hand against your own data (smoothing, max_accel, per-resonance residual), then generate a ready-to-paste <code>[input_shaper]</code> config.</p>
   </a>
 
   <a class="card" href="smoother_vs_shaper.html">
@@ -83,7 +78,7 @@
   </a>
 
   <div class="note">
-    <strong>Note on provenance.</strong> The pressure-advance page models a custom <code>bleeding-edge-v2</code> implementation (<code>tanh</code>/<code>recipr</code> nonlinear PA) that is not in upstream Kalico or Klipper. The input-shaper, smoother, resonance-excitation, and estimation pages reproduce the Kalico shaper code (<code>shaper_defs.py</code>, <code>resonance_tester.py</code>, <code>shaper_calibrate.py</code>) with proposed fixes and contrast them against current upstream Kalico (<code>bleeding-edge-v2</code>).
+    <strong>Note on provenance.</strong> The pressure-advance page models a custom <code>bleeding-edge-v2</code> implementation (<code>tanh</code>/<code>recipr</code> nonlinear PA) that is not in upstream Kalico or Klipper. The shaper-tuning, smoother, resonance-excitation, and estimation pages reproduce the Kalico shaper code (<code>shaper_defs.py</code>, <code>resonance_tester.py</code>, <code>shaper_calibrate.py</code>) with proposed fixes and contrast them against current upstream Kalico (<code>bleeding-edge-v2</code>).
   </div>
 
   <p class="foot">Math and kernels reproduced from <code>klippy/chelper/kin_extruder.c</code>, <code>klippy/extras/extruder_smoother.py</code>, and <code>klippy/extras/shaper_defs.py</code>. Charts rendered with Chart.js (CDN). Source: <a href="https://github.com/Hannott/KlipperVisuals">Hannott/KlipperVisuals</a>.</p>
