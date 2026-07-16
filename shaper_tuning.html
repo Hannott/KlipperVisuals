@@ -229,9 +229,9 @@
   function h2(f,z){return expShaper(f,z,T2,A2);}
   function h3(f,z){return expShaper(f,z,T3,A3);}
 
-  // Only the six impulse shapers are valid multimode bases (shaper_defs.TWO_MODE_BASES).
+  // All six are valid single-mode shaper_type_<axis> values (shaper_defs.INPUT_SHAPERS);
+  // only zv/mzv/ei are offered as multimode BASES below (see TWO_MODE_AUTOTUNE_BASES).
   var BASEFN={zv:zv,mzv:mzv,zvd:zvd,ei:ei,'2hump_ei':h2,'3hump_ei':h3};
-  var IMPULSE_BASES=['zv','mzv','zvd','ei','2hump_ei','3hump_ei'];
   var PULSE_COUNT={zv:2,mzv:3,zvd:3,ei:3,'2hump_ei':4,'3hump_ei':5};
   var MAX_SHAPER_PULSES=32;
   var BASE_LABEL={zv:'ZV',mzv:'MZV',zvd:'ZVD',ei:'EI','2hump_ei':'2HUMP_EI','3hump_ei':'3HUMP_EI'};
@@ -879,7 +879,12 @@
     var html='';
     for(var i=0;i<peaks.length;i++){
       var p=peaks[i];
-      var opts=IMPULSE_BASES.map(function(b){return '<option value="'+b+'"'+(b===p.base?' selected':'')+'>'+BASE_LABEL[b]+'</option>';}).join('');
+      // Restricted to zv/mzv/ei: Kalico's own multimode auto-search
+      // (TWO_MODE_AUTOTUNE_BASES) never considers zvd/2hump_ei/3hump_ei as
+      // bases -- a two-mode shaper convolves two copies of the base, so a
+      // higher-order base produces so much smoothing it can never win the
+      // recommendation, and only clutters the search.
+      var opts=TWO_MODE_AUTOTUNE_BASES.map(function(b){return '<option value="'+b+'"'+(b===p.base?' selected':'')+'>'+BASE_LABEL[b]+'</option>';}).join('');
       html+='<div class="peakrow" data-idx="'+i+'">'+
         '<span class="swatch" style="background:'+PALETTE[i%PALETTE.length]+'"></span>'+
         '<select class="pk-base">'+opts+'</select>'+
