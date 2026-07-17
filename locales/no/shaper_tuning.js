@@ -168,7 +168,8 @@ window.KV_LOCALES.no.shaper_tuning = {
     axisDetected: "Redigerer: {{axis}}-aksen",
     editingLabel: "Redigerer:",
     prefixLabel: "bruk <code>#*#</code>-prefiks",
-    invalidComment: "# Konfigurer en gyldig shaper i utforskeren ovenfor først."
+    invalidComment: "# Konfigurer en gyldig shaper i utforskeren ovenfor først.",
+    pickAxisComment: "# Velg en akse (X eller Y) ovenfor for å legge denne målingen til konfigurasjonen."
   },
   deep: {
     tag: "Dypere analyse — multimode ekstrudersynkronisering",

@@ -168,7 +168,8 @@ window.KV_LOCALES.en.shaper_tuning = {
     axisDetected: "Editing: {{axis}} axis",
     editingLabel: "Editing:",
     prefixLabel: "use <code>#*#</code> prefix",
-    invalidComment: "# Configure a valid shaper in the explorer above first."
+    invalidComment: "# Configure a valid shaper in the explorer above first.",
+    pickAxisComment: "# Pick an axis (X or Y) above to add this capture to the config."
   },
   deep: {
     tag: "Deeper analysis — multimode extruder synchronization",

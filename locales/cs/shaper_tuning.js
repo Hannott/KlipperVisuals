@@ -168,7 +168,8 @@ window.KV_LOCALES.cs.shaper_tuning = {
     axisDetected: "Úpravy: osa {{axis}}",
     editingLabel: "Úpravy:",
     prefixLabel: "použijte prefix <code>#*#</code>",
-    invalidComment: "# Nejprve nakonfigurujte platný tvořovač v níže uvedeném průzkumníku."
+    invalidComment: "# Nejprve nakonfigurujte platný tvořovač v níže uvedeném průzkumníku.",
+    pickAxisComment: "# Vyberte osu (X nebo Y) výše pro přidání tohoto záznamu do konfigurace."
   },
   deep: {
     tag: "Hlubší analýza — multimode synchronizace extrudéru",

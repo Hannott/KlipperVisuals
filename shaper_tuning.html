@@ -1531,6 +1531,10 @@
   // generator emits, since a single capture only ever covers one motion axis.
   function loadCapture(freq,x,y,z,xyz,label,testAxis){
     loadedCapture={freq:freq,x:x,y:y,z:z,xyz:xyz,psd:xyz,label:label,testAxis:testAxis||null};
+    // Reset the manual axis choice on every load: an undetected capture starts
+    // UNASSIGNED (null) so it writes to no axis and can't clobber an existing
+    // config just by being uploaded -- the user must explicitly pick X or Y.
+    cfgAxisChoice=null;
     axisHidden={x:false,y:false,z:false}; // a fresh capture starts with every axis feeding Combined
     excludedPeaks=[]; // a fresh capture starts with every detected peak in play
     var detected=detectAndEstimate(freq,xyz,4);
@@ -1574,13 +1578,16 @@
       document.getElementById('cfgAxisY').classList.toggle('primary',cfgAxisChoice==='y');
     }
   }
-  // User picked which axis an undetected capture represents. An ambiguous
-  // capture belongs to exactly one axis, so clear whatever the other slot held
-  // from an earlier choice, then re-cache this capture under the new axis.
+  // User picked which axis an undetected capture represents. If this capture
+  // was already assigned to the other axis (a previous pick this session),
+  // clear THAT slot first so one ambiguous capture only ever occupies one
+  // axis -- but never touch a slot this capture didn't write (so a different
+  // file's config in the other slot survives).
   function chooseCfgAxis(axis){
     if(axis!=='x'&&axis!=='y'||axis===cfgAxisChoice)return;
+    var prev=cfgAxisChoice; // what THIS capture was assigned to before (null if unassigned)
     cfgAxisChoice=axis;
-    axisConfigCache[axis==='x'?'y':'x']=null;
+    if(prev&&prev!==axis)axisConfigCache[prev]=null;
     renderCfgAxisBadge();
     update();                          // re-caches the manual snapshot under effectiveCfgAxis()
     if(lastReco)paintRecommendation(); // re-caches the suggested snapshot too
@@ -1614,7 +1621,7 @@
     if(loadedCapture && !window.confirm(t('shaper_tuning.capture.resetConfirm')))return;
     loadedCapture=null;lastReco=null;peaks=[];axisHidden={x:false,y:false,z:false};excludedPeaks=[];autoExcluded=[];recoCache={};
     explType='smooth_si';explFreq=50.0;explDamp=0.1;
-    axisConfigCache={x:null,y:null};cfgAxisChoice='x';
+    axisConfigCache={x:null,y:null};cfgAxisChoice=null;
     acclInput.min='3000';acclInput.max='30000';setAccel(6000,true);
     syncExplorerControls();
     renderPeakRows();
@@ -1932,8 +1939,10 @@
   var axisConfigCache={x:null,y:null};
   var cfgMode='manual'; // 'manual' | 'suggested' -- which snapshot the config output renders
   // Which axis an *undetected* capture is treated as (the user picks via the
-  // X/Y toggle). Ignored whenever the filename gave us a definite axis.
-  var cfgAxisChoice='x';
+  // X/Y toggle). null = unassigned: the capture writes to no axis and can't
+  // clobber an existing config. Ignored whenever the filename gave a definite
+  // axis. Reset to null on every load (see loadCapture).
+  var cfgAxisChoice=null;
   // The axis the config box is currently writing to: the detected one if we
   // have it, otherwise the user's toggle choice. Always resolves to 'x'/'y'.
   function effectiveCfgAxis(){return (loadedCapture&&loadedCapture.testAxis)||cfgAxisChoice;}
@@ -2096,10 +2105,12 @@
     else{deepSection.style.display='none';}
 
     // Remember this axis's manual config as of this (valid) explorer state.
-    if(loadedCapture){
-      var cfgAxis=effectiveCfgAxis();
-      if(!axisConfigCache[cfgAxis])axisConfigCache[cfgAxis]={manual:null,suggested:null};
-      axisConfigCache[cfgAxis].manual=explorerState();
+    // effectiveCfgAxis() is null for an undetected, not-yet-assigned capture --
+    // skip caching so it can't overwrite an existing axis config.
+    var mCfgAxis=loadedCapture&&effectiveCfgAxis();
+    if(mCfgAxis){
+      if(!axisConfigCache[mCfgAxis])axisConfigCache[mCfgAxis]={manual:null,suggested:null};
+      axisConfigCache[mCfgAxis].manual=explorerState();
     }
     renderConfigOutput();
   }
@@ -2388,10 +2399,11 @@
       (tierAllowsMultimode()&&allPeaks.length>=MULTIMODE_MAX_PEAKS?'<br><span style="color:var(--amber)">'+t('shaper_tuning.notes.recoCaveat')+'</span>':'');
 
     // Remember this axis's suggested config as of this recommendation.
-    if(loadedCapture){
-      var cfgAxis=effectiveCfgAxis();
-      if(!axisConfigCache[cfgAxis])axisConfigCache[cfgAxis]={manual:null,suggested:null};
-      axisConfigCache[cfgAxis].suggested=stateFromBest(best);
+    // Null (undetected, unassigned) -> skip so nothing gets overwritten.
+    var sCfgAxis=loadedCapture&&effectiveCfgAxis();
+    if(sCfgAxis){
+      if(!axisConfigCache[sCfgAxis])axisConfigCache[sCfgAxis]={manual:null,suggested:null};
+      axisConfigCache[sCfgAxis].suggested=stateFromBest(best);
       renderConfigOutput();
     }
   }
@@ -2467,14 +2479,23 @@
         if(state&&stateValid(state))body=body.concat(configLinesForState(ax,state));
       });
     }else{
-      // No axis cached yet (e.g. nothing loaded): preview the live explorer
-      // state under the single effective axis.
+      // No axis cached yet: preview the live explorer state under the single
+      // effective axis. If the axis is unassigned (undetected capture, no pick
+      // yet), effectiveCfgAxis() is null -> emit nothing, prompting a pick.
+      var ax=effectiveCfgAxis();
       var state=explorerState();
-      if(stateValid(state))body=body.concat(configLinesForState(effectiveCfgAxis(),state));
+      if(ax&&stateValid(state))body=body.concat(configLinesForState(ax,state));
     }
     // save_config prefix: Klipper's autosave block writes every line as "#*# <line>"
-    outEl.textContent=(body.length<=1)?t('shaper_tuning.config.invalidComment'):
-      (prefix?body.map(function(l){return '#*# '+l;}).join('\n'):body.join('\n'));
+    if(body.length>1){
+      outEl.textContent=prefix?body.map(function(l){return '#*# '+l;}).join('\n'):body.join('\n');
+    }else if(loadedCapture&&!effectiveCfgAxis()){
+      // Undetected capture, no axis chosen: nothing is written anywhere (so no
+      // existing config is lost) -- tell the user to pick an axis.
+      outEl.textContent=t('shaper_tuning.config.pickAxisComment');
+    }else{
+      outEl.textContent=t('shaper_tuning.config.invalidComment');
+    }
   }
   document.getElementById('cfgModeManual').addEventListener('click',function(){
     cfgMode='manual';this.classList.add('primary');document.getElementById('cfgModeSuggested').classList.remove('primary');

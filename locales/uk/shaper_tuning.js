@@ -168,7 +168,8 @@ window.KV_LOCALES.uk.shaper_tuning = {
     axisDetected: "Редагування: вісь {{axis}}",
     editingLabel: "Редагування:",
     prefixLabel: "використовуйте префікс <code>#*#</code>",
-    invalidComment: "# Спочатку налаштуйте дійсний шейпер у дослідникові вище."
+    invalidComment: "# Спочатку налаштуйте дійсний шейпер у дослідникові вище.",
+    pickAxisComment: "# Виберіть вісь (X або Y) вище, щоб додати цей запис до конфігурації."
   },
   deep: {
     tag: "Глибший аналіз — multimode синхронізація екструдера",
