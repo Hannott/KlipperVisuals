@@ -81,10 +81,15 @@
   if (cur === "") cur = "index.html";
 
   var css = [
-    // .kv-nav is the sticky positioning root for .palette-wrap below, which
-    // floats to the actual screen edge -- independent of .kv-nav-inner's
-    // centered 1040px column (the palette picker is chrome, not page content).
     ".kv-nav{position:sticky;top:0;z-index:20;background:var(--surface-0);border-bottom:.5px solid var(--border);}",
+    // controls-wrap is a normal flex item of kv-nav-inner (NOT absolutely
+    // positioned) so it always reserves its own space and wraps along with
+    // the brand/links -- an earlier absolute+floating-to-the-screen-edge
+    // version looked fine at a few tested widths but didn't reserve layout
+    // space at all, so on plenty of in-between widths (not just "narrow")
+    // it silently drew on top of the nav links instead of pushing them
+    // aside. flex-wrap on this container is what lets it drop to its own
+    // line when the links don't leave enough room next to it.
     ".kv-nav-inner{max-width:" + WIDTH + ";margin:0 auto;padding:.62rem 1.25rem;display:flex;flex-wrap:wrap;align-items:center;gap:6px 18px;font-size:14px;line-height:1.4;}",
     ".kv-nav a{text-decoration:none;}",
     ".kv-nav .brand{font-weight:500;color:var(--text-primary);margin-right:auto;padding-bottom:3px;border-bottom:2px solid transparent;}",
@@ -92,7 +97,10 @@
     ".kv-nav .links a{color:var(--text-secondary);padding-bottom:3px;border-bottom:2px solid transparent;}",
     ".kv-nav .links a:hover{color:var(--text-primary);}",
     ".kv-nav a.current{color:var(--blue);border-bottom-color:var(--blue);}",
-    ".kv-nav .controls-wrap{position:absolute;top:50%;right:1.25rem;transform:translateY(-50%);display:flex;align-items:flex-end;gap:10px;}",
+    // justify-content:flex-end so that when this wraps onto its own line
+    // (no room left next to the links), it still sits flush right instead
+    // of falling back to flex-start.
+    ".kv-nav .controls-wrap{display:flex;flex:none;align-items:flex-end;justify-content:flex-end;gap:10px;margin-left:auto;}",
     ".kv-nav .control{display:flex;flex-direction:column;align-items:flex-end;gap:2px;}",
     ".kv-nav .control-label{font-size:10px;letter-spacing:.05em;text-transform:uppercase;color:var(--text-muted);}",
     ".kv-nav .control select{font-family:inherit;font-size:12.5px;padding:4px 6px;border-radius:6px;border:.5px solid var(--border);background:var(--surface-2);color:var(--text-secondary);}",
@@ -111,8 +119,11 @@
       var isCur = cur === page.toLowerCase();
       h += "<a" + (isCur ? ' class="current" aria-current="page"' : "") + ' href="' + page + '">' + linkLabel(page) + "</a>";
     }
-    h += "</nav></div>";
+    h += "</nav>";
 
+    // A flex item of kv-nav-inner itself (see the CSS comment above), not a
+    // sibling div positioned outside it -- so it always reserves its own
+    // layout space instead of floating on top of whatever's underneath.
     h += '<div class="controls-wrap">';
 
     h += '<div class="control"><label class="control-label" for="kv-lang-select">' + i18n.t("common.language.fieldLabel") + "</label>";
@@ -131,7 +142,8 @@
     }
     h += "</select></div>";
 
-    h += "</div>";
+    h += "</div>"; // .controls-wrap
+    h += "</div>"; // .kv-nav-inner
     return h;
   }
 
