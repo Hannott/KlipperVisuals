@@ -165,8 +165,8 @@ window.KV_LOCALES.en.shaper_tuning = {
     manual: "manual",
     suggested: "suggested",
     copyTitle: "Copy to clipboard",
-    axisDetected: "currently editing: {{axis}} axis",
-    axisUnknown: "currently editing: X & Y<br>(axis not detected from filename)",
+    axisDetected: "Editing: {{axis}} axis",
+    editingLabel: "Editing:",
     prefixLabel: "use <code>#*#</code> prefix",
     invalidComment: "# Configure a valid shaper in the explorer above first."
   },

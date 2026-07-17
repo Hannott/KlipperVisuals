@@ -165,8 +165,8 @@ window.KV_LOCALES.no.shaper_tuning = {
     manual: "manuell",
     suggested: "anbefalt",
     copyTitle: "Kopier til utklippstavle",
-    axisDetected: "redigerer nå: {{axis}}-aksen",
-    axisUnknown: "redigerer nå: X og Y<br>(fant ikke aksen fra filnavnet)",
+    axisDetected: "Redigerer: {{axis}}-aksen",
+    editingLabel: "Redigerer:",
     prefixLabel: "bruk <code>#*#</code>-prefiks",
     invalidComment: "# Konfigurer en gyldig shaper i utforskeren ovenfor først."
   },

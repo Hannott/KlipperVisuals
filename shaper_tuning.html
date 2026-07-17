@@ -116,13 +116,20 @@
   .cfgcopy{position:absolute;top:8px;right:8px;width:28px;height:28px;display:flex;align-items:center;justify-content:center;border-radius:6px;border:.5px solid var(--border);background:var(--surface-1);color:var(--text-muted);cursor:pointer;padding:0;}
   .cfgcopy:hover{color:var(--text-primary);background:var(--surface-2);}
   .cfgcopy svg{width:15px;height:15px;display:block;}
-  /* align-items:stretch (not flex-start): the column itself was already the
-     right width, but flex-start let the badge/checkbox size to their own
-     content and left-align, so their visible boxes stopped short of the
-     column's actual right edge -- looked misaligned against full-width
-     content below even though .cfgbar's own bounding box was correct. */
-  .cfgbar{flex:1 1 220px;display:flex;flex-direction:column;align-items:stretch;gap:12px;}
+  /* Controls column. Base (wrapped / narrow viewport): flex:1 1 100% so it
+     fills its own line and never leaves dead space beside it. Desktop
+     (side-by-side, >=800px): flex:0 1 auto so it shrinks to its own content
+     width -- narrow, letting .cfgoutwrap (grow:4) take the freed space -- and
+     since it's the rightmost item in the row its right edge sits at the page
+     content edge, lining up with the library row below. align-items:stretch
+     so the badge/checkbox fill that width rather than left-hugging. */
+  .cfgbar{flex:1 1 100%;display:flex;flex-direction:column;align-items:stretch;gap:12px;}
+  @media(min-width:800px){ .cfgbar{flex:0 1 auto;} }
   .cfgbar .cfgtoggle{display:flex;gap:8px;align-items:center;}
+  /* Push the info icon to the column's right edge (top row), where it aligns
+     with the library row's right edge below. */
+  .cfgbar .cfgtoggle .infoicon{margin-left:auto;}
+  .cfgbar .axistoggle-label{font-size:13px;color:var(--text-secondary);}
   .cfgbar label{font-size:13px;color:var(--text-secondary);display:flex;align-items:center;gap:6px;}
   /* Info icon: replaces the old always-visible step-4 intro paragraph --
      same content, now a hover/focus tooltip (native title/aria-label, same
@@ -208,11 +215,22 @@
         <div class="cfgtoggle">
           <button class="btn primary" id="cfgModeManual" style="padding:2px 8px;" data-i18n="shaper_tuning.config.manual">manual</button>
           <button class="btn" id="cfgModeSuggested" style="padding:2px 8px;" data-i18n="shaper_tuning.config.suggested">suggested</button>
+          <!-- margin-left:auto (CSS) pushes this to the column's right edge,
+               where it lines up with the library row's right edge below. -->
           <span class="infoicon" id="cfgInfo" tabindex="0" role="button" title="Always shows the config for whichever axis you've worked on." aria-label="Always shows the config for whichever axis you've worked on." data-i18n-attr="title:shaper_tuning.config.intro|aria-label:shaper_tuning.config.intro">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
           </span>
         </div>
-        <span class="axis-badge" id="cfgAxisBadge"></span>
+        <!-- Axis indicator: a plain badge when the axis is known (detected from
+             the filename), OR an X/Y picker when it isn't -- so an ambiguously
+             named capture still gets written under a definite axis instead of
+             dumping both. renderCfgAxisBadge() shows exactly one of these. -->
+        <span class="axis-badge" id="cfgAxisBadge" style="display:none;"></span>
+        <div class="cfgtoggle" id="cfgAxisToggle" style="display:none;">
+          <span class="axistoggle-label" data-i18n="shaper_tuning.config.editingLabel">Editing:</span>
+          <button class="btn" id="cfgAxisX" type="button">X</button>
+          <button class="btn" id="cfgAxisY" type="button">Y</button>
+        </div>
         <label><input type="checkbox" id="cfgPrefix"> <span data-i18n-html="shaper_tuning.config.prefixLabel">apply save_config prefix (<code>#*#</code>)</span></label>
       </div>
     </div>
@@ -1538,10 +1556,36 @@
     if(hasY&&!hasX)return'y';
     return null;
   }
+  // Shows exactly one of: nothing (no capture), the detected-axis badge, or the
+  // X/Y picker (capture loaded but axis undetected).
   function renderCfgAxisBadge(){
-    var el=document.getElementById('cfgAxisBadge');
+    var badge=document.getElementById('cfgAxisBadge');
+    var toggle=document.getElementById('cfgAxisToggle');
     var ax=loadedCapture&&loadedCapture.testAxis;
-    el.innerHTML=ax?t('shaper_tuning.config.axisDetected',{axis:ax.toUpperCase()}):t('shaper_tuning.config.axisUnknown');
+    if(!loadedCapture){badge.style.display='none';toggle.style.display='none';return;}
+    if(ax){
+      toggle.style.display='none';
+      badge.style.display='';
+      badge.innerHTML=t('shaper_tuning.config.axisDetected',{axis:ax.toUpperCase()});
+    }else{
+      badge.style.display='none';
+      toggle.style.display='';
+      document.getElementById('cfgAxisX').classList.toggle('primary',cfgAxisChoice==='x');
+      document.getElementById('cfgAxisY').classList.toggle('primary',cfgAxisChoice==='y');
+    }
+  }
+  // User picked which axis an undetected capture represents. An ambiguous
+  // capture belongs to exactly one axis, so clear whatever the other slot held
+  // from an earlier choice, then re-cache this capture under the new axis.
+  function chooseCfgAxis(axis){
+    if(axis!=='x'&&axis!=='y'||axis===cfgAxisChoice)return;
+    cfgAxisChoice=axis;
+    axisConfigCache[axis==='x'?'y':'x']=null;
+    renderCfgAxisBadge();
+    update();                          // re-caches the manual snapshot under effectiveCfgAxis()
+    if(lastReco)paintRecommendation(); // re-caches the suggested snapshot too
+    else renderConfigOutput();
+    persistState(true);
   }
   // Recomputes Combined = sum of whichever raw axes are still visible on the
   // input chart (matching Kalico's own psd_sum = psd_x+psd_y+psd_z), then
@@ -1570,7 +1614,7 @@
     if(loadedCapture && !window.confirm(t('shaper_tuning.capture.resetConfirm')))return;
     loadedCapture=null;lastReco=null;peaks=[];axisHidden={x:false,y:false,z:false};excludedPeaks=[];autoExcluded=[];recoCache={};
     explType='smooth_si';explFreq=50.0;explDamp=0.1;
-    axisConfigCache={x:null,y:null};
+    axisConfigCache={x:null,y:null};cfgAxisChoice='x';
     acclInput.min='3000';acclInput.max='30000';setAccel(6000,true);
     syncExplorerControls();
     renderPeakRows();
@@ -1600,7 +1644,7 @@
       var blob={cap:{freq:d.freq,x:d.x,y:d.y,z:d.z,xyz:d.xyz,label:d.label,testAxis:d.testAxis},
         axisHidden:axisHidden, excludedPeaks:excludedPeaks,
         expl:{explType:explType,peaks:peaks,explFreq:explFreq,explDamp:explDamp,explAccel:explAccel},
-        axisConfigCache:axisConfigCache, cfgMode:cfgMode};
+        axisConfigCache:axisConfigCache, cfgMode:cfgMode, cfgAxisChoice:cfgAxisChoice};
       if(lastReco)blob.reco={best:lastReco.best,peaks:lastReco.result.peaks,allShapers:lastReco.result.allShapers,allPeaks:lastReco.allPeaks,label:lastReco.label};
       sessionStorage.setItem(STORE_KEY,JSON.stringify(blob));
     }catch(e){/* storage full/disabled: persistence just no-ops */}
@@ -1622,6 +1666,7 @@
     }
     if(blob.reco)lastReco={best:blob.reco.best,result:{peaks:blob.reco.peaks,allShapers:blob.reco.allShapers},allPeaks:blob.reco.allPeaks,label:blob.reco.label};
     axisConfigCache=blob.axisConfigCache||{x:null,y:null};
+    if(blob.cfgAxisChoice)cfgAxisChoice=blob.cfgAxisChoice;
     if(blob.cfgMode){
       cfgMode=blob.cfgMode;
       document.getElementById('cfgModeManual').classList.toggle('primary',cfgMode==='manual');
@@ -1886,6 +1931,12 @@
   // configs at once instead of only whichever capture is loaded right now.
   var axisConfigCache={x:null,y:null};
   var cfgMode='manual'; // 'manual' | 'suggested' -- which snapshot the config output renders
+  // Which axis an *undetected* capture is treated as (the user picks via the
+  // X/Y toggle). Ignored whenever the filename gave us a definite axis.
+  var cfgAxisChoice='x';
+  // The axis the config box is currently writing to: the detected one if we
+  // have it, otherwise the user's toggle choice. Always resolves to 'x'/'y'.
+  function effectiveCfgAxis(){return (loadedCapture&&loadedCapture.testAxis)||cfgAxisChoice;}
   function isSmootherType(t){return t.indexOf('smooth_')===0;}
   function isMultimodeType(t){return t==='multimode';}
   function worstResidualDisplay(kind,sh,f){
@@ -2045,8 +2096,8 @@
     else{deepSection.style.display='none';}
 
     // Remember this axis's manual config as of this (valid) explorer state.
-    var cfgAxis=loadedCapture&&loadedCapture.testAxis;
-    if(cfgAxis==='x'||cfgAxis==='y'){
+    if(loadedCapture){
+      var cfgAxis=effectiveCfgAxis();
       if(!axisConfigCache[cfgAxis])axisConfigCache[cfgAxis]={manual:null,suggested:null};
       axisConfigCache[cfgAxis].manual=explorerState();
     }
@@ -2337,8 +2388,8 @@
       (tierAllowsMultimode()&&allPeaks.length>=MULTIMODE_MAX_PEAKS?'<br><span style="color:var(--amber)">'+t('shaper_tuning.notes.recoCaveat')+'</span>':'');
 
     // Remember this axis's suggested config as of this recommendation.
-    var cfgAxis=loadedCapture&&loadedCapture.testAxis;
-    if(cfgAxis==='x'||cfgAxis==='y'){
+    if(loadedCapture){
+      var cfgAxis=effectiveCfgAxis();
       if(!axisConfigCache[cfgAxis])axisConfigCache[cfgAxis]={manual:null,suggested:null};
       axisConfigCache[cfgAxis].suggested=stateFromBest(best);
       renderConfigOutput();
@@ -2416,11 +2467,10 @@
         if(state&&stateValid(state))body=body.concat(configLinesForState(ax,state));
       });
     }else{
+      // No axis cached yet (e.g. nothing loaded): preview the live explorer
+      // state under the single effective axis.
       var state=explorerState();
-      if(stateValid(state)){
-        var detectedAxis=loadedCapture&&loadedCapture.testAxis;
-        (detectedAxis?[detectedAxis]:['x','y']).forEach(function(ax){body=body.concat(configLinesForState(ax,state));});
-      }
+      if(stateValid(state))body=body.concat(configLinesForState(effectiveCfgAxis(),state));
     }
     // save_config prefix: Klipper's autosave block writes every line as "#*# <line>"
     outEl.textContent=(body.length<=1)?t('shaper_tuning.config.invalidComment'):
@@ -2435,6 +2485,8 @@
     renderConfigOutput();persistState(true);
   });
   document.getElementById('cfgPrefix').addEventListener('change',renderConfigOutput);
+  document.getElementById('cfgAxisX').addEventListener('click',function(){chooseCfgAxis('x');});
+  document.getElementById('cfgAxisY').addEventListener('click',function(){chooseCfgAxis('y');});
   // ---- copy config to clipboard (icon swaps to a checkmark briefly) ----
   var CFG_COPY_ICON='<rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>';
   var CFG_CHECK_ICON='<polyline points="20 6 9 17 4 12"></polyline>';

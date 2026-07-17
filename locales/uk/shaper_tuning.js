@@ -165,8 +165,8 @@ window.KV_LOCALES.uk.shaper_tuning = {
     manual: "ручний",
     suggested: "рекомендований",
     copyTitle: "Копіювати в буфер обміну",
-    axisDetected: "зараз редагується: вісь {{axis}}",
-    axisUnknown: "зараз редагується: X та Y<br>(не вдалося визначити вісь з імені файлу)",
+    axisDetected: "Редагування: вісь {{axis}}",
+    editingLabel: "Редагування:",
     prefixLabel: "використовуйте префікс <code>#*#</code>",
     invalidComment: "# Спочатку налаштуйте дійсний шейпер у дослідникові вище."
   },
