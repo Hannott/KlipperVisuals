@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title data-i18n="config_reference.title">Config reference — Klipper / Kalico</title>
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<script src="i18n.js"></script>
+<style>
+  html{overflow-y:scroll;}
+  :root{
+    --text-primary:#0b0b0b; --text-secondary:#52514e; --text-muted:#898781;
+    --surface-0:#f4f3ee; --surface-1:#faf9f5; --surface-2:#ffffff;
+    --border:rgba(11,11,11,.12); --radius:8px;
+    --grid:#e1e0d9;
+    --font-sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --font-mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  }
+  @media (prefers-color-scheme:dark){
+    :root{
+      --text-primary:#f2f1ea; --text-secondary:#c3c2b7; --text-muted:#898781;
+      --surface-0:#191918; --surface-1:#1f1f1e; --surface-2:#262625;
+      --border:rgba(255,255,255,.14); --grid:#2c2c2a;
+    }
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--surface-0);color:var(--text-primary);font-family:var(--font-sans);line-height:1.6;}
+  .wrap{max-width:1040px;margin:0 auto;padding:2rem 1.25rem 4rem;}
+  h1{font-size:22px;font-weight:500;margin:.5rem 0 .25rem;}
+  h2{font-size:16px;font-weight:500;margin:0 0 .5rem;}
+  h2 code{font-size:1em;color:var(--blue);}
+  .sub{color:var(--text-secondary);font-size:15px;margin:0 0 1rem;}
+  code{font-family:var(--font-mono);font-size:.9em;}
+  a{color:var(--blue);}
+  .backlink{display:inline-block;font-size:13px;margin-bottom:1.25rem;}
+  .format-note{font-size:12.5px;color:var(--text-muted);margin:0 0 1.5rem;}
+  .cfgsec{margin-top:2.5rem;padding-top:1.25rem;border-top:.5px solid var(--border);}
+  .sec-intro{color:var(--text-secondary);font-size:14px;margin:.5rem 0 1rem;}
+  .sec-intro code,.sub code,.format-note code{background:var(--surface-1);border:.5px solid var(--border);border-radius:4px;padding:0 4px;}
+  /* Config code block, styled like the official reference: a monospace panel
+     with the section header + commented options, and a copy button top-right. */
+  .codewrap{position:relative;}
+  pre.cfgblock{font-family:var(--font-mono);font-size:12.5px;line-height:1.5;background:var(--surface-1);border:.5px solid var(--border);border-radius:var(--radius);padding:1rem 2.6rem 1rem 1rem;margin:0;overflow-x:auto;white-space:pre;color:var(--text-secondary);}
+  /* The uncommented (required) option lines are emphasized via a wrapper span. */
+  pre.cfgblock .req{color:var(--text-primary);font-weight:500;}
+  .copybtn{position:absolute;top:10px;right:10px;width:30px;height:30px;display:flex;align-items:center;justify-content:center;border-radius:6px;border:.5px solid var(--border);background:var(--surface-2);color:var(--text-muted);cursor:pointer;padding:0;}
+  .copybtn:hover{color:var(--text-primary);background:var(--surface-0);}
+  .copybtn svg{width:15px;height:15px;display:block;}
+  .foot-legal{margin-top:3rem;font-size:13px;border-top:.5px solid var(--border);padding-top:1rem;}
+  .foot-legal a{color:var(--text-secondary);}
+</style>
+</head>
+<body>
+<script src="nav.js"></script>
+<div class="wrap">
+  <a class="backlink" href="shaper_tuning.html" data-i18n="config_reference.backLink">← Back to Shaper tuning</a>
+  <h1 data-i18n="config_reference.heading">Config reference</h1>
+  <p class="sub" data-i18n-html="config_reference.intro">Only the config sections this fork changes are listed here — but each one in full. Every other section is unchanged from Kalico.</p>
+  <p class="sub" data-i18n-html="config_reference.fullRefNote">For all other sections, see the full Kalico config reference.</p>
+  <p class="format-note" data-i18n-html="config_reference.formatNote">Commented-out lines show the default value; uncommented options must be provided.</p>
+
+  <div class="cfgsec">
+    <h2><code>[input_shaper]</code></h2>
+    <p class="sec-intro" data-i18n-html="config_reference.io.intro"></p>
+    <div class="codewrap">
+      <pre class="cfgblock" id="ioBlock"></pre>
+      <button class="copybtn" data-copy="ioBlock" type="button" title="Copy to clipboard" aria-label="Copy to clipboard" data-i18n-attr="title:config_reference.copyTitle|aria-label:config_reference.copyTitle">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path></svg>
+      </button>
+    </div>
+  </div>
+
+  <div class="cfgsec">
+    <h2><code>[resonance_tester]</code></h2>
+    <p class="sec-intro" data-i18n-html="config_reference.rt.intro"></p>
+    <div class="codewrap">
+      <pre class="cfgblock" id="rtBlock"></pre>
+      <button class="copybtn" data-copy="rtBlock" type="button" title="Copy to clipboard" aria-label="Copy to clipboard" data-i18n-attr="title:config_reference.copyTitle|aria-label:config_reference.copyTitle">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path></svg>
+      </button>
+    </div>
+  </div>
+
+  <p class="foot-legal"><a href="disclaimer.html" data-i18n="common.disclaimer">Disclaimer &amp; credits</a></p>
+</div>
+
+<script>
+(function(){
+  var t = window.KV_I18N.t;
+
+  // Each entry: config line(s) exactly as they belong in printer.cfg (language
+  // -neutral, so they live here, not in the locale files) plus the locale KEY
+  // of the plain-text description. A leading "#" marks an optional line shown
+  // with its default; a line without "#" is a required option. buildBlock()
+  // word-wraps the description into "#   ..." comment lines beneath.
+  var HEADER_IO = "[input_shaper]";
+  var IO = [
+    { lines: ["#shaper_type: mzv"], key: "shaperType" },
+    { lines: ["#shaper_type_x:", "#shaper_type_y:"], key: "shaperTypeAxis" },
+    { lines: ["#shaper_freq_x: 0", "#shaper_freq_y: 0"], key: "shaperFreq" },
+    { lines: ["#damping_ratio_x: 0.1", "#damping_ratio_y: 0.1"], key: "dampingRatio" },
+    { lines: ["#shaper_base_x: mzv", "#shaper_base_y: mzv"], key: "shaperBase" },
+    { lines: ["#shaper_a_x:", "#shaper_t_x:", "#shaper_a_y:", "#shaper_t_y:"], key: "shaperAT" },
+    { lines: ["#smoother_freq_x:", "#smoother_freq_y:"], key: "smootherFreq" },
+    { lines: ["#smooth_time_x:", "#smooth_time_y:"], key: "smoothTime" },
+    { lines: ["#coeffs_x:", "#coeffs_y:"], key: "coeffs" },
+    { lines: ["#enabled_extruders:"], key: "enabledExtruders" }
+  ];
+  var HEADER_RT = "[resonance_tester]";
+  var RT = [
+    { lines: ["#accel_chips:"], key: "accelChips" },
+    { lines: ["#accel_chip:"], key: "accelChip" },
+    { lines: ["#accel_chip_x:", "#accel_chip_y:"], key: "accelChipXY" },
+    { lines: ["#probe_points:"], key: "probePoints" },
+    { lines: ["#move_speed: 50"], key: "moveSpeed" },
+    { lines: ["#min_freq: 5.0"], key: "minFreq" },
+    { lines: ["#max_freq: 135.0"], key: "maxFreq" },
+    { lines: ["#accel_per_hz: 75.0"], key: "accelPerHz" },
+    { lines: ["#hz_per_sec: 1.0"], key: "hzPerSec" },
+    { lines: ["#sweeping_accel: 400.0"], key: "sweepingAccel" },
+    { lines: ["#sweeping_period: 0"], key: "sweepingPeriod" },
+    { lines: ["#max_smoothing:"], key: "maxSmoothing" },
+    { lines: ["#multimode_bias: 1.0"], key: "multimodeBias" }
+  ];
+
+  var WRAP = 72; // total line width target, matching the official reference
+
+  // Greedy word-wrap of one description paragraph into "#   word word ..."
+  // comment lines no wider than WRAP.
+  function wrapComment(text){
+    var prefix = "#   ", words = text.split(/\s+/), lines = [], cur = "";
+    for (var i = 0; i < words.length; i++){
+      var w = words[i];
+      if (cur && (prefix + cur + " " + w).length > WRAP){
+        lines.push(prefix + cur); cur = w;
+      } else {
+        cur = cur ? cur + " " + w : w;
+      }
+    }
+    if (cur) lines.push(prefix + cur);
+    return lines;
+  }
+
+  // Builds the block as plain text (for textContent / clipboard) AND as HTML
+  // (so required, uncommented option lines can be emphasized). Returns {text,html}.
+  function buildBlock(header, opts, ns){
+    var textLines = [header], htmlLines = [esc(header)];
+    for (var i = 0; i < opts.length; i++){
+      var o = opts[i];
+      for (var j = 0; j < o.lines.length; j++){
+        var line = o.lines[j];
+        textLines.push(line);
+        // A line not starting with "#" is a required option -> emphasize.
+        htmlLines.push(line.charAt(0) === "#" ? esc(line)
+          : '<span class="req">' + esc(line) + "</span>");
+      }
+      var desc = t("config_reference." + ns + "." + o.key);
+      var cmt = wrapComment(desc);
+      for (var k = 0; k < cmt.length; k++){
+        textLines.push(cmt[k]); htmlLines.push(esc(cmt[k]));
+      }
+    }
+    return { text: textLines.join("\n"), html: htmlLines.join("\n") };
+  }
+
+  function esc(s){
+    return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+
+  function render(){
+    var io = buildBlock(HEADER_IO, IO, "io");
+    var rt = buildBlock(HEADER_RT, RT, "rt");
+    var ioEl = document.getElementById("ioBlock");
+    var rtEl = document.getElementById("rtBlock");
+    ioEl.innerHTML = io.html; ioEl.dataset.copy = io.text;
+    rtEl.innerHTML = rt.html; rtEl.dataset.copy = rt.text;
+  }
+
+  // Copy the plain-text block (stored in dataset.copy, so the emphasis markup
+  // never reaches the clipboard).
+  var COPY_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path></svg>';
+  var CHECK_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg>';
+  var copyBtns = document.querySelectorAll(".copybtn");
+  for (var b = 0; b < copyBtns.length; b++){
+    copyBtns[b].addEventListener("click", function(){
+      var btn = this, pre = document.getElementById(btn.dataset.copy);
+      var text = pre ? pre.dataset.copy : "";
+      var done = function(){
+        btn.innerHTML = CHECK_SVG;
+        setTimeout(function(){ btn.innerHTML = COPY_SVG; }, 1200);
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText){
+        navigator.clipboard.writeText(text).then(done, function(){});
+      }
+    });
+  }
+
+  render();
+  window.KV_I18N.onChange(render); // rebuild the blocks in the newly-selected language
+})();
+</script>
+</body>
+</html>

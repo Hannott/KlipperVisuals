@@ -33,6 +33,7 @@
   h1{font-size:22px;font-weight:500;margin:.5rem 0 .25rem;}
   h2{font-size:16px;font-weight:500;margin:2rem 0 .5rem;}
   .sub{color:var(--text-secondary);font-size:15px;margin:0 0 1.5rem;}
+  .configref-note{margin-top:-.9rem;font-size:14px;}
   code{font-family:var(--font-mono);font-size:.9em;}
   .grouplabel{font-size:12px;letter-spacing:.04em;text-transform:uppercase;color:var(--text-muted);margin:1rem 0 .5rem;}
   .row{display:flex;flex-wrap:wrap;gap:16px;margin-bottom:1rem;align-items:flex-end;}
@@ -159,6 +160,9 @@
 <div class="wrap">
   <h1 data-i18n="shaper_tuning.heading">Shaper tuning</h1>
   <p class="sub" data-i18n-html="shaper_tuning.intro">Load a resonance capture and everything on this page is computed from <em>your</em> data: the measured spectrum, the shaper <code>SHAPER_CALIBRATE</code> would recommend (the full <code>find_best_shaper</code> search ported to your browser), a hands-on explorer for any shaper type, and a ready-to-paste <code>[input_shaper]</code> config.<br>Nothing is uploaded anywhere — peak detection, damping estimation, and the whole shaper search run locally.</p>
+  <!-- Pointer to the (nav-hidden) config reference sub-page. Its own element so
+       the intro's data-i18n-html doesn't clobber the link. -->
+  <p class="sub configref-note" data-i18n-html="shaper_tuning.configRefLink">Setting up a new printer? See the <a href="config_reference.html">config reference</a> for every changed <code>[input_shaper]</code> and <code>[resonance_tester]</code> option.</p>
 
   <!-- Firmware tier: gates which shaper types are offered/searched, since
        smooth_* smoothers and multimode aren't on every firmware. The math

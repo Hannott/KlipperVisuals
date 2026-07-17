@@ -5,6 +5,7 @@ window.KV_LOCALES.no.shaper_tuning = {
   title: "Shaper-tuning — Klipper / Kalico",
   heading: "Shaper-tuning",
   intro: "Last inn en resonansmåling, og alt på denne siden beregnes fra <em>dine</em> data: det målte spekteret, shaperen <code>SHAPER_CALIBRATE</code> ville anbefalt (hele <code>find_best_shaper</code>-søket portert til nettleseren din), en utforsker for å prøve ut hvilken som helst shaper-type, og en klar-til-lim <code>[input_shaper]</code>-konfigurasjon.<br>Ingenting lastes opp noe sted — toppdeteksjon, dempingsestimering og hele shaper-søket kjører lokalt.",
+  configRefLink: "Setter du opp en ny skriver? Se <a href=\"config_reference.html\">konfigurasjonsreferansen</a> for hver endrede <code>[input_shaper]</code>- og <code>[resonance_tester]</code>-innstilling.",
   steps: {
     load: "1. Last inn en resonansmåling",
     recommended: "2. Anbefalt shaper",

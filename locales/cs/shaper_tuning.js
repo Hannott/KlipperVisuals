@@ -5,6 +5,7 @@ window.KV_LOCALES.cs.shaper_tuning = {
   title: "Ladění vyhlazovače — Klipper / Kalico",
   heading: "Ladění vyhlazovače",
   intro: "Načtěte rezonančí záznam a vše na této stránce se vypočítá z <em>vašich</em> dat: naměřené spektrum, vyhlazovač <code>SHAPER_CALIBRATE</code> by doporučil (úplné <code>find_best_shaper</code> hledání portované do vašeho prohlížeče), interaktivní průzkumník pro jakýkoli typ vyhlazovače a připravený <code>[input_shaper]</code> config.<br>Nic se neposílá nikam — detekce vrcholů, odhad tlumení a celé hledání vyhlazovače běží lokálně.",
+  configRefLink: "Nastavujete novou tiskárnu? V <a href=\"config_reference.html\">referenční příručce konfigurace</a> najdete každou změněnou volbu <code>[input_shaper]</code> a <code>[resonance_tester]</code>.",
   steps: {
     load: "1. Načtěte rezonančí záznam",
     recommended: "2. Doporučovaný vyhlazovač",

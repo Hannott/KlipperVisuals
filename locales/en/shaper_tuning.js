@@ -5,6 +5,7 @@ window.KV_LOCALES.en.shaper_tuning = {
   title: "Shaper tuning — Klipper / Kalico",
   heading: "Shaper tuning",
   intro: "Load a resonance capture and everything on this page is computed from <em>your</em> data: the measured spectrum, the shaper <code>SHAPER_CALIBRATE</code> would recommend (the full <code>find_best_shaper</code> search ported to your browser), a hands-on explorer for any shaper type, and a ready-to-paste <code>[input_shaper]</code> config.<br>Nothing is uploaded anywhere — peak detection, damping estimation, and the whole shaper search run locally.",
+  configRefLink: "Setting up a new printer? See the <a href=\"config_reference.html\">config reference</a> for every changed <code>[input_shaper]</code> and <code>[resonance_tester]</code> option.",
   steps: {
     load: "1. Load a resonance capture",
     recommended: "2. Recommended shaper",
