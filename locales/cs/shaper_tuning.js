@@ -14,7 +14,6 @@ window.KV_LOCALES.cs.shaper_tuning = {
   databar: {
     loadExX: "Příklad: X-osový záznam",
     loadExY: "Příklad: Y-osový záznam",
-    or: "nebo",
     upload: "Nahrát záznam…",
     clear: "Vymazat",
     tryExample: "Zatím žádná data? Vyzkoušejte příklad:"

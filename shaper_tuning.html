@@ -79,7 +79,7 @@
   .library-name{font-family:var(--font-mono);color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;}
   .library-date{color:var(--text-muted);font-size:11px;white-space:nowrap;}
   .library-remove{padding:1px 8px;line-height:1;font-size:15px;}
-  .examples-hint{font-size:12.5px;color:var(--text-muted);margin:0 0 1rem;display:flex;flex-wrap:wrap;gap:6px;align-items:center;}
+  .examples-hint{font-size:12.5px;color:var(--text-muted);margin:0 0 1rem;display:flex;flex-direction:column;align-items:flex-start;gap:4px;}
   .examples-hint button.linklike{background:none;border:none;padding:0;margin:0;color:var(--blue);text-decoration:underline;cursor:pointer;font:inherit;font-size:12.5px;}
   .examples-hint button.linklike:hover{color:var(--text-primary);}
   .aspectbox{position:relative;width:100%;overflow:hidden;border-radius:var(--radius);border:.5px solid var(--border);background:var(--surface-1);}
@@ -97,7 +97,10 @@
      instead of as its own step at the bottom of the page -- .loadcfgrow is
      the outer row, .cfgrow (below) is reused as-is as its right-hand side. */
   .loadcfgrow{display:flex;gap:24px;align-items:stretch;flex-wrap:wrap;margin:.75rem 0;}
-  .loadcol{flex:1 1 300px;display:flex;flex-direction:column;}
+  /* loadcol doesn't grow (flex-grow:0): stacking the example links (below)
+     means it no longer needs much width, so all leftover row space should
+     go to the config box instead. */
+  .loadcol{flex:0 1 220px;display:flex;flex-direction:column;}
   .cfgrow{display:flex;gap:20px;align-items:stretch;flex-wrap:wrap;flex:1 1 460px;margin:0;}
   .cfgoutwrap{position:relative;flex:1 1 260px;min-width:0;display:flex;}
   .cfgcopy{position:absolute;top:8px;right:8px;width:28px;height:28px;display:flex;align-items:center;justify-content:center;border-radius:6px;border:.5px solid var(--border);background:var(--surface-1);color:var(--text-muted);cursor:pointer;padding:0;}
@@ -181,9 +184,8 @@
       <!-- Examples are de-emphasized on purpose: this page is about the user's
            own data, not the bundled samples. -->
       <div class="examples-hint">
-        <span data-i18n="shaper_tuning.databar.tryExample">No data yet? Try an example:</span>
+        <div data-i18n="shaper_tuning.databar.tryExample">No data yet? Try an example:</div>
         <button type="button" class="linklike" id="loadExX" data-i18n="shaper_tuning.databar.loadExX">Example: X-axis capture</button>
-        <span data-i18n="shaper_tuning.databar.or">or</span>
         <button type="button" class="linklike" id="loadExY" data-i18n="shaper_tuning.databar.loadExY">Example: Y-axis capture</button>
       </div>
     </div>

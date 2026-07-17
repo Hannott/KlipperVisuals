@@ -14,7 +14,6 @@ window.KV_LOCALES.en.shaper_tuning = {
   databar: {
     loadExX: "Example: X-axis capture",
     loadExY: "Example: Y-axis capture",
-    or: "or",
     upload: "Upload capture…",
     clear: "Clear",
     tryExample: "No data yet? Try an example:"

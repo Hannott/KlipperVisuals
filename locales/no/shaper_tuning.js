@@ -14,7 +14,6 @@ window.KV_LOCALES.no.shaper_tuning = {
   databar: {
     loadExX: "Eksempel: X-akse-måling",
     loadExY: "Eksempel: Y-akse-måling",
-    or: "eller",
     upload: "Last opp måling…",
     clear: "Tøm",
     tryExample: "Ingen data ennå? Prøv et eksempel:"

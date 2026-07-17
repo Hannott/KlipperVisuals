@@ -14,7 +14,6 @@ window.KV_LOCALES.uk.shaper_tuning = {
   databar: {
     loadExX: "Приклад: запис осі X",
     loadExY: "Приклад: запис осі Y",
-    or: "або",
     upload: "Завантажити запис…",
     clear: "Очистити",
     tryExample: "Ще немає даних? Спробуйте приклад:"
