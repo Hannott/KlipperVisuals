@@ -166,7 +166,7 @@ window.KV_LOCALES.cs.shaper_tuning = {
     suggested: "doporučené",
     copyTitle: "Kopírovat do schránky",
     axisDetected: "právě upravujete: osu {{axis}}",
-    axisUnknown: "právě upravujete: X a Y (osu se nepodařilo rozpoznat z názvu souboru)",
+    axisUnknown: "právě upravujete: X a Y<br>(osu se nepodařilo rozpoznat z názvu souboru)",
     prefixLabel: "použijte prefix <code>#*#</code>",
     invalidComment: "# Nejprve nakonfigurujte platný tvořovač v níže uvedeném průzkumníku."
   },

@@ -106,11 +106,22 @@
      already puts its right edge flush against .loadcfgrow's right edge, no
      margin-left:auto needed. */
   .cfgrow{display:flex;gap:20px;align-items:stretch;flex-wrap:wrap;flex:1 1 460px;margin:0;}
-  .cfgoutwrap{position:relative;flex:1 1 260px;min-width:0;display:flex;}
+  /* cfgoutwrap:cfgbar grow 4:1 -- side by side, the box takes the bulk of
+     any freed space (this is the part "give it more room" was about) while
+     cfgbar only grows a little. Both still grow some (not 0) so that when
+     .cfgrow wraps to one-per-line on a narrow viewport, cfgbar stretches to
+     fill its own now-full-width line instead of hugging its content width
+     and leaving dead space next to it (flex-grow:0 did exactly that). */
+  .cfgoutwrap{position:relative;flex:4 1 260px;min-width:0;display:flex;}
   .cfgcopy{position:absolute;top:8px;right:8px;width:28px;height:28px;display:flex;align-items:center;justify-content:center;border-radius:6px;border:.5px solid var(--border);background:var(--surface-1);color:var(--text-muted);cursor:pointer;padding:0;}
   .cfgcopy:hover{color:var(--text-primary);background:var(--surface-2);}
   .cfgcopy svg{width:15px;height:15px;display:block;}
-  .cfgbar{flex:0 0 auto;min-width:220px;display:flex;flex-direction:column;align-items:flex-start;gap:12px;}
+  /* align-items:stretch (not flex-start): the column itself was already the
+     right width, but flex-start let the badge/checkbox size to their own
+     content and left-align, so their visible boxes stopped short of the
+     column's actual right edge -- looked misaligned against full-width
+     content below even though .cfgbar's own bounding box was correct. */
+  .cfgbar{flex:1 1 220px;display:flex;flex-direction:column;align-items:stretch;gap:12px;}
   .cfgbar .cfgtoggle{display:flex;gap:8px;align-items:center;}
   .cfgbar label{font-size:13px;color:var(--text-secondary);display:flex;align-items:center;gap:6px;}
   /* Info icon: replaces the old always-visible step-4 intro paragraph --
@@ -178,13 +189,6 @@
         <button class="btn" id="uploadBtn" data-i18n="shaper_tuning.databar.upload">Upload capture…</button>
         <button class="btn" id="clearData" data-i18n="shaper_tuning.databar.clear">Clear</button>
       </div>
-      <!-- Every successfully parsed upload is cached (freq/x/y/z/xyz, not the
-           raw file) in localStorage so it can be reloaded instantly without
-           re-uploading -- see addToLibrary/renderLibrary. Hidden while empty. -->
-      <div class="library" id="libraryBox" style="display:none;">
-        <div class="library-label" data-i18n="shaper_tuning.library.label">Previously uploaded</div>
-        <div class="library-list" id="libraryList"></div>
-      </div>
       <!-- Examples are de-emphasized on purpose: this page is about the user's
            own data, not the bundled samples. -->
       <div class="examples-hint">
@@ -212,6 +216,16 @@
         <label><input type="checkbox" id="cfgPrefix"> <span data-i18n-html="shaper_tuning.config.prefixLabel">apply save_config prefix (<code>#*#</code>)</span></label>
       </div>
     </div>
+  </div>
+  <!-- Every successfully parsed upload is cached (freq/x/y/z/xyz, not the
+       raw file) in localStorage so it can be reloaded instantly without
+       re-uploading -- see addToLibrary/renderLibrary. Hidden while empty. Its
+       own full-width row (not squeezed into .loadcol) since the list of
+       names can get wide/tall and doesn't belong constrained to that narrow
+       column. -->
+  <div class="library" id="libraryBox" style="display:none;">
+    <div class="library-label" data-i18n="shaper_tuning.library.label">Previously uploaded</div>
+    <div class="library-list" id="libraryList"></div>
   </div>
   <!-- No data-i18n here on purpose: renderDetectStatus() owns this text (it
        reflects live detection state, not a static string) and re-runs on
@@ -1527,7 +1541,7 @@
   function renderCfgAxisBadge(){
     var el=document.getElementById('cfgAxisBadge');
     var ax=loadedCapture&&loadedCapture.testAxis;
-    el.textContent=ax?t('shaper_tuning.config.axisDetected',{axis:ax.toUpperCase()}):t('shaper_tuning.config.axisUnknown');
+    el.innerHTML=ax?t('shaper_tuning.config.axisDetected',{axis:ax.toUpperCase()}):t('shaper_tuning.config.axisUnknown');
   }
   // Recomputes Combined = sum of whichever raw axes are still visible on the
   // input chart (matching Kalico's own psd_sum = psd_x+psd_y+psd_z), then
