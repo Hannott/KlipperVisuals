@@ -70,7 +70,6 @@
   .budget{font-size:12.5px;color:var(--text-muted);margin:.4rem 0 1rem;}
   .databar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:.6rem;}
   .databar input[type=file]{font-size:12.5px;max-width:220px;}
-  .databar .fname{font-size:12.5px;color:var(--text-muted);font-family:var(--font-mono);max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
   .library{margin:0 0 .8rem;}
   .library-label{font-size:11px;letter-spacing:.04em;text-transform:uppercase;color:var(--text-muted);margin-bottom:5px;}
   .library-list{display:flex;flex-direction:column;gap:5px;}
@@ -87,9 +86,32 @@
   .aspectbox canvas{position:absolute;inset:0;width:100%!important;height:100%!important;}
   .bandhdr{margin:3rem 0 .25rem;padding-top:1.25rem;border-top:1px solid var(--border);}
   .bandhdr .tag{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted);}
-  pre.cfgout{font-family:var(--font-mono);font-size:12.5px;line-height:1.5;background:var(--surface-2);border:.5px solid var(--border);border-radius:var(--radius);padding:.85rem 1rem;overflow-x:auto;white-space:pre;color:var(--text-primary);margin:.75rem 0 0;}
-  .cfgbar{display:flex;flex-wrap:wrap;gap:14px;align-items:center;}
+  pre.cfgout{font-family:var(--font-mono);font-size:12.5px;line-height:1.5;background:var(--surface-2);border:.5px solid var(--border);border-radius:var(--radius);padding:.85rem 2.4rem .85rem 1rem;overflow-x:auto;white-space:pre;color:var(--text-primary);margin:0;flex:1 1 auto;min-height:0;}
+  /* Two-column layout: config output left (grows to ~half), controls stacked
+     to its right. flex-basis (not a hard %) so it collapses to one column on
+     narrow viewports without needing a dedicated breakpoint -- same approach
+     .row/.cfgbar already use elsewhere on this page. align-items:stretch (not
+     flex-start) + .cfgoutwrap/pre as a flex column makes the empty-state box
+     match the controls column's height instead of collapsing to ~2 lines. */
+  /* Config box now sits beside "1. Load a resonance capture" (.loadcol)
+     instead of as its own step at the bottom of the page -- .loadcfgrow is
+     the outer row, .cfgrow (below) is reused as-is as its right-hand side. */
+  .loadcfgrow{display:flex;gap:24px;align-items:stretch;flex-wrap:wrap;margin:.75rem 0;}
+  .loadcol{flex:1 1 300px;display:flex;flex-direction:column;}
+  .cfgrow{display:flex;gap:20px;align-items:stretch;flex-wrap:wrap;flex:1 1 460px;margin:0;}
+  .cfgoutwrap{position:relative;flex:1 1 260px;min-width:0;display:flex;}
+  .cfgcopy{position:absolute;top:8px;right:8px;width:28px;height:28px;display:flex;align-items:center;justify-content:center;border-radius:6px;border:.5px solid var(--border);background:var(--surface-1);color:var(--text-muted);cursor:pointer;padding:0;}
+  .cfgcopy:hover{color:var(--text-primary);background:var(--surface-2);}
+  .cfgcopy svg{width:15px;height:15px;display:block;}
+  .cfgbar{flex:1 1 220px;display:flex;flex-direction:column;align-items:flex-start;gap:12px;}
+  .cfgbar .cfgtoggle{display:flex;gap:8px;align-items:center;}
   .cfgbar label{font-size:13px;color:var(--text-secondary);display:flex;align-items:center;gap:6px;}
+  /* Info icon: replaces the old always-visible step-4 intro paragraph --
+     same content, now a hover/focus tooltip (native title/aria-label, same
+     pattern as accelEditHint elsewhere on this page). */
+  .infoicon{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;color:var(--text-muted);cursor:help;flex:none;}
+  .infoicon:hover,.infoicon:focus-visible{color:var(--text-primary);}
+  .infoicon svg{width:16px;height:16px;display:block;}
   .axis-badge{font-size:13px;color:var(--text-secondary);padding:4px 10px;border-radius:6px;background:var(--surface-2);border:.5px solid var(--border);}
   .tierinfo{display:flex;align-items:flex-start;gap:12px;margin:0 0 1.25rem;padding:.7rem 1rem;border-radius:var(--radius);border:.5px solid var(--border);background:var(--surface-1);color:var(--text-secondary);font-size:13px;line-height:1.5;}
   .tierinfo-close{flex:none;background:none;border:none;color:var(--text-muted);font-size:20px;line-height:1;padding:0 2px;cursor:pointer;}
@@ -102,7 +124,7 @@
 <script src="nav.js"></script>
 <div class="wrap">
   <h1 data-i18n="shaper_tuning.heading">Shaper tuning</h1>
-  <p class="sub" data-i18n-html="shaper_tuning.intro">Load a resonance capture and everything on this page is computed from <em>your</em> data: the measured spectrum, the shaper <code>SHAPER_CALIBRATE</code> would recommend (the full <code>find_best_shaper</code> search ported to your browser), a hands-on explorer for any shaper type, and a ready-to-paste <code>[input_shaper]</code> config. Nothing is uploaded anywhere — peak detection, damping estimation, and the whole shaper search run locally.</p>
+  <p class="sub" data-i18n-html="shaper_tuning.intro">Load a resonance capture and everything on this page is computed from <em>your</em> data: the measured spectrum, the shaper <code>SHAPER_CALIBRATE</code> would recommend (the full <code>find_best_shaper</code> search ported to your browser), a hands-on explorer for any shaper type, and a ready-to-paste <code>[input_shaper]</code> config.<br>Nothing is uploaded anywhere — peak detection, damping estimation, and the whole shaper search run locally.</p>
 
   <!-- Firmware tier: gates which shaper types are offered/searched, since
        smooth_* smoothers and multimode aren't on every firmware. The math
@@ -127,40 +149,69 @@
        smoother) can only target one resonance, so the tool keeps the tallest
        peak and sets the rest aside. Dismissal persists (localStorage). -->
   <div class="tierinfo" id="tierInfo" style="display:none;">
-    <span data-i18n-html="shaper_tuning.tier.info">On the <strong>Klipper</strong> and <strong>Kalico BE</strong> tiers each shaper (or smoother) targets a single resonance, so it can't cancel several peaks at once. This tool keeps your tallest peak and sets the rest aside — click any peak marker in the measured-spectrum legend below to include or exclude it. To shape multiple resonances at once, use the <strong>Multimode</strong> tier.</span>
+    <span data-i18n-html="shaper_tuning.tier.info">On the <strong>Klipper</strong> and <strong>Kalico BE</strong> tiers each shaper (or smoother) targets a single resonance, so it can't cancel several peaks at once.<br>This tool keeps your tallest peak and sets the rest aside — click any peak marker in the measured-spectrum legend below to include or exclude it.<br>To shape multiple resonances at once, use the <strong>Multimode</strong> tier.</span>
     <button type="button" class="tierinfo-close" id="tierInfoClose" title="Dismiss" aria-label="Dismiss" data-i18n-attr="title:shaper_tuning.tier.dismiss">&times;</button>
   </div>
 
   <h2 data-i18n="shaper_tuning.steps.load">1. Load a resonance capture</h2>
-  <div class="databar">
-    <!-- Native file input is hidden; the styled button below triggers it, so
-         the label matches the site's buttons and is localizable (the browser's
-         own "Choose File" text can't be styled or translated). -->
-    <input type="file" id="csvFile" accept=".csv,text/csv" style="display:none">
-    <button class="btn" id="uploadBtn" data-i18n="shaper_tuning.databar.upload">Upload capture…</button>
-    <span id="uploadName" class="fname"></span>
-    <button class="btn" id="clearData" data-i18n="shaper_tuning.databar.clear">Clear</button>
-  </div>
-  <!-- Every successfully parsed upload is cached (freq/x/y/z/xyz, not the
-       raw file) in localStorage so it can be reloaded instantly without
-       re-uploading -- see addToLibrary/renderLibrary. Hidden while empty. -->
-  <div class="library" id="libraryBox" style="display:none;">
-    <div class="library-label" data-i18n="shaper_tuning.library.label">Previously uploaded</div>
-    <div class="library-list" id="libraryList"></div>
-  </div>
-  <!-- Examples are de-emphasized on purpose: this page is about the user's
-       own data, not the bundled samples. -->
-  <div class="examples-hint">
-    <span data-i18n="shaper_tuning.databar.tryExample">No data yet? Try an example:</span>
-    <button type="button" class="linklike" id="loadExX" data-i18n="shaper_tuning.databar.loadExX">Example: X-axis capture</button>
-    <span data-i18n="shaper_tuning.databar.or">or</span>
-    <button type="button" class="linklike" id="loadExY" data-i18n="shaper_tuning.databar.loadExY">Example: Y-axis capture</button>
+  <!-- The config box lives here, beside "load", rather than as its own
+       numbered step at the bottom of the page: it's always live now (no
+       Generate button, see renderConfigOutput()), so it reads more like a
+       persistent readout next to your data than a separate workflow step.
+       The old step-4 intro paragraph is now the info icon's tooltip instead
+       of a permanent block of text -- see the (i) beside the suggested
+       toggle below. -->
+  <div class="loadcfgrow">
+    <div class="loadcol">
+      <div class="databar">
+        <!-- Native file input is hidden; the styled button below triggers it, so
+             the label matches the site's buttons and is localizable (the browser's
+             own "Choose File" text can't be styled or translated). -->
+        <input type="file" id="csvFile" accept=".csv,text/csv" style="display:none">
+        <button class="btn" id="uploadBtn" data-i18n="shaper_tuning.databar.upload">Upload capture…</button>
+        <button class="btn" id="clearData" data-i18n="shaper_tuning.databar.clear">Clear</button>
+      </div>
+      <!-- Every successfully parsed upload is cached (freq/x/y/z/xyz, not the
+           raw file) in localStorage so it can be reloaded instantly without
+           re-uploading -- see addToLibrary/renderLibrary. Hidden while empty. -->
+      <div class="library" id="libraryBox" style="display:none;">
+        <div class="library-label" data-i18n="shaper_tuning.library.label">Previously uploaded</div>
+        <div class="library-list" id="libraryList"></div>
+      </div>
+      <!-- Examples are de-emphasized on purpose: this page is about the user's
+           own data, not the bundled samples. -->
+      <div class="examples-hint">
+        <span data-i18n="shaper_tuning.databar.tryExample">No data yet? Try an example:</span>
+        <button type="button" class="linklike" id="loadExX" data-i18n="shaper_tuning.databar.loadExX">Example: X-axis capture</button>
+        <span data-i18n="shaper_tuning.databar.or">or</span>
+        <button type="button" class="linklike" id="loadExY" data-i18n="shaper_tuning.databar.loadExY">Example: Y-axis capture</button>
+      </div>
+    </div>
+    <div class="cfgrow">
+      <div class="cfgoutwrap">
+        <pre class="cfgout" id="cfgOut"></pre>
+        <button class="cfgcopy" id="cfgCopy" type="button" title="Copy to clipboard" aria-label="Copy to clipboard" data-i18n-attr="title:shaper_tuning.config.copyTitle|aria-label:shaper_tuning.config.copyTitle">
+          <svg id="cfgCopyIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path></svg>
+        </button>
+      </div>
+      <div class="cfgbar">
+        <div class="cfgtoggle">
+          <button class="btn primary" id="cfgModeManual" style="padding:2px 8px;" data-i18n="shaper_tuning.config.manual">manual</button>
+          <button class="btn" id="cfgModeSuggested" style="padding:2px 8px;" data-i18n="shaper_tuning.config.suggested">suggested</button>
+          <span class="infoicon" id="cfgInfo" tabindex="0" role="button" title="Always shows the config for whichever axis you've worked on." aria-label="Always shows the config for whichever axis you've worked on." data-i18n-attr="title:shaper_tuning.config.intro|aria-label:shaper_tuning.config.intro">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+          </span>
+        </div>
+        <span class="axis-badge" id="cfgAxisBadge"></span>
+        <label><input type="checkbox" id="cfgPrefix"> <span data-i18n-html="shaper_tuning.config.prefixLabel">apply save_config prefix (<code>#*#</code>)</span></label>
+      </div>
+    </div>
   </div>
   <!-- No data-i18n here on purpose: renderDetectStatus() owns this text (it
        reflects live detection state, not a static string) and re-runs on
        locale change, so i18n's apply() must not overwrite it -- doing so
        clobbered a session-restored capture's "detected peaks" line. -->
-  <div class="note" id="detectStatus">No capture loaded. Load an example, or upload a Kalico <code>calibration_data_*.csv</code> / <code>resonances_*.csv</code> (a <code>freq</code> column plus <code>psd_x</code>/<code>psd_y</code>/<code>psd_z</code>/<code>psd_xyz</code>). Peak detection and half-power damping-ratio estimation run live in your browser — nothing is uploaded anywhere.</div>
+  <div class="note" id="detectStatus">No capture loaded. Load an example, or upload a Kalico <code>calibration_data_*.csv</code> / <code>resonances_*.csv</code> (a <code>freq</code> column plus <code>psd_x</code>/<code>psd_y</code>/<code>psd_z</code>/<code>psd_xyz</code>).<br>Peak detection and half-power damping-ratio estimation run live in your browser — nothing is uploaded anywhere.</div>
   <div class="cap"><span data-i18n="shaper_tuning.captions.measuredSpectrum">measured resonance spectrum</span> <span style="color:var(--text-muted)" data-i18n="shaper_tuning.captions.measuredSpectrumNote">(the loaded capture; dashed verticals mark the detected resonances; click a legend entry to toggle it)</span>
     <span style="float:right;font-size:12.5px;color:var(--text-muted);"><span data-i18n="shaper_tuning.scale.label">scale:</span>
       <button class="btn" id="inpLog" style="padding:2px 8px;" data-i18n="shaper_tuning.scale.log">log</button>
@@ -173,7 +224,7 @@
   </div>
 
   <h2 data-i18n="shaper_tuning.steps.recommended">2. Recommended shaper</h2>
-  <p class="sub" style="margin-bottom:.75rem;" data-i18n-html="shaper_tuning.recommended.intro">The same search <code>SHAPER_CALIBRATE</code> runs, on your capture: every <code>smooth_*</code> smoother and classic shaper, plus a multimode search over the detected resonances (up to 4, with the peak-cluster-widening fix), scored and selected with Kalico's formula and thresholds. Per-peak residual is shown for every resonance detected. The manual explorer below starts from this pick so you can tweak it.</p>
+  <p class="sub" style="margin-bottom:.75rem;" data-i18n-html="shaper_tuning.recommended.intro">The same search <code>SHAPER_CALIBRATE</code> runs, on your capture: every <code>smooth_*</code> smoother and classic shaper, plus a multimode search over the detected resonances (up to 4, with the peak-cluster-widening fix), scored and selected with Kalico's formula and thresholds.<br>Per-peak residual is shown for every resonance detected.<br>The manual explorer below starts from this pick so you can tweak it.</p>
   <div class="busybox" id="recoBox">
     <div class="busy-mute">
       <div class="note" id="recoStatus" data-i18n="shaper_tuning.recommended.statusDefault">Load a capture above to compute a recommendation.</div>
@@ -184,7 +235,7 @@
   </div>
 
   <h2 data-i18n="shaper_tuning.steps.explorer">3. Manual shaper explorer</h2>
-  <p class="sub" style="margin-bottom:.75rem;" data-i18n-html="shaper_tuning.explorer.intro">Pick any shaper type and see how it performs against the loaded capture — corner smoothing, projected <code>max_accel</code>, and the residual vibration left at each detected resonance. Seeded from the recommendation above; change the type or frequencies to compare.</p>
+  <p class="sub" style="margin-bottom:.75rem;" data-i18n-html="shaper_tuning.explorer.intro">Pick any shaper type and see how it performs against the loaded capture — corner smoothing, projected <code>max_accel</code>, and the residual vibration left at each detected resonance.<br>Seeded from the recommendation above; change the type or frequencies to compare.</p>
   <div class="row" style="align-items:flex-end;">
     <div class="ctl" style="max-width:260px;">
       <div class="lbl"><span data-i18n="shaper_tuning.explorer.shaperType">shaper type</span></div>
@@ -239,19 +290,10 @@
   <div class="cap" style="margin-top:1rem;"><span data-i18n="shaper_tuning.captions.residualVsFreq">residual vibration vs frequency</span> <span style="color:var(--text-muted)" data-i18n="shaper_tuning.captions.residualVsFreqNote">(the selected shaper's response; dashed verticals mark the detected resonances; lower = better)</span></div>
   <div class="chart"><canvas id="c1"></canvas></div>
 
-  <h2 data-i18n-html="shaper_tuning.steps.generateConfig">4. Generate <code>[input_shaper]</code> config</h2>
-  <p class="sub" style="margin-bottom:.5rem;" data-i18n="shaper_tuning.config.intro">Emits the shaper currently selected in the explorer above, in Kalico's config format.</p>
-  <div class="cfgbar">
-    <button class="btn primary" id="genCfg" data-i18n="shaper_tuning.config.generateBtn">Generate config</button>
-    <span class="axis-badge" id="cfgAxisBadge"></span>
-    <label><input type="checkbox" id="cfgPrefix"> <span data-i18n-html="shaper_tuning.config.prefixLabel">apply save_config prefix (<code>#*#</code>)</span></label>
-  </div>
-  <pre class="cfgout" id="cfgOut" style="display:none;"></pre>
-
   <div id="deepSection" style="display:none;">
   <div class="bandhdr"><span class="tag" data-i18n="shaper_tuning.deep.tag">Deeper analysis — multimode extruder synchronization</span></div>
   <h2 data-i18n="shaper_tuning.steps.deepAnalysis">Deeper analysis</h2>
-  <p class="sub" id="deepIntro" style="margin-bottom:.75rem;" data-i18n-html="shaper_tuning.deep.intro">How this hand-built multimode shaper behaves across per-peak damping mismatch, and the fitted extruder-smoother kernel that keeps pressure advance synchronized with it. (Shown only while the explorer is set to <strong>multimode</strong>.)</p>
+  <p class="sub" id="deepIntro" style="margin-bottom:.75rem;" data-i18n-html="shaper_tuning.deep.intro">How this hand-built multimode shaper behaves across per-peak damping mismatch, and the fitted extruder-smoother kernel that keeps pressure advance synchronized with it.<br>(Shown only while the explorer is set to <strong>multimode</strong>.)</p>
   <div id="deepBody">
   <div class="cap"><span data-i18n="shaper_tuning.captions.notchDepth">notch depth vs a uniformly-assumed damping ratio</span> <span style="color:var(--text-muted)" data-i18n="shaper_tuning.captions.notchDepthNote">(what if the design used ONE shared ζ for every peak instead of each peak's own measured value? True ζ per peak marked with a matching vertical)</span></div>
   <div class="chart" style="height:270px;"><canvas id="c2"></canvas></div>
@@ -267,7 +309,7 @@
   </div>
   </div>
 
-  <p class="foot" data-i18n-html="shaper_tuning.footer">Everything is computed from the loaded capture. The recommendation ports Kalico's <code>find_best_shaper</code> (<code>shaper_calibrate.py</code>) — every smoother/shaper candidate plus a multimode search over the detected resonances (up to 4) with the peak-cluster-widening fix, scored with Kalico's formula. Multimode shaper = convolution of a base shaper tuned to each configured peak (amplitudes multiply, times add). Peak detection and half-power damping estimation port <code>_detect_resonance_peaks</code> / <code>_estimate_damping_ratio</code>. The fitted extruder kernel reproduces <code>extruder_smoother.get_multi_mode_extruder_smoother</code> (Legendre basis, KKT-constrained least squares). Rendered with Chart.js.</p>
+  <p class="foot" data-i18n-html="shaper_tuning.footer">Everything is computed from the loaded capture.<br>The recommendation ports Kalico's <code>find_best_shaper</code> (<code>shaper_calibrate.py</code>) — every smoother/shaper candidate plus a multimode search over the detected resonances (up to 4) with the peak-cluster-widening fix, scored with Kalico's formula.<br>Multimode shaper = convolution of a base shaper tuned to each configured peak (amplitudes multiply, times add).<br>Peak detection and half-power damping estimation port <code>_detect_resonance_peaks</code> / <code>_estimate_damping_ratio</code>.<br>The fitted extruder kernel reproduces <code>extruder_smoother.get_multi_mode_extruder_smoother</code> (Legendre basis, KKT-constrained least squares). Rendered with Chart.js.</p>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
@@ -1508,15 +1550,14 @@
     if(loadedCapture && !window.confirm(t('shaper_tuning.capture.resetConfirm')))return;
     loadedCapture=null;lastReco=null;peaks=[];axisHidden={x:false,y:false,z:false};excludedPeaks=[];autoExcluded=[];recoCache={};
     explType='smooth_si';explFreq=50.0;explDamp=0.1;
+    axisConfigCache={x:null,y:null};
     acclInput.min='3000';acclInput.max='30000';setAccel(6000,true);
     syncExplorerControls();
     renderPeakRows();
     renderDetectStatus();
     renderInput();
     renderRecommendation();
-    update();
-    var co=document.getElementById('cfgOut');co.style.display='none';co.textContent='';
-    uploadNameEl.textContent='';
+    update(); // also re-renders #cfgOut (now empty axisConfigCache -> bare explorer preview)
     persistState(true); // no capture -> clears the stored state
     renderLibrary(); // drop the "active" highlight, library entries themselves are untouched
     renderCfgAxisBadge();
@@ -1538,7 +1579,8 @@
       var d=loadedCapture;
       var blob={cap:{freq:d.freq,x:d.x,y:d.y,z:d.z,xyz:d.xyz,label:d.label,testAxis:d.testAxis},
         axisHidden:axisHidden, excludedPeaks:excludedPeaks,
-        expl:{explType:explType,peaks:peaks,explFreq:explFreq,explDamp:explDamp,explAccel:explAccel,fname:uploadNameEl.textContent}};
+        expl:{explType:explType,peaks:peaks,explFreq:explFreq,explDamp:explDamp,explAccel:explAccel},
+        axisConfigCache:axisConfigCache, cfgMode:cfgMode};
       if(lastReco)blob.reco={best:lastReco.best,peaks:lastReco.result.peaks,allShapers:lastReco.result.allShapers,allPeaks:lastReco.allPeaks,label:lastReco.label};
       sessionStorage.setItem(STORE_KEY,JSON.stringify(blob));
     }catch(e){/* storage full/disabled: persistence just no-ops */}
@@ -1557,14 +1599,19 @@
       explType=blob.expl.explType;peaks=blob.expl.peaks||[];
       explFreq=blob.expl.explFreq;explDamp=blob.expl.explDamp;
       if(blob.expl.explAccel>0)setAccel(blob.expl.explAccel,true);
-      if(blob.expl.fname)uploadNameEl.textContent=blob.expl.fname;
     }
     if(blob.reco)lastReco={best:blob.reco.best,result:{peaks:blob.reco.peaks,allShapers:blob.reco.allShapers},allPeaks:blob.reco.allPeaks,label:blob.reco.label};
+    axisConfigCache=blob.axisConfigCache||{x:null,y:null};
+    if(blob.cfgMode){
+      cfgMode=blob.cfgMode;
+      document.getElementById('cfgModeManual').classList.toggle('primary',cfgMode==='manual');
+      document.getElementById('cfgModeSuggested').classList.toggle('primary',cfgMode==='suggested');
+    }
     renderDetectStatus();
     renderInput();
     renderPeakRows();
     syncExplorerControls();
-    update();
+    update(); // also re-renders #cfgOut from the restored axisConfigCache
     if(lastReco)paintRecommendation(); else renderRecommendation(); // recompute only if reco wasn't stored
     renderLibrary();
     renderCfgAxisBadge();
@@ -1629,7 +1676,6 @@
     if(e.target.classList.contains('library-remove')){removeFromLibrary(name);return;}
     var entry=loadLibrary().find(function(x){return x.name===name;});
     if(!entry)return;
-    uploadNameEl.textContent=entry.name;
     loadCapture(entry.freq,entry.x,entry.y,entry.z,entry.xyz,'"'+entry.name+'"',entry.testAxis||detectAxisFromFilename(entry.name));
   });
   document.getElementById('loadExX').addEventListener('click',function(){
@@ -1642,7 +1688,6 @@
   });
   document.getElementById('clearData').addEventListener('click',clearAll);
   // The styled button just proxies to the hidden native file input.
-  var uploadNameEl=document.getElementById('uploadName');
   document.getElementById('uploadBtn').addEventListener('click',function(){
     document.getElementById('csvFile').click();
   });
@@ -1652,7 +1697,6 @@
   // + normalize_to_frequencies), so everything downstream is identical.
   document.getElementById('csvFile').addEventListener('change',function(e){
     var file=e.target.files[0]; if(!file)return;
-    uploadNameEl.textContent=file.name;
     var reader=new FileReader();
     reader.onload=function(ev){
       try{
@@ -1707,7 +1751,6 @@
         addToLibrary(file.name,{freq:freqArr,x:xArr,y:yArr,z:zArr,xyz:xyzArr},testAxis2);
         loadCapture(freqArr,xArr,yArr,zArr,xyzArr,'"'+file.name+'"',testAxis2);
       }catch(err){
-        uploadNameEl.textContent='';
         detectStatus.innerHTML=t('shaper_tuning.capture.csvParseError',{filename:file.name,error:err.message});
       }
     };
@@ -1812,6 +1855,17 @@
   // the exact number lives here and in the click-to-edit input.
   var explType='smooth_si', explFreq=50.0, explDamp=0.1, explAccel=6000;
   var SINGLE_SHAPERS=['zv','mzv','zvd','ei','2hump_ei','3hump_ei'];
+  // Per-axis config memory: {x:{manual,suggested}|null, y:{...}|null}. Each of
+  // .manual/.suggested is a snapshot shaped like {type,freq,damping,peaks} (see
+  // explorerState()/stateFromBest() below) -- NOT pre-rendered config lines,
+  // so the save_config-prefix checkbox and the manual/suggested toggle can be
+  // flipped without recomputing anything. Populated as a side effect of
+  // update() (manual) and paintRecommendation() (suggested) whenever the
+  // currently loaded capture's testAxis is unambiguously 'x' or 'y' -- this is
+  // what lets "upload X, tweak, upload Y, tweak" end up showing both axes'
+  // configs at once instead of only whichever capture is loaded right now.
+  var axisConfigCache={x:null,y:null};
+  var cfgMode='manual'; // 'manual' | 'suggested' -- which snapshot the config output renders
   function isSmootherType(t){return t.indexOf('smooth_')===0;}
   function isMultimodeType(t){return t==='multimode';}
   function worstResidualDisplay(kind,sh,f){
@@ -1920,6 +1974,7 @@
       deepSection.style.display=mm?'':'none';
       if(mm){c2.data.datasets=[];c2.update();c3.data.datasets.forEach(function(d){d.data=[];});c3.update();c4.data.datasets.forEach(function(d){d.data=[];});c4.update();
         document.getElementById('cards2').innerHTML='';document.getElementById('note2').innerHTML='<span style="color:var(--text-muted)">'+reason+'</span>';}
+      renderConfigOutput(); // still reflects axisConfigCache/other axis even while this axis's edit is mid-invalid
       return;
     }
 
@@ -1968,6 +2023,14 @@
     // ---- deeper analysis (multimode only) ----
     if(mm){deepSection.style.display='';renderDeep(sh,label,scv,accel);}
     else{deepSection.style.display='none';}
+
+    // Remember this axis's manual config as of this (valid) explorer state.
+    var cfgAxis=loadedCapture&&loadedCapture.testAxis;
+    if(cfgAxis==='x'||cfgAxis==='y'){
+      if(!axisConfigCache[cfgAxis])axisConfigCache[cfgAxis]={manual:null,suggested:null};
+      axisConfigCache[cfgAxis].manual=explorerState();
+    }
+    renderConfigOutput();
   }
 
   // Multimode-only deeper analysis: per-peak uniform-ζ mismatch (c2), fitted
@@ -2160,7 +2223,7 @@
     cardsEl.innerHTML='';noteEl.innerHTML='';
     if(!loadedCapture){
       lastReco=null;
-      statusEl.innerHTML=t('shaper_tuning.recommended.statusDefault');
+      statusEl.style.display='';statusEl.innerHTML=t('shaper_tuning.recommended.statusDefault');
       setBusy('inputChartBox',false);setBusy('recoBox',false);
       return;
     }
@@ -2183,7 +2246,7 @@
       persistState(true);
       return;
     }
-    statusEl.innerHTML=t('shaper_tuning.status.computing',{label:bLabel});
+    statusEl.style.display='';statusEl.innerHTML=t('shaper_tuning.status.computing',{label:bLabel});
     setBusy('inputChartBox',true);setBusy('recoBox',true);
     setTimeout(function(){
       if(myGen!==recomputeGen)return; // superseded by a newer recompute; drop this stale result (a newer call owns the busy state now)
@@ -2243,29 +2306,23 @@
       card(t('shaper_tuning.cards.vibrationsSearchScore'),(Math.round(best.vibrs*1000)/10).toFixed(1)+'%')+
       card(t('shaper_tuning.cards.smoothing'),best.smoothing.toFixed(4))+
       card(t('shaper_tuning.cards.maxAccel'),Math.round(best.maxAccel).toLocaleString()+' mm/s²',TEAL);
-    var cfgHtml=isMultimode?
-      ('<code>shaper_type_&lt;axis&gt; = multimode</code> <code>shaper_base_&lt;axis&gt; = '+best.bases.join(', ')+
-       '</code> <code>shaper_freq_&lt;axis&gt; = '+best.freqs.map(function(f){return f.toFixed(1);}).join(', ')+
-       '</code> <code>damping_ratio_&lt;axis&gt; = '+best.dampingRatios.map(function(d){return d.toFixed(4);}).join(', ')+'</code>')
-      :('<code>shaper_type_&lt;axis&gt; = '+best.name+'</code> <code>shaper_freq_&lt;axis&gt; = '+best.freq.toFixed(1)+'</code>');
-    // result.peaks is intentionally magnitude-ordered (most significant
-    // first) -- it faithfully mirrors _detect_resonance_peaks's own return
-    // contract and is what fitMultiMode's ascending-by-frequency re-sort
-    // starts from (see the PORTING MAP header). Sort a COPY here purely so
-    // this sentence reads left-to-right ascending like the config line
-    // right below it; don't sort result.peaks itself.
-    var peaksAscending=result.peaks.slice().sort(function(a,b){return a-b;});
-    statusEl.innerHTML=t('shaper_tuning.status.basedOn',{
-      n:result.peaks.length,
-      list:peaksAscending.map(function(f){return f.toFixed(1)+'&nbsp;Hz';}).join(', '),
-      total:allPeaks.length,
-      cfgHtml:cfgHtml
-    });
+    // No "Based on N peaks... Recommended config: ..." status line anymore --
+    // the peak list is already in detectStatus above, and the config preview
+    // is now always-redundant with the always-visible #cfgOut box.
+    statusEl.style.display='none';
     // The caveat only applies once the capture shows as many resonances as
     // the auto-search caps at (MULTIMODE_MAX_PEAKS): beyond that, extra modes
     // must be added by hand.
     noteEl.innerHTML=t('shaper_tuning.notes.recoNoteIntro')+'<br>'+perPeakHtml+
       (tierAllowsMultimode()&&allPeaks.length>=MULTIMODE_MAX_PEAKS?'<br><span style="color:var(--amber)">'+t('shaper_tuning.notes.recoCaveat')+'</span>':'');
+
+    // Remember this axis's suggested config as of this recommendation.
+    var cfgAxis=loadedCapture&&loadedCapture.testAxis;
+    if(cfgAxis==='x'||cfgAxis==='y'){
+      if(!axisConfigCache[cfgAxis])axisConfigCache[cfgAxis]={manual:null,suggested:null};
+      axisConfigCache[cfgAxis].suggested=stateFromBest(best);
+      renderConfigOutput();
+    }
   }
   // Seed the manual explorer from the recommendation so it starts on the
   // recommended shaper (the user can then change type / frequencies).
@@ -2283,40 +2340,107 @@
     if(best.maxAccel>0)setAccel(best.maxAccel,true);
     update();
   }
-  // ---- config generator (emits the explorer's current selection) ----
-  function explorerConfigLines(axis){
-    if(isMultimodeType(explType)){
+  // ---- config generator (always-live; no button) ----
+  // A snapshot is {type,freq,damping,peaks} -- the same shape whether it came
+  // from the live explorer or from a recommendation's `best`, so one pair of
+  // functions (stateValid/configLinesForState) renders either. peaks is only
+  // meaningful for type==='multimode'; freq/damping are only meaningful for
+  // non-multimode types (mirrors explType/explFreq/explDamp/peaks below).
+  function clonePeaks(arr){return arr.map(function(p){return {base:p.base,freq:p.freq,damping:p.damping};});}
+  function explorerState(){return {type:explType,freq:explFreq,damping:explDamp,peaks:clonePeaks(peaks)};}
+  // Mirrors seedExplorerFromReco's best->explorer mapping, without mutating
+  // any live explorer state -- used to snapshot the "suggested" side of the
+  // per-axis cache independently of whatever the user is currently editing.
+  function stateFromBest(best){
+    if(best.freqs!=null){
+      return {type:'multimode',freq:0,damping:0,peaks:best.freqs.map(function(f,i){
+        return {base:best.bases[i],freq:Math.round(f*10)/10,damping:Math.round(best.dampingRatios[i]*1000)/1000};
+      })};
+    }
+    var damping=SINGLE_SHAPERS.indexOf(best.name)>=0?Math.round((best.dampingRatio||0.1)*1000)/1000:0;
+    return {type:best.name,freq:Math.round(best.freq*10)/10,damping:damping,peaks:[]};
+  }
+  function stateValid(state){
+    if(isMultimodeType(state.type))return state.peaks.length>=2&&!state.peaks.some(function(p){return !(p.freq>0);})&&pulseCount(state.peaks)<=MAX_SHAPER_PULSES;
+    return state.freq>0;
+  }
+  function configLinesForState(axis,state){
+    if(isMultimodeType(state.type)){
       return ['shaper_type_'+axis+' = multimode',
-        'shaper_base_'+axis+' = '+peaks.map(function(p){return p.base;}).join(', '),
-        'shaper_freq_'+axis+' = '+peaks.map(function(p){return p.freq.toFixed(1);}).join(', '),
-        'damping_ratio_'+axis+' = '+peaks.map(function(p){return p.damping.toFixed(6);}).join(', ')];
+        'shaper_base_'+axis+' = '+state.peaks.map(function(p){return p.base;}).join(', '),
+        'shaper_freq_'+axis+' = '+state.peaks.map(function(p){return p.freq.toFixed(1);}).join(', '),
+        'damping_ratio_'+axis+' = '+state.peaks.map(function(p){return p.damping.toFixed(6);}).join(', ')];
     }
-    if(isSmootherType(explType)){
-      return ['shaper_type_'+axis+' = '+explType,'shaper_freq_'+axis+' = '+explFreq.toFixed(1)];
+    if(isSmootherType(state.type)){
+      return ['shaper_type_'+axis+' = '+state.type,'shaper_freq_'+axis+' = '+state.freq.toFixed(1)];
     }
-    return ['shaper_type_'+axis+' = '+explType,'shaper_freq_'+axis+' = '+explFreq.toFixed(1),
-      'damping_ratio_'+axis+' = '+explDamp.toFixed(6)];
+    return ['shaper_type_'+axis+' = '+state.type,'shaper_freq_'+axis+' = '+state.freq.toFixed(1),
+      'damping_ratio_'+axis+' = '+state.damping.toFixed(6)];
   }
-  function explorerConfigValid(){
-    if(isMultimodeType(explType))return peaks.length>=2&&!peaks.some(function(p){return !(p.freq>0);})&&pulseCount(peaks)<=MAX_SHAPER_PULSES;
-    return explFreq>0;
-  }
-  function generateConfig(){
+  // Renders #cfgOut from axisConfigCache (once at least one axis has been
+  // detected and cached) so "upload X, tweak, upload Y, tweak" keeps showing
+  // both axes at once even though only one capture is ever "loaded". Before
+  // any axis has been detected/cached yet, falls back to a live preview of
+  // the current explorer state (matching the old Generate button's behavior
+  // from a bare page with no capture loaded).
+  function renderConfigOutput(){
     var outEl=document.getElementById('cfgOut');
-    outEl.style.display='block';
-    if(!explorerConfigValid()){
-      outEl.textContent=t('shaper_tuning.config.invalidComment');
-      return;
-    }
+    if(!outEl)return;
     var prefix=document.getElementById('cfgPrefix').checked;
-    var detectedAxis=loadedCapture&&loadedCapture.testAxis;
-    var axes=detectedAxis?[detectedAxis]:['x','y'];
+    var axesWithCache=['x','y'].filter(function(a){return axisConfigCache[a];});
     var body=['[input_shaper]'];
-    axes.forEach(function(ax){body=body.concat(explorerConfigLines(ax));});
+    if(axesWithCache.length){
+      axesWithCache.forEach(function(ax){
+        var entry=axisConfigCache[ax];
+        var state=entry[cfgMode]||entry.manual||entry.suggested; // fall back if this axis has no data yet for the selected mode
+        if(state&&stateValid(state))body=body.concat(configLinesForState(ax,state));
+      });
+    }else{
+      var state=explorerState();
+      if(stateValid(state)){
+        var detectedAxis=loadedCapture&&loadedCapture.testAxis;
+        (detectedAxis?[detectedAxis]:['x','y']).forEach(function(ax){body=body.concat(configLinesForState(ax,state));});
+      }
+    }
     // save_config prefix: Klipper's autosave block writes every line as "#*# <line>"
-    outEl.textContent=prefix?body.map(function(l){return '#*# '+l;}).join('\n'):body.join('\n');
+    outEl.textContent=(body.length<=1)?t('shaper_tuning.config.invalidComment'):
+      (prefix?body.map(function(l){return '#*# '+l;}).join('\n'):body.join('\n'));
   }
-  document.getElementById('genCfg').addEventListener('click',generateConfig);
+  document.getElementById('cfgModeManual').addEventListener('click',function(){
+    cfgMode='manual';this.classList.add('primary');document.getElementById('cfgModeSuggested').classList.remove('primary');
+    renderConfigOutput();persistState(true);
+  });
+  document.getElementById('cfgModeSuggested').addEventListener('click',function(){
+    cfgMode='suggested';this.classList.add('primary');document.getElementById('cfgModeManual').classList.remove('primary');
+    renderConfigOutput();persistState(true);
+  });
+  document.getElementById('cfgPrefix').addEventListener('change',renderConfigOutput);
+  // ---- copy config to clipboard (icon swaps to a checkmark briefly) ----
+  var CFG_COPY_ICON='<rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>';
+  var CFG_CHECK_ICON='<polyline points="20 6 9 17 4 12"></polyline>';
+  var _cfgCopyResetTimer=null;
+  function cfgCopyFallback(text){
+    // navigator.clipboard needs a secure context; this covers plain http:// (e.g. this page opened via python -m http.server)
+    var ta=document.createElement('textarea');
+    ta.value=text;ta.style.position='fixed';ta.style.opacity='0';
+    document.body.appendChild(ta);ta.focus();ta.select();
+    try{document.execCommand('copy');}catch(e){/* clipboard truly unavailable: no-op, nothing else we can do */}
+    document.body.removeChild(ta);
+  }
+  document.getElementById('cfgCopy').addEventListener('click',function(){
+    var text=document.getElementById('cfgOut').textContent;
+    var iconEl=document.getElementById('cfgCopyIcon');
+    function showCopied(){
+      clearTimeout(_cfgCopyResetTimer);
+      iconEl.innerHTML=CFG_CHECK_ICON;
+      _cfgCopyResetTimer=setTimeout(function(){iconEl.innerHTML=CFG_COPY_ICON;},1200);
+    }
+    if(navigator.clipboard&&navigator.clipboard.writeText){
+      navigator.clipboard.writeText(text).then(showCopied,function(){cfgCopyFallback(text);showCopied();});
+    }else{
+      cfgCopyFallback(text);showCopied();
+    }
+  });
 
   // ---- live palette repaint (nav.js "kv-palette-change" event) ----
   // Refreshes every color baked into JS (chart datasets, card highlights,
@@ -2379,7 +2503,7 @@
     renderCfgAxisBadge();
     renderTierNote();
     update();               // rebuilds c1 + cards/note, and c2/c3/c4 (via renderDeep) when multimode is selected
-    if(lastReco)paintRecommendation(); else document.getElementById('recoStatus').innerHTML=t('shaper_tuning.recommended.statusDefault');
+    if(lastReco)paintRecommendation(); else{var rs=document.getElementById('recoStatus');rs.style.display='';rs.innerHTML=t('shaper_tuning.recommended.statusDefault');}
     [c1,cInput,c2,c3,c4].forEach(function(ch){ch.update();});
   });
 
