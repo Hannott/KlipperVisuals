@@ -10,6 +10,7 @@ window.KV_LOCALES.en.shaper_tuning = {
     load: "1. Load a resonance capture",
     recommended: "2. Recommended shaper",
     explorer: "3. Manual shaper explorer",
+    advancedTag: "advanced",
     deepAnalysis: "Deeper analysis"
   },
   databar: {
@@ -167,15 +168,16 @@ window.KV_LOCALES.en.shaper_tuning = {
     }
   },
   config: {
-    intro: "Always shows the config for whichever axis you've worked on.\nToggle between your manual explorer tweaks and the auto-suggested shaper; each axis keeps its own latest value as you upload different captures.",
-    manual: "manual",
-    suggested: "suggested",
+    suggestedHeading: "Suggested config",
+    manualHeading: "Manual config",
     copyTitle: "Copy to clipboard",
     axisDetected: "Editing: {{axis}} axis",
     editingLabel: "Editing:",
     prefixLabel: "use <code>#*#</code> prefix",
     invalidComment: "# Configure a valid shaper in the explorer above first.",
-    pickAxisComment: "# Pick an axis (X or Y) above to add this capture to the config."
+    invalidCommentSuggested: "# No recommendation available yet.",
+    pickAxisComment: "# Pick an axis (X or Y) above to add this capture to the config.",
+    pickAxisCommentManual: "# Pick an axis (X or Y) in the suggested config above first."
   },
   deep: {
     tag: "Deeper analysis — multimode extruder synchronization",

@@ -10,6 +10,7 @@ window.KV_LOCALES.de.shaper_tuning = {
     load: "1. Resonanzmessung laden",
     recommended: "2. Empfohlener Shaper",
     explorer: "3. Manueller Shaper-Explorer",
+    advancedTag: "erweitert",
     deepAnalysis: "Tiefere Analyse"
   },
   databar: {
@@ -167,15 +168,16 @@ window.KV_LOCALES.de.shaper_tuning = {
     }
   },
   config: {
-    intro: "Zeigt immer die Konfiguration für die Achse(n), an der/denen du gearbeitet hast.\nWechsle zwischen deinen manuellen Explorer-Anpassungen und dem automatisch vorgeschlagenen Shaper; jede Achse behält ihren eigenen letzten Wert, während du verschiedene Messungen hochlädst.",
-    manual: "manuell",
-    suggested: "vorgeschlagen",
+    suggestedHeading: "Vorgeschlagene Konfiguration",
+    manualHeading: "Manuelle Konfiguration",
     copyTitle: "In die Zwischenablage kopieren",
     axisDetected: "Bearbeitung: {{axis}}-Achse",
     editingLabel: "Bearbeitung:",
     prefixLabel: "<code>#*#</code>-Präfix verwenden",
     invalidComment: "# Konfiguriere zuerst einen gültigen Shaper im Explorer oben.",
-    pickAxisComment: "# Wähle oben eine Achse (X oder Y), um diese Messung zur Konfiguration hinzuzufügen."
+    invalidCommentSuggested: "# Noch keine Empfehlung verfügbar.",
+    pickAxisComment: "# Wähle oben eine Achse (X oder Y), um diese Messung zur Konfiguration hinzuzufügen.",
+    pickAxisCommentManual: "# Wähle zuerst oben in der vorgeschlagenen Konfiguration eine Achse (X oder Y)."
   },
   deep: {
     tag: "Tiefere Analyse — Multimode-Extruder-Synchronisation",

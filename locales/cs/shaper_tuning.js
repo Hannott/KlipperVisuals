@@ -10,6 +10,7 @@ window.KV_LOCALES.cs.shaper_tuning = {
     load: "1. Načtěte rezonančí záznam",
     recommended: "2. Doporučovaný vyhlazovač",
     explorer: "3. Ruční průzkumník vyhlazovače",
+    advancedTag: "pokročilé",
     deepAnalysis: "Hlubší analýza"
   },
   databar: {
@@ -167,15 +168,16 @@ window.KV_LOCALES.cs.shaper_tuning = {
     }
   },
   config: {
-    intro: "Vždy zobrazuje konfiguraci pro osu (osy), se kterými jste pracovali.\nPřepínejte mezi svými ručními úpravami v průzkumníku a automaticky doporučeným tvořovačem; každá osa si pamatuje svou poslední hodnotu při nahrávání různých záznamů.",
-    manual: "ruční",
-    suggested: "doporučené",
+    suggestedHeading: "Doporučená konfigurace",
+    manualHeading: "Ruční konfigurace",
     copyTitle: "Kopírovat do schránky",
     axisDetected: "Úpravy: osa {{axis}}",
     editingLabel: "Úpravy:",
     prefixLabel: "použijte prefix <code>#*#</code>",
-    invalidComment: "# Nejprve nakonfigurujte platný tvořovač v níže uvedeném průzkumníku.",
-    pickAxisComment: "# Vyberte osu (X nebo Y) výše pro přidání tohoto záznamu do konfigurace."
+    invalidComment: "# Nejprve nakonfigurujte platný tvořovač v průzkumníku výše.",
+    invalidCommentSuggested: "# Zatím není k dispozici žádné doporučení.",
+    pickAxisComment: "# Vyberte osu (X nebo Y) výše pro přidání tohoto záznamu do konfigurace.",
+    pickAxisCommentManual: "# Nejprve vyberte osu (X nebo Y) v doporučené konfiguraci výše."
   },
   deep: {
     tag: "Hlubší analýza — multimode synchronizace extrudéru",

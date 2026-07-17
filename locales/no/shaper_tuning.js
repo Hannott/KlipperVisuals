@@ -10,6 +10,7 @@ window.KV_LOCALES.no.shaper_tuning = {
     load: "1. Last inn en resonansmåling",
     recommended: "2. Anbefalt shaper",
     explorer: "3. Manuell shaper-utforsker",
+    advancedTag: "avansert",
     deepAnalysis: "Dypere analyse"
   },
   databar: {
@@ -167,15 +168,16 @@ window.KV_LOCALES.no.shaper_tuning = {
     }
   },
   config: {
-    intro: "Viser alltid konfigurasjonen for aksen(e) du har jobbet med.\nVeksle mellom dine manuelle utforsker-justeringer og den automatisk anbefalte shaperen; hver akse husker sin siste verdi etter hvert som du laster opp ulike opptak.",
-    manual: "manuell",
-    suggested: "anbefalt",
+    suggestedHeading: "Anbefalt konfigurasjon",
+    manualHeading: "Manuell konfigurasjon",
     copyTitle: "Kopier til utklippstavle",
     axisDetected: "Redigerer: {{axis}}-aksen",
     editingLabel: "Redigerer:",
     prefixLabel: "bruk <code>#*#</code>-prefiks",
     invalidComment: "# Konfigurer en gyldig shaper i utforskeren ovenfor først.",
-    pickAxisComment: "# Velg en akse (X eller Y) ovenfor for å legge denne målingen til konfigurasjonen."
+    invalidCommentSuggested: "# Ingen anbefaling tilgjengelig ennå.",
+    pickAxisComment: "# Velg en akse (X eller Y) ovenfor for å legge denne målingen til konfigurasjonen.",
+    pickAxisCommentManual: "# Velg en akse (X eller Y) i den anbefalte konfigurasjonen ovenfor først."
   },
   deep: {
     tag: "Dypere analyse — multimode ekstrudersynkronisering",

@@ -32,6 +32,20 @@
   .wrap{max-width:1040px;margin:0 auto;padding:2rem 1.25rem 4rem;}
   h1{font-size:22px;font-weight:500;margin:.5rem 0 .25rem;}
   h2{font-size:16px;font-weight:500;margin:2rem 0 .5rem;}
+  /* Manual/multimode explorer (+ Deeper analysis nested inside it) is for
+     advanced users -- collapsed behind a native <details> disclosure, closed
+     by default, so a first-time visitor never sees its generic placeholder
+     numbers (mzv @ 50Hz etc.) before loading real data. summary mimics the
+     h2 style so it reads as the section's heading; the native marker is
+     replaced with a rotating ▸ so it still doubles as an expand/collapse cue. */
+  details.advanced{margin-top:2rem;}
+  summary.advanced-summary{cursor:pointer;font-size:16px;font-weight:500;color:var(--text-primary);list-style:none;display:flex;align-items:center;gap:8px;margin:0 0 .5rem;}
+  summary.advanced-summary::-webkit-details-marker{display:none;}
+  summary.advanced-summary::before{content:'▸';display:inline-block;color:var(--text-muted);font-size:12px;transition:transform .15s;}
+  details.advanced[open] summary.advanced-summary::before{transform:rotate(90deg);}
+  summary.advanced-summary:hover{color:var(--text-primary);}
+  summary.advanced-summary .tag{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted);font-weight:400;}
+  .advanced-body{padding-top:.25rem;}
   .sub{color:var(--text-secondary);font-size:15px;margin:0 0 1.5rem;}
   .configref-note{margin-top:-.9rem;font-size:14px;}
   code{font-family:var(--font-mono);font-size:.9em;}
@@ -49,6 +63,12 @@
   button.btn.primary{color:var(--blue);border-color:var(--blue);background:color-mix(in srgb, var(--blue) 8%, transparent);font-weight:500;}
   .cap{font-size:13px;color:var(--text-secondary);margin:1.1rem 0 2px;}
   .chart{position:relative;width:100%;height:320px;}
+  /* Elevates the primary measured-spectrum chart (one of the page's 3 named
+     focus points, alongside the recommendation + config) to the same bordered-
+     panel visual weight as .card/.note, instead of a bare canvas floating on
+     the page background -- the secondary "residual vs frequency" chart inside
+     the advanced section stays plain by contrast. */
+  .chart.panel{border:.5px solid var(--border);border-radius:var(--radius);background:var(--surface-1);padding:1rem 1rem .25rem;}
   .busybox{position:relative;}
   .busybox.busy .busy-mute{opacity:.35;filter:saturate(.5);transition:opacity .15s,filter .15s;pointer-events:none;}
   .busy-overlay{position:absolute;inset:0;display:none;align-items:center;justify-content:center;z-index:5;border-radius:var(--radius);}
@@ -61,6 +81,11 @@
   .card{background:var(--surface-1);border:.5px solid var(--border);border-radius:var(--radius);padding:.85rem 1rem;}
   .card .k{font-size:13px;color:var(--text-secondary);}
   .card .v{font-size:19px;font-weight:500;margin-top:2px;}
+  /* Soft blue accent on the recommendation box, carried through to the
+     suggested config panel below it (.cfgpanel.primary) -- together they read
+     as one connected "this is your answer" block, distinct from the neutral
+     (and collapsed-by-default) advanced section beneath. */
+  .recopanel{border:.5px solid color-mix(in srgb, var(--blue) 30%, var(--border));border-radius:var(--radius);padding:1rem 1rem .75rem;background:color-mix(in srgb, var(--blue) 4%, var(--surface-0));}
   .foot{margin-top:2.5rem;font-size:13px;color:var(--text-muted);border-top:.5px solid var(--border);padding-top:1rem;}
   /* Legal/credits link -- its own line at the very bottom, set apart from the
      provenance footer above it. Present on every page. */
@@ -91,51 +116,31 @@
   .aspectbox canvas{position:absolute;inset:0;width:100%!important;height:100%!important;}
   .bandhdr{margin:3rem 0 .25rem;padding-top:1.25rem;border-top:1px solid var(--border);}
   .bandhdr .tag{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted);}
-  pre.cfgout{font-family:var(--font-mono);font-size:12.5px;line-height:1.5;background:var(--surface-2);border:.5px solid var(--border);border-radius:var(--radius);padding:.85rem 2.4rem .85rem 1rem;overflow-x:auto;white-space:pre;color:var(--text-primary);margin:0;flex:1 1 auto;min-height:0;}
-  /* Two-column layout: config output left (grows to ~half), controls stacked
-     to its right. flex-basis (not a hard %) so it collapses to one column on
-     narrow viewports without needing a dedicated breakpoint -- same approach
-     .row/.cfgbar already use elsewhere on this page. align-items:stretch (not
-     flex-start) + .cfgoutwrap/pre as a flex column makes the empty-state box
-     match the controls column's height instead of collapsing to ~2 lines. */
-  /* Config box now sits beside "1. Load a resonance capture" (.loadcol)
-     instead of as its own step at the bottom of the page -- .loadcfgrow is
-     the outer row, .cfgrow (below) is reused as-is as its right-hand side. */
-  .loadcfgrow{display:flex;gap:24px;align-items:stretch;flex-wrap:wrap;margin:.75rem 0;}
-  /* loadcol doesn't grow (flex-grow:0): stacking the example links (below)
-     means it no longer needs much width, so all leftover row space should
-     go to the config box instead. */
-  .loadcol{flex:0 1 220px;display:flex;flex-direction:column;}
-  /* loadcol doesn't grow (flex-grow:0 above) so all leftover row width goes
-     here -- as the last (only other) flex child, growing to fill the row
-     already puts its right edge flush against .loadcfgrow's right edge, no
-     margin-left:auto needed. */
-  .cfgrow{display:flex;gap:20px;align-items:stretch;flex-wrap:wrap;flex:1 1 460px;margin:0;}
-  /* cfgoutwrap:cfgbar grow 4:1 -- side by side, the box takes the bulk of
-     any freed space (this is the part "give it more room" was about) while
-     cfgbar only grows a little. Both still grow some (not 0) so that when
-     .cfgrow wraps to one-per-line on a narrow viewport, cfgbar stretches to
-     fill its own now-full-width line instead of hugging its content width
-     and leaving dead space next to it (flex-grow:0 did exactly that). */
-  .cfgoutwrap{position:relative;flex:4 1 260px;min-width:0;display:flex;}
+  pre.cfgout{font-family:var(--font-mono);font-size:12.5px;line-height:1.5;background:var(--surface-2);border:.5px solid var(--border);border-radius:var(--radius);padding:.85rem 2.4rem .85rem 1rem;overflow-x:auto;white-space:pre;color:var(--text-primary);margin:0;min-height:4.5em;}
+  /* One config panel = a labeled config-output box with its own copy button
+     and save_config-prefix checkbox. Two independent instances (suggested +
+     manual) replace the old single side-by-side box+toggle -- see
+     cfgOutSuggested/cfgOutManual in the JS below. */
+  .cfgpanel{margin:1rem 0;}
+  .cfgpanel-head{display:flex;align-items:center;gap:10px;margin-bottom:6px;}
+  .cfgpanel-label{font-size:13px;font-weight:500;color:var(--text-primary);}
+  /* Axis badge/picker only appears on the suggested panel (axis assignment is
+     a property of the loaded capture, not of manual-vs-suggested, so there's
+     only one control point for it) -- pushed to the row's right edge. */
+  .cfgpanel-head .axis-badge,.cfgpanel-head .cfgtoggle{margin-left:auto;}
+  .cfgoutwrap{position:relative;}
   .cfgcopy{position:absolute;top:8px;right:8px;width:28px;height:28px;display:flex;align-items:center;justify-content:center;border-radius:6px;border:.5px solid var(--border);background:var(--surface-1);color:var(--text-muted);cursor:pointer;padding:0;}
   .cfgcopy:hover{color:var(--text-primary);background:var(--surface-2);}
   .cfgcopy svg{width:15px;height:15px;display:block;}
-  /* Controls column. Base (wrapped / narrow viewport): flex:1 1 100% so it
-     fills its own line and never leaves dead space beside it. Desktop
-     (side-by-side, >=800px): flex:0 1 auto so it shrinks to its own content
-     width -- narrow, letting .cfgoutwrap (grow:4) take the freed space -- and
-     since it's the rightmost item in the row its right edge sits at the page
-     content edge, lining up with the library row below. align-items:stretch
-     so the badge/checkbox fill that width rather than left-hugging. */
-  .cfgbar{flex:1 1 100%;display:flex;flex-direction:column;align-items:stretch;gap:12px;}
-  @media(min-width:800px){ .cfgbar{flex:0 1 auto;} }
-  .cfgbar .cfgtoggle{display:flex;gap:8px;align-items:center;}
-  /* Push the info icon to the column's right edge (top row), where it aligns
-     with the library row's right edge below. */
-  .cfgbar .cfgtoggle .infoicon{margin-left:auto;}
-  .cfgbar .axistoggle-label{font-size:13px;color:var(--text-secondary);}
-  .cfgbar label{font-size:13px;color:var(--text-secondary);display:flex;align-items:center;gap:6px;}
+  .cfgprefix{font-size:13px;color:var(--text-secondary);display:flex;align-items:center;gap:6px;margin-top:8px;}
+  .cfgtoggle{display:flex;gap:8px;align-items:center;}
+  .axistoggle-label{font-size:13px;color:var(--text-secondary);}
+  /* The suggested panel is the direct product of "2. Recommended shaper" --
+     a soft blue accent (paired with .recopanel above it) ties the two
+     together as one "this is your answer" block, distinct from the neutral,
+     collapsed-by-default advanced section below. */
+  .cfgpanel.primary .cfgpanel-label{color:var(--blue);}
+  .cfgpanel.primary pre.cfgout{border-color:color-mix(in srgb, var(--blue) 35%, var(--border));}
   /* Info icon: replaces the old always-visible step-4 intro paragraph --
      same content, now a hover/focus tooltip (native title/aria-label, same
      pattern as accelEditHint elsewhere on this page). */
@@ -192,68 +197,24 @@
   </div>
 
   <h2 data-i18n="shaper_tuning.steps.load">1. Load a resonance capture</h2>
-  <!-- The config box lives here, beside "load", rather than as its own
-       numbered step at the bottom of the page: it's always live now (no
-       Generate button, see renderConfigOutput()), so it reads more like a
-       persistent readout next to your data than a separate workflow step.
-       The old step-4 intro paragraph is now the info icon's tooltip instead
-       of a permanent block of text -- see the (i) beside the suggested
-       toggle below. -->
-  <div class="loadcfgrow">
-    <div class="loadcol">
-      <div class="databar">
-        <!-- Native file input is hidden; the styled button below triggers it, so
-             the label matches the site's buttons and is localizable (the browser's
-             own "Choose File" text can't be styled or translated). -->
-        <input type="file" id="csvFile" accept=".csv,text/csv" style="display:none">
-        <button class="btn" id="uploadBtn" data-i18n="shaper_tuning.databar.upload">Upload capture…</button>
-        <button class="btn" id="clearData" data-i18n="shaper_tuning.databar.clear">Clear</button>
-      </div>
-      <!-- Examples are de-emphasized on purpose: this page is about the user's
-           own data, not the bundled samples. -->
-      <div class="examples-hint">
-        <div data-i18n="shaper_tuning.databar.tryExample">No data yet? Try an example:</div>
-        <button type="button" class="linklike" id="loadExX" data-i18n="shaper_tuning.databar.loadExX">Example: X-axis capture</button>
-        <button type="button" class="linklike" id="loadExY" data-i18n="shaper_tuning.databar.loadExY">Example: Y-axis capture</button>
-      </div>
-    </div>
-    <div class="cfgrow">
-      <div class="cfgoutwrap">
-        <pre class="cfgout" id="cfgOut"></pre>
-        <button class="cfgcopy" id="cfgCopy" type="button" title="Copy to clipboard" aria-label="Copy to clipboard" data-i18n-attr="title:shaper_tuning.config.copyTitle|aria-label:shaper_tuning.config.copyTitle">
-          <svg id="cfgCopyIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path></svg>
-        </button>
-      </div>
-      <div class="cfgbar">
-        <div class="cfgtoggle">
-          <button class="btn primary" id="cfgModeManual" style="padding:2px 8px;" data-i18n="shaper_tuning.config.manual">manual</button>
-          <button class="btn" id="cfgModeSuggested" style="padding:2px 8px;" data-i18n="shaper_tuning.config.suggested">suggested</button>
-          <!-- margin-left:auto (CSS) pushes this to the column's right edge,
-               where it lines up with the library row's right edge below. -->
-          <span class="infoicon" id="cfgInfo" tabindex="0" role="button" title="Always shows the config for whichever axis you've worked on." aria-label="Always shows the config for whichever axis you've worked on." data-i18n-attr="title:shaper_tuning.config.intro|aria-label:shaper_tuning.config.intro">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
-          </span>
-        </div>
-        <!-- Axis indicator: a plain badge when the axis is known (detected from
-             the filename), OR an X/Y picker when it isn't -- so an ambiguously
-             named capture still gets written under a definite axis instead of
-             dumping both. renderCfgAxisBadge() shows exactly one of these. -->
-        <span class="axis-badge" id="cfgAxisBadge" style="display:none;"></span>
-        <div class="cfgtoggle" id="cfgAxisToggle" style="display:none;">
-          <span class="axistoggle-label" data-i18n="shaper_tuning.config.editingLabel">Editing:</span>
-          <button class="btn" id="cfgAxisX" type="button">X</button>
-          <button class="btn" id="cfgAxisY" type="button">Y</button>
-        </div>
-        <label><input type="checkbox" id="cfgPrefix"> <span data-i18n-html="shaper_tuning.config.prefixLabel">apply save_config prefix (<code>#*#</code>)</span></label>
-      </div>
-    </div>
+  <div class="databar">
+    <!-- Native file input is hidden; the styled button below triggers it, so
+         the label matches the site's buttons and is localizable (the browser's
+         own "Choose File" text can't be styled or translated). -->
+    <input type="file" id="csvFile" accept=".csv,text/csv" style="display:none">
+    <button class="btn" id="uploadBtn" data-i18n="shaper_tuning.databar.upload">Upload capture…</button>
+    <button class="btn" id="clearData" data-i18n="shaper_tuning.databar.clear">Clear</button>
+  </div>
+  <!-- Examples are de-emphasized on purpose: this page is about the user's
+       own data, not the bundled samples. -->
+  <div class="examples-hint">
+    <div data-i18n="shaper_tuning.databar.tryExample">No data yet? Try an example:</div>
+    <button type="button" class="linklike" id="loadExX" data-i18n="shaper_tuning.databar.loadExX">Example: X-axis capture</button>
+    <button type="button" class="linklike" id="loadExY" data-i18n="shaper_tuning.databar.loadExY">Example: Y-axis capture</button>
   </div>
   <!-- Every successfully parsed upload is cached (freq/x/y/z/xyz, not the
        raw file) in localStorage so it can be reloaded instantly without
-       re-uploading -- see addToLibrary/renderLibrary. Hidden while empty. Its
-       own full-width row (not squeezed into .loadcol) since the list of
-       names can get wide/tall and doesn't belong constrained to that narrow
-       column. -->
+       re-uploading -- see addToLibrary/renderLibrary. Hidden while empty. -->
   <div class="library" id="libraryBox" style="display:none;">
     <div class="library-label" data-i18n="shaper_tuning.library.label">Previously uploaded</div>
     <div class="library-list" id="libraryList"></div>
@@ -269,7 +230,7 @@
       <button class="btn primary" id="inpLin" style="padding:2px 8px;" data-i18n="shaper_tuning.scale.linear">linear</button>
     </span>
   </div>
-  <div class="chart busybox" id="inputChartBox">
+  <div class="chart busybox panel" id="inputChartBox">
     <canvas id="cInput" class="busy-mute"></canvas>
     <div class="busy-overlay"><div class="kv-spinner"></div></div>
   </div>
@@ -278,7 +239,7 @@
        renderInfoTooltips() sets its title/aria-label in JS -- NOT data-i18n-attr
        (which would clobber the tier-specific text on locale change). -->
   <h2><span data-i18n="shaper_tuning.steps.recommended">2. Recommended shaper</span><span class="infoicon inline" id="recoInfo" tabindex="0" role="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg></span></h2>
-  <div class="busybox" id="recoBox">
+  <div class="busybox recopanel" id="recoBox">
     <div class="busy-mute">
       <div class="note" id="recoStatus" data-i18n="shaper_tuning.recommended.statusDefault">Load a capture above to compute a recommendation.</div>
       <div class="cards" id="cardsReco"></div>
@@ -287,7 +248,45 @@
     <div class="busy-overlay"><div class="kv-spinner"></div></div>
   </div>
 
-  <h2><span data-i18n="shaper_tuning.steps.explorer">3. Manual shaper explorer</span><span class="infoicon inline" tabindex="0" role="button" data-i18n-attr="title:shaper_tuning.explorer.intro|aria-label:shaper_tuning.explorer.intro"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg></span></h2>
+  <!-- The config this recommendation produces -- kept right beside "2." (not
+       tucked away with the manual/advanced controls below) since it's one of
+       the page's primary outcomes, same as the recommendation itself. Its
+       manual counterpart lives further down, inside the advanced section. -->
+  <div class="cfgpanel primary">
+    <div class="cfgpanel-head">
+      <span class="cfgpanel-label" data-i18n="shaper_tuning.config.suggestedHeading">Suggested config</span>
+      <!-- Axis indicator: a plain badge when the axis is known (detected from
+           the filename), OR an X/Y picker when it isn't -- so an ambiguously
+           named capture still gets written under a definite axis instead of
+           dumping both. renderCfgAxisBadge() shows exactly one of these. -->
+      <span class="axis-badge" id="cfgAxisBadge" style="display:none;"></span>
+      <div class="cfgtoggle" id="cfgAxisToggle" style="display:none;">
+        <span class="axistoggle-label" data-i18n="shaper_tuning.config.editingLabel">Editing:</span>
+        <button class="btn" id="cfgAxisX" type="button">X</button>
+        <button class="btn" id="cfgAxisY" type="button">Y</button>
+      </div>
+    </div>
+    <div class="cfgoutwrap">
+      <pre class="cfgout" id="cfgOutSuggested"></pre>
+      <button class="cfgcopy" id="cfgCopySuggested" type="button" title="Copy to clipboard" aria-label="Copy to clipboard" data-i18n-attr="title:shaper_tuning.config.copyTitle|aria-label:shaper_tuning.config.copyTitle">
+        <svg id="cfgCopyIconSuggested" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path></svg>
+      </button>
+    </div>
+    <label class="cfgprefix"><input type="checkbox" id="cfgPrefixSuggested"> <span data-i18n-html="shaper_tuning.config.prefixLabel">apply save_config prefix (<code>#*#</code>)</span></label>
+  </div>
+
+  <!-- Manual/multimode explorer is for advanced users -- collapsed by default
+       (native <details>, no JS state needed) so a first-time visitor never
+       sees its generic placeholder numbers (mzv @ 50Hz etc.) before loading
+       real data; the primary flow above (graph -> recommendation -> suggested
+       config) never requires opening this. -->
+  <details class="advanced" id="advancedDetails">
+  <summary class="advanced-summary">
+    <span data-i18n="shaper_tuning.steps.explorer">3. Manual shaper explorer</span>
+    <span class="tag" data-i18n="shaper_tuning.steps.advancedTag">advanced</span>
+    <span class="infoicon inline" tabindex="0" role="button" data-i18n-attr="title:shaper_tuning.explorer.intro|aria-label:shaper_tuning.explorer.intro"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg></span>
+  </summary>
+  <div class="advanced-body">
   <div class="row" style="align-items:flex-end;">
     <div class="ctl" style="max-width:260px;">
       <div class="lbl"><span data-i18n="shaper_tuning.explorer.shaperType">shaper type</span></div>
@@ -342,6 +341,23 @@
   <div class="cap" style="margin-top:1rem;"><span data-i18n="shaper_tuning.captions.residualVsFreq">residual vibration vs frequency</span><span class="infoicon inline" tabindex="0" role="button" data-i18n-attr="title:shaper_tuning.captions.residualVsFreqNote|aria-label:shaper_tuning.captions.residualVsFreqNote"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg></span></div>
   <div class="chart"><canvas id="c1"></canvas></div>
 
+  <!-- The manual explorer's own config output -- independent of the suggested
+       panel above; reflects whatever this explorer is currently set to. No
+       axis picker of its own (axis assignment happens once, in the suggested
+       panel above). -->
+  <div class="cfgpanel">
+    <div class="cfgpanel-head">
+      <span class="cfgpanel-label" data-i18n="shaper_tuning.config.manualHeading">Manual config</span>
+    </div>
+    <div class="cfgoutwrap">
+      <pre class="cfgout" id="cfgOutManual"></pre>
+      <button class="cfgcopy" id="cfgCopyManual" type="button" title="Copy to clipboard" aria-label="Copy to clipboard" data-i18n-attr="title:shaper_tuning.config.copyTitle|aria-label:shaper_tuning.config.copyTitle">
+        <svg id="cfgCopyIconManual" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path></svg>
+      </button>
+    </div>
+    <label class="cfgprefix"><input type="checkbox" id="cfgPrefixManual"> <span data-i18n-html="shaper_tuning.config.prefixLabel">apply save_config prefix (<code>#*#</code>)</span></label>
+  </div>
+
   <div id="deepSection" style="display:none;">
   <div class="bandhdr"><span class="tag" data-i18n="shaper_tuning.deep.tag">Deeper analysis — multimode extruder synchronization</span></div>
   <h2><span data-i18n="shaper_tuning.steps.deepAnalysis">Deeper analysis</span><span class="infoicon inline" tabindex="0" role="button" data-i18n-attr="title:shaper_tuning.deep.intro|aria-label:shaper_tuning.deep.intro"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg></span></h2>
@@ -359,6 +375,8 @@
   <div class="note" id="note2"></div>
   </div>
   </div>
+  </div>
+  </details>
 
   <p class="foot" data-i18n-html="shaper_tuning.footer">Reproduces Kalico's <code>find_best_shaper</code> shaper calibration and DSP entirely in your browser — your capture is never uploaded. Rendered with Chart.js. Source on <a href="https://github.com/Hannott/KlipperVisuals">GitHub</a>.</p>
   <!-- Legal/credits link: its own line at the very bottom of every page. -->
@@ -1544,6 +1562,7 @@
     if(pairs.length<1){
       peaks=[];renderPeakRows();update();
       renderDetectStatus();
+      renderSuggestedConfigOutput(); // see note below -- keeps the suggested panel from going stale
       return;
     }
     var prevBases=peaks.map(function(p){return p.base;});
@@ -1551,6 +1570,14 @@
     renderPeakRows();
     renderDetectStatus();
     update();
+    // update() only refreshes the MANUAL panel. paintRecommendation() (which
+    // refreshes the suggested one) only runs once the async search resolves,
+    // and even then only if effectiveCfgAxis() is truthy -- so an undetected,
+    // not-yet-assigned capture would otherwise leave the suggested panel
+    // showing whatever the previous capture (or the initial placeholder) put
+    // there. Called from both loadCapture() and recombineAndCascade() (via
+    // applyDetected), so both paths get this for free.
+    renderSuggestedConfigOutput();
   }
   // Loading a capture drives everything: the input graph, the manual
   // explorer's detected peaks, AND the automatic recommendation (which then
@@ -1624,7 +1651,7 @@
     renderCfgAxisBadge();
     update();                          // re-caches the manual snapshot under effectiveCfgAxis()
     if(lastReco)paintRecommendation(); // re-caches the suggested snapshot too
-    else renderConfigOutput();
+    else renderSuggestedConfigOutput();
     persistState(true);
   }
   // Recomputes Combined = sum of whichever raw axes are still visible on the
@@ -1661,7 +1688,8 @@
     renderDetectStatus();
     renderInput();
     renderRecommendation();
-    update(); // also re-renders #cfgOut (now empty axisConfigCache -> bare explorer preview)
+    update(); // also re-renders the manual config panel (now empty axisConfigCache -> bare explorer preview)
+    renderSuggestedConfigOutput(); // reset to its own "no capture" placeholder
     persistState(true); // no capture -> clears the stored state
     renderLibrary(); // drop the "active" highlight, library entries themselves are untouched
     renderCfgAxisBadge();
@@ -1684,7 +1712,7 @@
       var blob={cap:{freq:d.freq,x:d.x,y:d.y,z:d.z,xyz:d.xyz,label:d.label,testAxis:d.testAxis},
         axisHidden:axisHidden, excludedPeaks:excludedPeaks,
         expl:{explType:explType,peaks:peaks,explFreq:explFreq,explDamp:explDamp,explAccel:explAccel},
-        axisConfigCache:axisConfigCache, cfgMode:cfgMode, cfgAxisChoice:cfgAxisChoice};
+        axisConfigCache:axisConfigCache, cfgAxisChoice:cfgAxisChoice};
       if(lastReco)blob.reco={best:lastReco.best,peaks:lastReco.result.peaks,allShapers:lastReco.result.allShapers,allPeaks:lastReco.allPeaks,label:lastReco.label};
       sessionStorage.setItem(STORE_KEY,JSON.stringify(blob));
     }catch(e){/* storage full/disabled: persistence just no-ops */}
@@ -1707,17 +1735,12 @@
     if(blob.reco)lastReco={best:blob.reco.best,result:{peaks:blob.reco.peaks,allShapers:blob.reco.allShapers},allPeaks:blob.reco.allPeaks,label:blob.reco.label};
     axisConfigCache=blob.axisConfigCache||{x:null,y:null};
     if(blob.cfgAxisChoice)cfgAxisChoice=blob.cfgAxisChoice;
-    if(blob.cfgMode){
-      cfgMode=blob.cfgMode;
-      document.getElementById('cfgModeManual').classList.toggle('primary',cfgMode==='manual');
-      document.getElementById('cfgModeSuggested').classList.toggle('primary',cfgMode==='suggested');
-    }
     renderDetectStatus();
     renderInput();
     renderPeakRows();
     syncExplorerControls();
-    update(); // also re-renders #cfgOut from the restored axisConfigCache
-    if(lastReco)paintRecommendation(); else renderRecommendation(); // recompute only if reco wasn't stored
+    update(); // also re-renders the manual config panel from the restored axisConfigCache
+    if(lastReco)paintRecommendation(); else{renderRecommendation();renderSuggestedConfigOutput();} // recompute only if reco wasn't stored
     renderLibrary();
     renderCfgAxisBadge();
     return true;
@@ -1963,14 +1986,13 @@
   // Per-axis config memory: {x:{manual,suggested}|null, y:{...}|null}. Each of
   // .manual/.suggested is a snapshot shaped like {type,freq,damping,peaks} (see
   // explorerState()/stateFromBest() below) -- NOT pre-rendered config lines,
-  // so the save_config-prefix checkbox and the manual/suggested toggle can be
-  // flipped without recomputing anything. Populated as a side effect of
-  // update() (manual) and paintRecommendation() (suggested) whenever the
-  // currently loaded capture's testAxis is unambiguously 'x' or 'y' -- this is
-  // what lets "upload X, tweak, upload Y, tweak" end up showing both axes'
-  // configs at once instead of only whichever capture is loaded right now.
+  // so the save_config-prefix checkboxes can be flipped without recomputing
+  // anything. Populated as a side effect of update() (manual) and
+  // paintRecommendation() (suggested) whenever the currently loaded capture's
+  // testAxis is unambiguously 'x' or 'y' -- this is what lets "upload X,
+  // tweak, upload Y, tweak" end up showing both axes' configs at once instead
+  // of only whichever capture is loaded right now.
   var axisConfigCache={x:null,y:null};
-  var cfgMode='manual'; // 'manual' | 'suggested' -- which snapshot the config output renders
   // Which axis an *undetected* capture is treated as (the user picks via the
   // X/Y toggle). null = unassigned: the capture writes to no axis and can't
   // clobber an existing config. Ignored whenever the filename gave a definite
@@ -2099,7 +2121,7 @@
       deepSection.style.display=mm?'':'none';
       if(mm){c2.data.datasets=[];c2.update();c3.data.datasets.forEach(function(d){d.data=[];});c3.update();c4.data.datasets.forEach(function(d){d.data=[];});c4.update();
         document.getElementById('cards2').innerHTML='';document.getElementById('note2').innerHTML='<span style="color:var(--text-muted)">'+reason+'</span>';}
-      renderConfigOutput(); // still reflects axisConfigCache/other axis even while this axis's edit is mid-invalid
+      renderManualConfigOutput(); // still reflects axisConfigCache/other axis even while this axis's edit is mid-invalid
       return;
     }
 
@@ -2157,7 +2179,7 @@
       if(!axisConfigCache[mCfgAxis])axisConfigCache[mCfgAxis]={manual:null,suggested:null};
       axisConfigCache[mCfgAxis].manual=explorerState();
     }
-    renderConfigOutput();
+    renderManualConfigOutput();
   }
 
   // Multimode-only deeper analysis: per-peak uniform-ζ mismatch (c2), fitted
@@ -2449,7 +2471,7 @@
     if(sCfgAxis){
       if(!axisConfigCache[sCfgAxis])axisConfigCache[sCfgAxis]={manual:null,suggested:null};
       axisConfigCache[sCfgAxis].suggested=stateFromBest(best);
-      renderConfigOutput();
+      renderSuggestedConfigOutput();
     }
   }
   // Seed the manual explorer from the recommendation so it starts on the
@@ -2505,25 +2527,23 @@
     return ['shaper_type_'+axis+' = '+state.type,'shaper_freq_'+axis+' = '+state.freq.toFixed(1),
       'damping_ratio_'+axis+' = '+state.damping.toFixed(6)];
   }
-  // Renders #cfgOut from axisConfigCache (once at least one axis has been
-  // detected and cached) so "upload X, tweak, upload Y, tweak" keeps showing
-  // both axes at once even though only one capture is ever "loaded". Before
-  // any axis has been detected/cached yet, falls back to a live preview of
-  // the current explorer state (matching the old Generate button's behavior
-  // from a bare page with no capture loaded).
-  function renderConfigOutput(){
-    var outEl=document.getElementById('cfgOut');
+  // Shared renderer for both config panels. mode is 'suggested' or 'manual'
+  // (which half of axisConfigCache to read); opts.liveFallback (manual only)
+  // previews the bare live explorer state before any axis has been cached yet
+  // (matching the old Generate button's behavior on a bare page); opts.
+  // pickAxisKey/invalidKey let each panel show wording appropriate to its own
+  // position on the page (see the two wrapper functions below).
+  function renderConfigPanel(mode,outEl,prefixEl,opts){
     if(!outEl)return;
-    var prefix=document.getElementById('cfgPrefix').checked;
-    var axesWithCache=['x','y'].filter(function(a){return axisConfigCache[a];});
+    var prefix=prefixEl.checked;
+    var axesWithCache=['x','y'].filter(function(a){return axisConfigCache[a]&&axisConfigCache[a][mode];});
     var body=['[input_shaper]'];
     if(axesWithCache.length){
       axesWithCache.forEach(function(ax){
-        var entry=axisConfigCache[ax];
-        var state=entry[cfgMode]||entry.manual||entry.suggested; // fall back if this axis has no data yet for the selected mode
+        var state=axisConfigCache[ax][mode];
         if(state&&stateValid(state))body=body.concat(configLinesForState(ax,state));
       });
-    }else{
+    }else if(opts.liveFallback){
       // No axis cached yet: preview the live explorer state under the single
       // effective axis. If the axis is unassigned (undetected capture, no pick
       // yet), effectiveCfgAxis() is null -> emit nothing, prompting a pick.
@@ -2537,26 +2557,35 @@
     }else if(loadedCapture&&!effectiveCfgAxis()){
       // Undetected capture, no axis chosen: nothing is written anywhere (so no
       // existing config is lost) -- tell the user to pick an axis.
-      outEl.textContent=t('shaper_tuning.config.pickAxisComment');
+      outEl.textContent=t(opts.pickAxisKey);
     }else{
-      outEl.textContent=t('shaper_tuning.config.invalidComment');
+      outEl.textContent=t(opts.invalidKey);
     }
   }
-  document.getElementById('cfgModeManual').addEventListener('click',function(){
-    cfgMode='manual';this.classList.add('primary');document.getElementById('cfgModeSuggested').classList.remove('primary');
-    renderConfigOutput();persistState(true);
-  });
-  document.getElementById('cfgModeSuggested').addEventListener('click',function(){
-    cfgMode='suggested';this.classList.add('primary');document.getElementById('cfgModeManual').classList.remove('primary');
-    renderConfigOutput();persistState(true);
-  });
-  document.getElementById('cfgPrefix').addEventListener('change',renderConfigOutput);
+  // The recommendation's config -- lives right after "2. Recommended shaper";
+  // this is also where the axis badge/picker lives, so no live-explorer
+  // fallback applies here (there's no "suggested" state without a real
+  // recommendation to derive it from).
+  function renderSuggestedConfigOutput(){
+    renderConfigPanel('suggested',document.getElementById('cfgOutSuggested'),document.getElementById('cfgPrefixSuggested'),
+      {liveFallback:false,pickAxisKey:'shaper_tuning.config.pickAxisComment',invalidKey:'shaper_tuning.config.invalidCommentSuggested'});
+  }
+  // The manual explorer's own config -- lives inside the advanced section,
+  // below the explorer controls that drive it.
+  function renderManualConfigOutput(){
+    renderConfigPanel('manual',document.getElementById('cfgOutManual'),document.getElementById('cfgPrefixManual'),
+      {liveFallback:true,pickAxisKey:'shaper_tuning.config.pickAxisCommentManual',invalidKey:'shaper_tuning.config.invalidComment'});
+  }
+  document.getElementById('cfgPrefixSuggested').addEventListener('change',renderSuggestedConfigOutput);
+  document.getElementById('cfgPrefixManual').addEventListener('change',renderManualConfigOutput);
   document.getElementById('cfgAxisX').addEventListener('click',function(){chooseCfgAxis('x');});
   document.getElementById('cfgAxisY').addEventListener('click',function(){chooseCfgAxis('y');});
   // ---- copy config to clipboard (icon swaps to a checkmark briefly) ----
+  // Wired to both panels' copy buttons via wireCfgCopy() below; each gets its
+  // own closure-scoped reset timer so copying one panel can't cut short the
+  // other's checkmark animation.
   var CFG_COPY_ICON='<rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>';
   var CFG_CHECK_ICON='<polyline points="20 6 9 17 4 12"></polyline>';
-  var _cfgCopyResetTimer=null;
   function cfgCopyFallback(text){
     // navigator.clipboard needs a secure context; this covers plain http:// (e.g. this page opened via python -m http.server)
     var ta=document.createElement('textarea');
@@ -2565,20 +2594,25 @@
     try{document.execCommand('copy');}catch(e){/* clipboard truly unavailable: no-op, nothing else we can do */}
     document.body.removeChild(ta);
   }
-  document.getElementById('cfgCopy').addEventListener('click',function(){
-    var text=document.getElementById('cfgOut').textContent;
-    var iconEl=document.getElementById('cfgCopyIcon');
-    function showCopied(){
-      clearTimeout(_cfgCopyResetTimer);
-      iconEl.innerHTML=CFG_CHECK_ICON;
-      _cfgCopyResetTimer=setTimeout(function(){iconEl.innerHTML=CFG_COPY_ICON;},1200);
-    }
-    if(navigator.clipboard&&navigator.clipboard.writeText){
-      navigator.clipboard.writeText(text).then(showCopied,function(){cfgCopyFallback(text);showCopied();});
-    }else{
-      cfgCopyFallback(text);showCopied();
-    }
-  });
+  function wireCfgCopy(btnId,outId,iconId){
+    var resetTimer=null;
+    document.getElementById(btnId).addEventListener('click',function(){
+      var text=document.getElementById(outId).textContent;
+      var iconEl=document.getElementById(iconId);
+      function showCopied(){
+        clearTimeout(resetTimer);
+        iconEl.innerHTML=CFG_CHECK_ICON;
+        resetTimer=setTimeout(function(){iconEl.innerHTML=CFG_COPY_ICON;},1200);
+      }
+      if(navigator.clipboard&&navigator.clipboard.writeText){
+        navigator.clipboard.writeText(text).then(showCopied,function(){cfgCopyFallback(text);showCopied();});
+      }else{
+        cfgCopyFallback(text);showCopied();
+      }
+    });
+  }
+  wireCfgCopy('cfgCopySuggested','cfgOutSuggested','cfgCopyIconSuggested');
+  wireCfgCopy('cfgCopyManual','cfgOutManual','cfgCopyIconManual');
 
   // ---- live palette repaint (nav.js "kv-palette-change" event) ----
   // Refreshes every color baked into JS (chart datasets, card highlights,
@@ -2643,7 +2677,7 @@
     renderTierNote();
     renderInfoTooltips();   // re-translate the tier-aware (i) tooltips
     update();               // rebuilds c1 + cards/note, and c2/c3/c4 (via renderDeep) when multimode is selected
-    if(lastReco)paintRecommendation(); else{var rs=document.getElementById('recoStatus');rs.style.display='';rs.innerHTML=t('shaper_tuning.recommended.statusDefault');}
+    if(lastReco)paintRecommendation(); else{var rs=document.getElementById('recoStatus');rs.style.display='';rs.innerHTML=t('shaper_tuning.recommended.statusDefault');renderSuggestedConfigOutput();}
     [c1,cInput,c2,c3,c4].forEach(function(ch){ch.update();});
   });
 
@@ -2664,9 +2698,20 @@
     renderPeakRows();
     syncExplorerControls();
     update();
+    renderSuggestedConfigOutput();
     renderLibrary(); // the library is localStorage-based, independent of the session
     renderCfgAxisBadge();
   }
+  // Charts inside the collapsed-by-default <details> (c1, plus c2/c3/c4 when
+  // multimode is selected) are created/updated while their container has
+  // `display:none` (native <details> behavior when closed), so Chart.js bakes
+  // in a 0-size layout. Force a resize the first time it's actually opened.
+  var advancedDetails=document.getElementById('advancedDetails');
+  advancedDetails.addEventListener('toggle',function(){
+    if(!advancedDetails.open)return;
+    c1.resize();
+    if(document.getElementById('deepSection').style.display!=='none'){c2.resize();c3.resize();c4.resize();}
+  });
 })();
 </script>
 </body>
