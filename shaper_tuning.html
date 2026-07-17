@@ -101,7 +101,11 @@
      means it no longer needs much width, so all leftover row space should
      go to the config box instead. */
   .loadcol{flex:0 1 220px;display:flex;flex-direction:column;}
-  .cfgrow{display:flex;gap:20px;align-items:stretch;flex-wrap:wrap;flex:1 1 460px;margin:0;}
+  /* flex:0 0 auto + margin-left:auto -- sized to its own content instead of
+     stretching to fill the row, and pushed flush to the right edge (the gap
+     from loadcol's narrower fixed width lands between them, not inside the
+     box). */
+  .cfgrow{display:flex;gap:20px;align-items:stretch;flex-wrap:wrap;flex:0 0 auto;margin:0 0 0 auto;}
   .cfgoutwrap{position:relative;flex:1 1 260px;min-width:0;display:flex;}
   .cfgcopy{position:absolute;top:8px;right:8px;width:28px;height:28px;display:flex;align-items:center;justify-content:center;border-radius:6px;border:.5px solid var(--border);background:var(--surface-1);color:var(--text-muted);cursor:pointer;padding:0;}
   .cfgcopy:hover{color:var(--text-primary);background:var(--surface-2);}

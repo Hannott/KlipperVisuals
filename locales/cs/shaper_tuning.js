@@ -167,7 +167,7 @@ window.KV_LOCALES.cs.shaper_tuning = {
     copyTitle: "Kopírovat do schránky",
     axisDetected: "právě upravujete: osu {{axis}}",
     axisUnknown: "právě upravujete: X a Y (osu se nepodařilo rozpoznat z názvu souboru)",
-    prefixLabel: "použijte save_config prefix (<code>#*#</code>)",
+    prefixLabel: "použijte prefix <code>#*#</code>",
     invalidComment: "# Nejprve nakonfigurujte platný tvořovač v níže uvedeném průzkumníku."
   },
   deep: {
