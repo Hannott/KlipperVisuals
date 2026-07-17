@@ -40,19 +40,19 @@ window.KV_LOCALES.en.shaper_tuning = {
   detectStatus: {
     default: "No capture loaded. Load an example, or upload a Kalico <code>calibration_data_*.csv</code> / <code>resonances_*.csv</code> (a <code>freq</code> column plus <code>psd_x</code>/<code>psd_y</code>/<code>psd_z</code>/<code>psd_xyz</code>).<br>Peak detection and half-power damping-ratio estimation run live in your browser — nothing is uploaded anywhere.",
     noPeaksDetected: "No peaks detected in {{source}}.",
-    detected: "Detected {{n}} peak(s) in {{source}} (live, in-browser): {{list}}."
+    detected: "Detected {{n}} peak(s) in {{source}}: {{list}}."
   },
   captions: {
     measuredSpectrum: "measured resonance spectrum",
-    measuredSpectrumNote: "(the loaded capture; dashed verticals mark the detected resonances; click a peak in the legend to drop that resonance from the recommendation, or an axis to include/exclude it)",
+    measuredSpectrumNote: "The loaded capture.\nDashed verticals mark the detected resonances.\nClick a peak in the legend to drop that resonance from the recommendation, or an axis to include/exclude it.",
     residualVsFreq: "residual vibration vs frequency",
-    residualVsFreqNote: "(the selected shaper's response; dashed verticals mark the detected resonances; lower = better)",
+    residualVsFreqNote: "The selected shaper's response.\nDashed verticals mark the detected resonances; lower = better.",
     notchDepth: "notch depth vs a uniformly-assumed damping ratio",
-    notchDepthNote: "(what if the design used ONE shared ζ for every peak instead of each peak's own measured value? True ζ per peak marked with a matching vertical)",
+    notchDepthNote: "What if the design used ONE shared ζ for every peak\ninstead of each peak's own measured value?\nTrue ζ per peak is marked with a matching vertical.",
     extruderKernel: "extruder synchronization kernel",
-    extruderKernelNote: "(exact convolution vs a fitted smoother counterpart, over the shaper's own duration)",
+    extruderKernelNote: "Exact convolution vs a fitted smoother counterpart,\nover the shaper's own duration.",
     cornerAccel: "extruder acceleration demand at a sharp corner",
-    cornerAccelNote: "(100&rarr;20&nbsp;mm/s corner, exact vs fitted)"
+    cornerAccelNote: "100→20 mm/s corner, exact vs fitted."
   },
   scale: {
     label: "scale:",
@@ -60,11 +60,16 @@ window.KV_LOCALES.en.shaper_tuning = {
     linear: "linear"
   },
   recommended: {
-    intro: "The same search <code>SHAPER_CALIBRATE</code> runs, on your capture: every <code>smooth_*</code> smoother and classic shaper, plus a multimode search over the detected resonances (up to 4, with the peak-cluster-widening fix), scored and selected with Kalico's formula and thresholds.<br>Per-peak residual is shown for every resonance detected.<br>The manual explorer below starts from this pick so you can tweak it.",
+    intro: "The same search SHAPER_CALIBRATE runs, on your capture:\n{{candidates}},\nscored and selected with Kalico's formula and thresholds.\nPer-peak residual is shown below for each active resonance.\nThe manual explorer further down starts from this pick so you can tweak it.",
+    candidates: {
+      klipper: "classic impulse shapers only",
+      kalicobe: "every classic shaper and smooth_* smoother",
+      multimode: "every classic shaper and smooth_* smoother,\nplus a multimode search over the detected resonances\n(up to 4, with the peak-cluster-widening fix)"
+    },
     statusDefault: "Load a capture above to compute a recommendation."
   },
   explorer: {
-    intro: "Pick any shaper type and see how it performs against the loaded capture — corner smoothing, projected <code>max_accel</code>, and the residual vibration left at each detected resonance.<br>Seeded from the recommendation above; change the type or frequencies to compare.",
+    intro: "Pick any shaper type and see how it performs against the loaded capture:\ncorner smoothing, projected max_accel, and the residual vibration\nleft at each active resonance.\nSeeded from the recommendation above; change the type or frequencies to compare.",
     shaperType: "shaper type",
     frequencyHz: "frequency (Hz)",
     dampingZeta: "damping ζ",
@@ -106,10 +111,10 @@ window.KV_LOCALES.en.shaper_tuning = {
     maxAccel: "max_accel"
   },
   notes: {
-    residualPerPeak: "Residual vibration this shaper leaves at each detected resonance (worst case across ζ={{ratios}}):",
+    residualPerPeak: "Residual vibration this shaper leaves at each active resonance (worst case across ζ={{ratios}}):",
     loadCaptureForResidual: "Load a capture to see the residual left at each detected resonance.",
     deepNote: "The <strong>exact</strong> convolution ({{impulses}} impulses, base {{base}}) is a mathematically perfect match to the shaped toolhead motion, but each impulse is a velocity-derivative discontinuity.<br>The <strong>fitted</strong> smoother (order {{order}}) trades a little exactness for a continuous kernel, cutting peak extruder acceleration by <strong>{{reduction}}×</strong> at a sharp 100&rarr;20&nbsp;mm/s corner.<br>This ports <code>extruder_smoother.get_multi_mode_extruder_smoother</code>, fit near every peak with that peak's own damping ratio.<br>The chart above it shows why per-peak damping matters: with one shared assumed ζ, only the peak whose true ζ matches gets a clean notch.",
-    recoNoteIntro: "Per-peak residual using the recommended shaper above, at <strong>every</strong> resonance detected in the capture:",
+    recoNoteIntro: "Per-peak residual using the recommended shaper above, at each active resonance:",
     recoCaveat: "The auto-tuner searches at most 4 resonance peaks.<br>If your printer shows more, add the extras as additional multimode modes by hand (use the explorer below)."
   },
   status: {
@@ -173,7 +178,7 @@ window.KV_LOCALES.en.shaper_tuning = {
   },
   deep: {
     tag: "Deeper analysis — multimode extruder synchronization",
-    intro: "How this hand-built multimode shaper behaves across per-peak damping mismatch, and the fitted extruder-smoother kernel that keeps pressure advance synchronized with it.<br>(Shown only while the explorer is set to <strong>multimode</strong>.)"
+    intro: "How this hand-built multimode shaper behaves across per-peak\ndamping mismatch, and the fitted extruder-smoother kernel that\nkeeps pressure advance synchronized with it.\nShown only while the explorer is set to multimode."
   },
-  footer: "Everything is computed from the loaded capture.<br>The recommendation ports Kalico's <code>find_best_shaper</code> (<code>shaper_calibrate.py</code>) — every smoother/shaper candidate plus a multimode search over the detected resonances (up to 4) with the peak-cluster-widening fix, scored with Kalico's formula.<br>Multimode shaper = convolution of a base shaper tuned to each configured peak (amplitudes multiply, times add).<br>Peak detection and half-power damping estimation port <code>_detect_resonance_peaks</code> / <code>_estimate_damping_ratio</code>.<br>The fitted extruder kernel reproduces <code>extruder_smoother.get_multi_mode_extruder_smoother</code> (Legendre basis, KKT-constrained least squares). Rendered with Chart.js."
+  footer: "Reproduces Kalico's <code>find_best_shaper</code> shaper calibration and DSP entirely in your browser — your capture is never uploaded. Rendered with Chart.js. Source on <a href=\"https://github.com/Hannott/KlipperVisuals\">GitHub</a>."
 };

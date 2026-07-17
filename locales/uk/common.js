@@ -18,5 +18,6 @@ window.KV_LOCALES.uk.common = {
   language: {
     fieldLabel: "Мова",
     fieldTitle: "Мова інтерфейсу"
-  }
+  },
+  disclaimer: "Застереження та подяки"
 };

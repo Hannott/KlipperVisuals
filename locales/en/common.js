@@ -18,5 +18,6 @@ window.KV_LOCALES.en.common = {
   language: {
     fieldLabel: "Language",
     fieldTitle: "Interface language"
-  }
+  },
+  disclaimer: "Disclaimer & credits"
 };

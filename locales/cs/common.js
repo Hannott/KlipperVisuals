@@ -18,5 +18,6 @@ window.KV_LOCALES.cs.common = {
   language: {
     fieldLabel: "Jazyk",
     fieldTitle: "Jazyk rozhraní"
-  }
+  },
+  disclaimer: "Prohlášení a poděkování"
 };

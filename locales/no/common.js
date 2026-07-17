@@ -18,5 +18,6 @@ window.KV_LOCALES.no.common = {
   language: {
     fieldLabel: "Språk",
     fieldTitle: "Grensesnittspråk"
-  }
+  },
+  disclaimer: "Ansvarsfraskrivelse og krediteringer"
 };

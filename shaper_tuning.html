@@ -61,6 +61,10 @@
   .card .k{font-size:13px;color:var(--text-secondary);}
   .card .v{font-size:19px;font-weight:500;margin-top:2px;}
   .foot{margin-top:2.5rem;font-size:13px;color:var(--text-muted);border-top:.5px solid var(--border);padding-top:1rem;}
+  /* Legal/credits link -- its own line at the very bottom, set apart from the
+     provenance footer above it. Present on every page. */
+  .foot-legal{margin-top:1.75rem;font-size:13px;}
+  .foot-legal a{color:var(--text-secondary);}
   a{color:var(--blue);}
   .peakrows{display:flex;flex-direction:column;gap:8px;margin-bottom:.6rem;}
   .peakrow{display:grid;grid-template-columns:20px 1fr 100px 100px 32px;gap:10px;align-items:center;}
@@ -137,6 +141,11 @@
   .infoicon{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;color:var(--text-muted);cursor:help;flex:none;}
   .infoicon:hover,.infoicon:focus-visible{color:var(--text-primary);}
   .infoicon svg{width:16px;height:16px;display:block;}
+  /* Inline variant: an (i) sitting next to a heading or chart caption, holding
+     supplemental "how this works" text in its native tooltip (\n-broken so the
+     popup stays narrow). vertical-align:middle keeps it centred on the text. */
+  .infoicon.inline{vertical-align:middle;margin-left:4px;width:18px;height:18px;}
+  .infoicon.inline svg{width:15px;height:15px;}
   .axis-badge{font-size:13px;color:var(--text-secondary);padding:4px 10px;border-radius:6px;background:var(--surface-2);border:.5px solid var(--border);}
   .tierinfo{display:flex;align-items:flex-start;gap:12px;margin:0 0 1.25rem;padding:.7rem 1rem;border-radius:var(--radius);border:.5px solid var(--border);background:var(--surface-1);color:var(--text-secondary);font-size:13px;line-height:1.5;}
   .tierinfo-close{flex:none;background:none;border:none;color:var(--text-muted);font-size:20px;line-height:1;padding:0 2px;cursor:pointer;}
@@ -250,7 +259,7 @@
        locale change, so i18n's apply() must not overwrite it -- doing so
        clobbered a session-restored capture's "detected peaks" line. -->
   <div class="note" id="detectStatus">No capture loaded. Load an example, or upload a Kalico <code>calibration_data_*.csv</code> / <code>resonances_*.csv</code> (a <code>freq</code> column plus <code>psd_x</code>/<code>psd_y</code>/<code>psd_z</code>/<code>psd_xyz</code>).<br>Peak detection and half-power damping-ratio estimation run live in your browser — nothing is uploaded anywhere.</div>
-  <div class="cap"><span data-i18n="shaper_tuning.captions.measuredSpectrum">measured resonance spectrum</span> <span style="color:var(--text-muted)" data-i18n="shaper_tuning.captions.measuredSpectrumNote">(the loaded capture; dashed verticals mark the detected resonances; click a legend entry to toggle it)</span>
+  <div class="cap"><span data-i18n="shaper_tuning.captions.measuredSpectrum">measured resonance spectrum</span><span class="infoicon inline" tabindex="0" role="button" data-i18n-attr="title:shaper_tuning.captions.measuredSpectrumNote|aria-label:shaper_tuning.captions.measuredSpectrumNote"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg></span>
     <span style="float:right;font-size:12.5px;color:var(--text-muted);"><span data-i18n="shaper_tuning.scale.label">scale:</span>
       <button class="btn" id="inpLog" style="padding:2px 8px;" data-i18n="shaper_tuning.scale.log">log</button>
       <button class="btn primary" id="inpLin" style="padding:2px 8px;" data-i18n="shaper_tuning.scale.linear">linear</button>
@@ -261,8 +270,10 @@
     <div class="busy-overlay"><div class="kv-spinner"></div></div>
   </div>
 
-  <h2 data-i18n="shaper_tuning.steps.recommended">2. Recommended shaper</h2>
-  <p class="sub" style="margin-bottom:.75rem;" data-i18n-html="shaper_tuning.recommended.intro">The same search <code>SHAPER_CALIBRATE</code> runs, on your capture: every <code>smooth_*</code> smoother and classic shaper, plus a multimode search over the detected resonances (up to 4, with the peak-cluster-widening fix), scored and selected with Kalico's formula and thresholds.<br>Per-peak residual is shown for every resonance detected.<br>The manual explorer below starts from this pick so you can tweak it.</p>
+  <!-- Info tooltip is tier-aware (the candidate list differs per tier), so
+       renderInfoTooltips() sets its title/aria-label in JS -- NOT data-i18n-attr
+       (which would clobber the tier-specific text on locale change). -->
+  <h2><span data-i18n="shaper_tuning.steps.recommended">2. Recommended shaper</span><span class="infoicon inline" id="recoInfo" tabindex="0" role="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg></span></h2>
   <div class="busybox" id="recoBox">
     <div class="busy-mute">
       <div class="note" id="recoStatus" data-i18n="shaper_tuning.recommended.statusDefault">Load a capture above to compute a recommendation.</div>
@@ -272,8 +283,7 @@
     <div class="busy-overlay"><div class="kv-spinner"></div></div>
   </div>
 
-  <h2 data-i18n="shaper_tuning.steps.explorer">3. Manual shaper explorer</h2>
-  <p class="sub" style="margin-bottom:.75rem;" data-i18n-html="shaper_tuning.explorer.intro">Pick any shaper type and see how it performs against the loaded capture — corner smoothing, projected <code>max_accel</code>, and the residual vibration left at each detected resonance.<br>Seeded from the recommendation above; change the type or frequencies to compare.</p>
+  <h2><span data-i18n="shaper_tuning.steps.explorer">3. Manual shaper explorer</span><span class="infoicon inline" tabindex="0" role="button" data-i18n-attr="title:shaper_tuning.explorer.intro|aria-label:shaper_tuning.explorer.intro"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg></span></h2>
   <div class="row" style="align-items:flex-end;">
     <div class="ctl" style="max-width:260px;">
       <div class="lbl"><span data-i18n="shaper_tuning.explorer.shaperType">shaper type</span></div>
@@ -325,21 +335,20 @@
   <div class="cards" id="cards"></div>
   <div class="note" id="note"></div>
 
-  <div class="cap" style="margin-top:1rem;"><span data-i18n="shaper_tuning.captions.residualVsFreq">residual vibration vs frequency</span> <span style="color:var(--text-muted)" data-i18n="shaper_tuning.captions.residualVsFreqNote">(the selected shaper's response; dashed verticals mark the detected resonances; lower = better)</span></div>
+  <div class="cap" style="margin-top:1rem;"><span data-i18n="shaper_tuning.captions.residualVsFreq">residual vibration vs frequency</span><span class="infoicon inline" tabindex="0" role="button" data-i18n-attr="title:shaper_tuning.captions.residualVsFreqNote|aria-label:shaper_tuning.captions.residualVsFreqNote"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg></span></div>
   <div class="chart"><canvas id="c1"></canvas></div>
 
   <div id="deepSection" style="display:none;">
   <div class="bandhdr"><span class="tag" data-i18n="shaper_tuning.deep.tag">Deeper analysis — multimode extruder synchronization</span></div>
-  <h2 data-i18n="shaper_tuning.steps.deepAnalysis">Deeper analysis</h2>
-  <p class="sub" id="deepIntro" style="margin-bottom:.75rem;" data-i18n-html="shaper_tuning.deep.intro">How this hand-built multimode shaper behaves across per-peak damping mismatch, and the fitted extruder-smoother kernel that keeps pressure advance synchronized with it.<br>(Shown only while the explorer is set to <strong>multimode</strong>.)</p>
+  <h2><span data-i18n="shaper_tuning.steps.deepAnalysis">Deeper analysis</span><span class="infoicon inline" tabindex="0" role="button" data-i18n-attr="title:shaper_tuning.deep.intro|aria-label:shaper_tuning.deep.intro"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg></span></h2>
   <div id="deepBody">
-  <div class="cap"><span data-i18n="shaper_tuning.captions.notchDepth">notch depth vs a uniformly-assumed damping ratio</span> <span style="color:var(--text-muted)" data-i18n="shaper_tuning.captions.notchDepthNote">(what if the design used ONE shared ζ for every peak instead of each peak's own measured value? True ζ per peak marked with a matching vertical)</span></div>
+  <div class="cap"><span data-i18n="shaper_tuning.captions.notchDepth">notch depth vs a uniformly-assumed damping ratio</span><span class="infoicon inline" tabindex="0" role="button" data-i18n-attr="title:shaper_tuning.captions.notchDepthNote|aria-label:shaper_tuning.captions.notchDepthNote"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg></span></div>
   <div class="chart" style="height:270px;"><canvas id="c2"></canvas></div>
 
-  <div class="cap" style="margin-top:1.5rem;"><span data-i18n="shaper_tuning.captions.extruderKernel">extruder synchronization kernel</span> <span style="color:var(--text-muted)" data-i18n="shaper_tuning.captions.extruderKernelNote">(exact convolution vs a fitted smoother counterpart, over the shaper's own duration)</span></div>
+  <div class="cap" style="margin-top:1.5rem;"><span data-i18n="shaper_tuning.captions.extruderKernel">extruder synchronization kernel</span><span class="infoicon inline" tabindex="0" role="button" data-i18n-attr="title:shaper_tuning.captions.extruderKernelNote|aria-label:shaper_tuning.captions.extruderKernelNote"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg></span></div>
   <div class="chart" style="height:230px;"><canvas id="c3"></canvas></div>
 
-  <div class="cap"><span data-i18n="shaper_tuning.captions.cornerAccel">extruder acceleration demand at a sharp corner</span> <span style="color:var(--text-muted)" data-i18n-html="shaper_tuning.captions.cornerAccelNote">(100&rarr;20&nbsp;mm/s corner, exact vs fitted)</span></div>
+  <div class="cap"><span data-i18n="shaper_tuning.captions.cornerAccel">extruder acceleration demand at a sharp corner</span><span class="infoicon inline" tabindex="0" role="button" data-i18n-attr="title:shaper_tuning.captions.cornerAccelNote|aria-label:shaper_tuning.captions.cornerAccelNote"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg></span></div>
   <div class="chart" style="height:230px;"><canvas id="c4"></canvas></div>
 
   <div class="cards" id="cards2"></div>
@@ -347,7 +356,9 @@
   </div>
   </div>
 
-  <p class="foot" data-i18n-html="shaper_tuning.footer">Everything is computed from the loaded capture.<br>The recommendation ports Kalico's <code>find_best_shaper</code> (<code>shaper_calibrate.py</code>) — every smoother/shaper candidate plus a multimode search over the detected resonances (up to 4) with the peak-cluster-widening fix, scored with Kalico's formula.<br>Multimode shaper = convolution of a base shaper tuned to each configured peak (amplitudes multiply, times add).<br>Peak detection and half-power damping estimation port <code>_detect_resonance_peaks</code> / <code>_estimate_damping_ratio</code>.<br>The fitted extruder kernel reproduces <code>extruder_smoother.get_multi_mode_extruder_smoother</code> (Legendre basis, KKT-constrained least squares). Rendered with Chart.js.</p>
+  <p class="foot" data-i18n-html="shaper_tuning.footer">Reproduces Kalico's <code>find_best_shaper</code> shaper calibration and DSP entirely in your browser — your capture is never uploaded. Rendered with Chart.js. Source on <a href="https://github.com/Hannott/KlipperVisuals">GitHub</a>.</p>
+  <!-- Legal/credits link: its own line at the very bottom of every page. -->
+  <p class="foot-legal"><a href="disclaimer.html" data-i18n="common.disclaimer">Disclaimer &amp; credits</a></p>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
@@ -1498,13 +1509,31 @@
   // side effects -- used both by applyDetected (right after detection) and by
   // the KV_I18N.onChange handler (just re-rendering the same state in a newly
   // selected language, no re-detection).
+  // Which raw axis (X/Y/Z, never Combined) is loudest at a given frequency --
+  // used to color-match each peak's text to the same axis line it sits on in
+  // the measured-spectrum chart above (BLUE/AMBER/TEAL, same as renderInput).
+  // Returns null when the capture has no per-axis breakdown (precomputed-PSD
+  // captures with only psd_xyz).
+  function peakDominantColor(freq){
+    var d=loadedCapture;
+    if(!d||!d.freq||!d.freq.length)return null;
+    var idx=0,best=Infinity;
+    for(var i=0;i<d.freq.length;i++){var diff=Math.abs(d.freq[i]-freq);if(diff<best){best=diff;idx=i;}}
+    var axis=null,max=-Infinity;
+    ['x','y','z'].forEach(function(a){if(d[a]&&d[a][idx]>max){max=d[a][idx];axis=a;}});
+    return axis==='x'?BLUE:axis==='y'?AMBER:axis==='z'?TEAL:null;
+  }
   function renderDetectStatus(){
     if(!loadedCapture){detectStatus.innerHTML=t('shaper_tuning.detectStatus.default');return;}
     var sourceLabel=computeSourceLabel();
     if(!peaks.length){detectStatus.innerHTML=t('shaper_tuning.detectStatus.noPeaksDetected',{source:sourceLabel});return;}
     detectStatus.innerHTML=t('shaper_tuning.detectStatus.detected',{
       n:peaks.length, source:sourceLabel,
-      list:peaks.map(function(p){return p.freq.toFixed(1)+'&nbsp;Hz (&zeta;='+p.damping.toFixed(3)+')';}).join(', ')
+      list:peaks.map(function(p){
+        var txt=p.freq.toFixed(1)+'&nbsp;Hz (&zeta;='+p.damping.toFixed(3)+')';
+        var color=peakDominantColor(p.freq);
+        return color?'<span style="color:'+color+'">'+txt+'</span>':txt;
+      }).join(', ')
     });
   }
   function applyDetected(pairs){
@@ -1986,6 +2015,17 @@
   function renderTierNote(){
     document.getElementById('tierNote').textContent=t('shaper_tuning.tier.note.'+firmwareTier);
   }
+  // The "2. Recommended shaper" (i) tooltip describes which candidates the
+  // search actually considers -- and that differs per tier (classic only /
+  // +smoothers / +multimode). Set here in JS (not data-i18n-attr) so the
+  // tier-specific text and the {{candidates}} substitution survive a locale
+  // change; runs on tier change, locale change, and init.
+  function renderInfoTooltips(){
+    var candidates=t('shaper_tuning.recommended.candidates.'+firmwareTier);
+    var recoText=t('shaper_tuning.recommended.intro',{candidates:candidates});
+    var ri=document.getElementById('recoInfo');
+    if(ri){ri.setAttribute('title',recoText);ri.setAttribute('aria-label',recoText);}
+  }
   // Multimode isn't in any released Klipper/Kalico build -- only shown while
   // that tier is selected, since the other tiers don't need the download link.
   function renderMultimodeDownload(){
@@ -2006,6 +2046,7 @@
     ['tierKlipper','tierKalicoBE','tierMultimode'].forEach(function(id){document.getElementById(id).classList.remove('primary');});
     document.getElementById(tier==='klipper'?'tierKlipper':tier==='kalicobe'?'tierKalicoBE':'tierMultimode').classList.add('primary');
     renderTierNote();
+    renderInfoTooltips(); // candidate list in the (i) tooltips is tier-specific
     renderTierInfo();
     renderMultimodeDownload();
     applyTierToExplorerOptions();
@@ -2558,6 +2599,7 @@
     c4.data.datasets[1].borderColor=BLUE;
     renderInput();
     renderPeakRows();
+    renderDetectStatus(); // peak-color spans bake in BLUE/AMBER/TEAL as hex, same as chart datasets
     update();             // rebuilds c1 + cards/note, and c2/c3/c4 (via renderDeep) when multimode is selected
     paintRecommendation(); // repaints the recommendation cards from cache -- no re-search
     // update()/renderInput() only call .update() on charts they actively
@@ -2595,6 +2637,7 @@
     renderLibrary(); // re-translate the row titles (load/remove) baked in at render time
     renderCfgAxisBadge();
     renderTierNote();
+    renderInfoTooltips();   // re-translate the tier-aware (i) tooltips
     update();               // rebuilds c1 + cards/note, and c2/c3/c4 (via renderDeep) when multimode is selected
     if(lastReco)paintRecommendation(); else{var rs=document.getElementById('recoStatus');rs.style.display='';rs.innerHTML=t('shaper_tuning.recommended.statusDefault');}
     [c1,cInput,c2,c3,c4].forEach(function(ch){ch.update();});
@@ -2603,6 +2646,7 @@
   // ---- restore the firmware tier (persists across reloads/navigation) ----
   document.getElementById(firmwareTier==='klipper'?'tierKlipper':firmwareTier==='kalicobe'?'tierKalicoBE':'tierMultimode').classList.add('primary');
   renderTierNote();
+  renderInfoTooltips();
   renderTierInfo();
   renderMultimodeDownload();
   applyTierToExplorerOptions();
