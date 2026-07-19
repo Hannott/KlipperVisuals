@@ -418,17 +418,19 @@
      zv/mzv/zvd/ei/h2/h3, convolve, buildMultiMode <- shaper_defs.get_*_shaper / convolve_shapers / get_multimode_shaper
      makeSmoother, multiModeExtruderSmoother <- extruder_smoother.get_multi_mode_extruder_smoother
 
-   BIG GOTCHA -- fork scoring is NOT vanilla Klipper's (cost this session a lot):
-     The scoring here is the FORK's: estimateRemainingVibrations f^2-weights
-     each bin (`... * freq^2`) and lowers the threshold near secondary peaks.
-     Vanilla Klipper instead uses a FLAT threshold (psd.max()/20) with NO f^2
-     weight and a slightly different score formula. Consequence: a single
-     shaper can be pushed toward a MINOR high-frequency peak over the dominant
-     low one (f^2 over-weights high freq). The "Klipper"/"Kalico BE" tier tabs
-     ONLY filter the candidate list -- they do NOT swap in vanilla math. The
-     peak-exclusion (click a marker) + tier-scoped auto-deselect exist to work
-     around this for single-shaper users. Do not "fix" it by assuming the
-     Klipper tab matches real Klipper; it doesn't, by design (one engine).
+   SCORING NOTE -- fork scoring now matches mainline, with one extension:
+     The fork's "Revert to mainline vibration scoring" commit dropped the old
+     f^2 bin weighting (it let high-frequency floor noise outvote the actual
+     resonances) and restored vanilla Klipper's flat psd.max()/20 threshold,
+     unweighted sums, score formula, selection tolerances, upgrade walk and
+     ZV demotion. The ONE remaining fork extension: the flat threshold is
+     lowered near each *detected* resonance peak (calcVibrThreshold), so
+     multimode candidates keep getting credit for shaping secondary peaks.
+     Single-peak spectra score identically to mainline. The tier tabs still
+     ONLY filter the candidate list (one engine); the Klipper tab is now
+     close to real Klipper but not identical (fork sweeps to 200 Hz vs
+     mainline's MAX_SHAPER_FREQ=150, uses the newer windowed estimator, and
+     has the peak-aware threshold).
 
    i18n: every user-facing string lives in a per-language shaper_tuning.js
    under locales/ (en is the fallback; more languages get added over time).
@@ -749,27 +751,45 @@
     return effectiveExcluded().some(function(pf){return Math.abs(pf-f)<3.0;});
   }
   // Returns a copy of psdArr with the band around each excluded peak zeroed,
-  // walking outward from the peak center to the surrounding valleys so the
-  // whole resonance lump is removed without eating neighbouring peaks. This
-  // is what makes "deselect a peak" mean "analyze as if it weren't there":
-  // peak detection, the single-shaper score, and the multimode search all
-  // run on this masked spectrum.
+  // so "deselect a peak" means "analyze as if it weren't there": peak
+  // detection, the single-shaper score, and the multimode search all run on
+  // this masked spectrum.
+  //
+  // Zeroing only to the surrounding valleys is NOT enough: a broad
+  // resonance's tail often rises again slightly past its first valley (a
+  // shoulder), and the leftover stump then reads as a fresh local maximum --
+  // prominent enough for _detect_resonance_peaks to flag it as a resonance
+  // of its own, which the (peak-aware) scoring then demands be shaped. So
+  // after the valley walk, keep extending outward through everything that
+  // is clearly this peak's tail or trailing floor (below 20% of the excluded
+  // peak's own height), stopping at the midpoint toward the nearest ACTIVE
+  // detected peak on that side so a kept neighbour's flank is never eaten.
   function maskExcludedPeaks(freqArr,psdArr){
     var ex=effectiveExcluded();
     if(!ex.length)return psdArr.slice();
     var out=psdArr.slice(),n=psdArr.length;
+    var activePeaks=detectPeaks(freqArr,psdArr,MIN_FREQ,freqArr[n-1],0.12,8.0,MULTIMODE_MAX_PEAKS)
+      .filter(function(f){return !ex.some(function(pf){return Math.abs(pf-f)<3.0;});});
     ex.forEach(function(pf){
       var i0=0,bd=Infinity;
       for(var i=0;i<n;i++){var d=Math.abs(freqArr[i]-pf);if(d<bd){bd=d;i0=i;}}
       // Only mask if there's actually a local peak here (guards stale entries).
       if(!(psdArr[i0]>0))return;
       // Walk out to the surrounding valleys, then widen to at least +-8 Hz
-      // (the peak-detector's own min separation) so a shoulder next to the
-      // excluded peak isn't left behind to be re-detected as a new peak.
+      // (the peak-detector's own min separation).
       var lo=i0;while(lo>0&&psdArr[lo-1]<psdArr[lo])lo--;
       var hi=i0;while(hi<n-1&&psdArr[hi+1]<psdArr[hi])hi++;
       while(lo>0&&freqArr[i0]-freqArr[lo-1]<=8.0)lo--;
       while(hi<n-1&&freqArr[hi+1]-freqArr[i0]<=8.0)hi++;
+      // Extend through the peak's low tails (see comment above). Bounds:
+      // halfway to the nearest active peak on each side, or the spectrum edge.
+      var tail=0.2*psdArr[i0];
+      var actLo=activePeaks.filter(function(f){return f<freqArr[i0];});
+      var actHi=activePeaks.filter(function(f){return f>freqArr[i0];});
+      var boundLo=actLo.length?(Math.max.apply(null,actLo)+freqArr[i0])/2:-Infinity;
+      var boundHi=actHi.length?(Math.min.apply(null,actHi)+freqArr[i0])/2:Infinity;
+      while(lo>0&&psdArr[lo-1]<tail&&freqArr[lo-1]>boundLo)lo--;
+      while(hi<n-1&&psdArr[hi+1]<tail&&freqArr[hi+1]<boundHi)hi++;
       for(var j=lo;j<=hi;j++)out[j]=0;
     });
     return out;
@@ -1024,33 +1044,42 @@
     if(sub.length<2)return [centerFreq,centerFreq];
     return [Math.min(sub[0],sub[1]),Math.max(sub[0],sub[1])];
   }
-  // Ports the FORK's _estimate_remaining_vibrations + _calc_vibr_threshold.
-  // Two fork-specific traits that differ from vanilla Klipper and drive the
-  // whole tier/peak-exclusion design (see PORTING MAP header):
-  //   1. each bin is weighted by freq^2 (`...*freqBins[i]*freqBins[i]`), so a
-  //      modest HIGH-frequency peak can outweigh a much taller low one;
-  //   2. the threshold is lowered near secondary peaks (the per-peak loop),
-  //      not a single flat psd.max()/20 like vanilla.
-  // Returns remaining/all, both f^2-weighted -- a relative score, not physical
-  // vibration. Vanilla Klipper: flat threshold, no f^2, different score.
-  function estimateRemainingVibrations(freqBins,vals,psd){
+  // Ports the fork's _calc_vibr_threshold + _estimate_remaining_vibrations
+  // (which since the scoring revert match mainline Klipper's flat-threshold
+  // unweighted scheme, with ONE fork extension): the flat acceptance
+  // threshold psd.max()/SHAPER_VIBRATION_REDUCTION is lowered to that peak's
+  // own psd/SHAPER_VIBRATION_REDUCTION within 12 Hz of each *detected*
+  // resonance peak, so a shaper that leaves a genuine secondary resonance
+  // unshaped still pays for it (this is what lets multimode candidates win
+  // on multi-peak spectra). For a single-peak PSD the scoring is identical
+  // to mainline. NO freq^2 weighting -- an earlier fork scheme weighted each
+  // bin by freq^2, which let high-frequency floor noise outvote the actual
+  // resonances and pushed recommendations far above every real peak.
+  var SHAPER_VIBRATION_REDUCTION=20.0; // shaper_defs.SHAPER_VIBRATION_REDUCTION
+  // The threshold depends only on (freqBins, psd), fixed across the hundreds
+  // of per-candidate-frequency calls a single fit makes -- cache it on the
+  // exact array identities, mirroring the firmware's per-fit cache.
+  var _vibrThresholdCache=null;
+  function calcVibrThreshold(freqBins,psd){
+    if(_vibrThresholdCache&&_vibrThresholdCache[0]===freqBins&&_vibrThresholdCache[1]===psd)return _vibrThresholdCache;
     var n=freqBins.length,i,j;
-    var ratio=new Array(n).fill(0),globalRatio=0;
-    for(i=0;i<n;i++){if(freqBins[i]>0){ratio[i]=psd[i]/freqBins[i];if(ratio[i]>globalRatio)globalRatio=ratio[i];}}
-    var threshRatio=new Array(n).fill(globalRatio);
     var psdMax=0;for(i=0;i<n;i++)if(psd[i]>psdMax)psdMax=psd[i];
-    for(i=1;i<n-1;i++){
-      if(!(psd[i]>psd[i-1]&&psd[i]>=psd[i+1]&&psd[i]>0.05*psdMax))continue;
-      if(!(freqBins[i]>0))continue;
-      if(ratio[i]>=globalRatio)continue;
-      for(j=0;j<n;j++)if(Math.abs(freqBins[j]-freqBins[i])<=12.0)threshRatio[j]=Math.min(threshRatio[j],ratio[i]);
+    var thr=new Array(n).fill(psdMax/SHAPER_VIBRATION_REDUCTION);
+    var peaks=detectPeaks(freqBins,psd,MIN_FREQ,freqBins[n-1],0.12,8.0,MULTIMODE_MAX_PEAKS);
+    for(var p=0;p<peaks.length;p++){
+      var i0=0,bd=Infinity;
+      for(j=0;j<n;j++){var d=Math.abs(freqBins[j]-peaks[p]);if(d<bd){bd=d;i0=j;}}
+      var lvl=psd[i0]/SHAPER_VIBRATION_REDUCTION;
+      for(j=0;j<n;j++)if(Math.abs(freqBins[j]-freqBins[i0])<=12.0)thr[j]=Math.min(thr[j],lvl);
     }
-    var remaining=0,all=0;
-    for(i=0;i<n;i++){
-      var vibrThreshold=threshRatio[i]*(freqBins[i]+MIN_FREQ)*(1.0/33.3);
-      remaining+=Math.max(vals[i]*psd[i]-vibrThreshold,0)*freqBins[i]*freqBins[i];
-      all+=psd[i]*freqBins[i]*freqBins[i];
-    }
+    var all=0;for(i=0;i<n;i++)all+=Math.max(psd[i]-thr[i],0);
+    _vibrThresholdCache=[freqBins,psd,thr,all];
+    return _vibrThresholdCache;
+  }
+  function estimateRemainingVibrations(freqBins,vals,psd){
+    var c=calcVibrThreshold(freqBins,psd),thr=c[2],all=c[3];
+    var remaining=0;
+    for(var i=0;i<freqBins.length;i++)remaining+=Math.max(vals[i]*psd[i]-thr[i],0);
     return remaining/all;
   }
   function linspace2(a,b,n){var out=new Array(n),step=(b-a)/(n-1);for(var i=0;i<n;i++)out[i]=a+step*i;return out;}
@@ -1067,7 +1096,10 @@
     return out;
   }
   function shaperScore(smoothing,vibrations){
-    return smoothing*(2.0*Math.pow(vibrations,1.5)+vibrations*0.2+0.001+smoothing*0.002);
+    // Mainline Klipper's formula (the fork reverted to it alongside the
+    // vibration-scoring revert): "does not have any special meaning, it
+    // simply shows good results on real user data".
+    return smoothing*(Math.pow(vibrations,1.5)+vibrations*0.2+0.01);
   }
   // ---- single-mode fit: port of fit_shaper, for either an impulse shaper or a smoother ----
   function fitSingleMode(kind,name,freqBins,psd,scv,maxFreq,freqStep){
@@ -1106,12 +1138,23 @@
       results.push(res);
       if(bestRes===null||bestRes.vibrs>res.vibrs)bestRes=res;
     }
+    // Walk LOW freq -> HIGH freq, keeping whichever candidate most recently
+    // improved on the score (within the vibration tolerance of bestRes):
+    // trades a little vibration suppression for much less smoothing.
+    // Direction matters: fit_shaper builds its results high->low
+    // (`for test_freq in test_freqs[::-1]`) and its selection loop reverses
+    // that (`for res in results[::-1]`), i.e. scans low->high. `results`
+    // here is already built low->high, so iterate it FORWARDS -- a backwards
+    // iteration walks the opposite direction and can land on a distant
+    // high-frequency side-lobe instead of the notch nearest the resonance.
     var selected=bestRes;
-    for(i=results.length-1;i>=0;i--){
+    for(i=0;i<results.length;i++){
       var res2=results[i];
-      if(res2.score<selected.score&&(res2.vibrs<bestRes.vibrs*1.2||res2.vibrs<bestRes.vibrs+0.0075))selected=res2;
+      if(res2.vibrs<bestRes.vibrs*1.1+0.0005&&res2.score<selected.score)selected=res2;
     }
-    return selected;
+    // The full per-frequency list rides along so findBestShaperReal can run
+    // fit-the-firmware's strictly-better upgrade walk across it.
+    return {selected:selected,results:results};
   }
   // ---- N-peak multimode fit: faithful port of fit_multimode_shaper ----
   // bases/peaks/dampings are parallel arrays (length n>=2), peaks ascending.
@@ -1229,7 +1272,7 @@
     var selected=bestRes;
     for(i=results.length-1;i>=0;i--){
       var r2=results[i];
-      if(r2.score<selected.score&&(r2.vibrs<bestRes.vibrs*1.2||r2.vibrs<bestRes.vibrs+0.0075))selected=r2;
+      if(r2.vibrs<bestRes.vibrs*1.1+0.0005&&r2.score<selected.score)selected=r2;
     }
     selected.maxAccel=findMaxAccel(mmShaper(bases,selected.freqs,dampings),scv,shaperSmoothing);
     return selected;
@@ -1242,13 +1285,35 @@
     // multimode_bias=1.0: take multimode on ANY genuine score improvement.
     var multimodeBias=1.0;
     var allShapers=[],best=null;
-    function consider(res){
+    function consider(fit){
+      var res=fit.selected;
+      // Either the candidate significantly improves the score (by 20%), or
+      // it improves the score and smoothing (by 5% and 10% resp.) -- the
+      // firmware's (== mainline's) cross-shaper selection clauses.
+      if(best===null||res.score*1.2<best.score||(res.score*1.05<best.score&&res.smoothing*1.1<best.smoothing))best=res;
+      // Mainline's upgrade walk: any of this candidate's other tested
+      // frequencies that beats the current best on BOTH remaining vibrations
+      // and smoothing is strictly better and takes over. fit.results is
+      // built low->high, which is the same direction the firmware's
+      // reversed-descending walk scans.
+      for(var w=0;w<fit.results.length;w++){
+        var s=fit.results[w];
+        if(s.vibrs<best.vibrs&&s.smoothing<best.smoothing){best=s;res=s;}
+      }
       allShapers.push(res);
-      if(best===null||res.score*1.2<best.score||(res.score*1.03<best.score&&res.smoothing*1.01<best.smoothing))best=res;
     }
     var i;
     if(tierAllowsSmoothers())for(i=0;i<AUTOTUNE_SMOOTHER_NAMES.length;i++)consider(fitSingleMode('smoother',AUTOTUNE_SMOOTHER_NAMES[i],freqBins,psd,scv,maxFreq));
     for(i=0;i<AUTOTUNE_SHAPER_NAMES.length;i++)consider(fitSingleMode('shaper',AUTOTUNE_SHAPER_NAMES[i],freqBins,psd,scv,maxFreq));
+    if(best&&best.name==='zv'){
+      // Mainline's ZV demotion: ZV is the narrowest shaper and wins mostly
+      // on minimal smoothing -- if any other candidate leaves meaningfully
+      // (10%+) less vibration, prefer it.
+      for(i=0;i<allShapers.length;i++){
+        var tuned=allShapers[i];
+        if(tuned.name!=='zv'&&tuned.vibrs*1.1<best.vibrs){best=tuned;break;}
+      }
+    }
     // Up to MULTIMODE_MAX_PEAKS peaks, most-significant first.
     var peaks=detectPeaks(freqBins,psd,MIN_FREQ,maxFreq,0.12,8.0,MULTIMODE_MAX_PEAKS);
     var dampingEstimates=peaks.map(function(f,idx){
