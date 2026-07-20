@@ -2248,7 +2248,9 @@
     var sweepMin=MIN_FREQ,sweepMax=210;
     if(loadedCapture&&loadedCapture.freq.length){
       sweepMin=Math.max(MIN_FREQ,loadedCapture.freq[0]);
-      sweepMax=loadedCapture.freq[loadedCapture.freq.length-1];
+      // Matches the analysis ceiling (captureMaxFreq), not the capture's raw
+      // Nyquist extent -- see the same reasoning on cInput's axis in renderInput().
+      sweepMax=captureMaxFreq(loadedCapture.freq);
     }
     c1.options.scales.x.min=sweepMin;c1.options.scales.x.max=sweepMax;
     var pts=300,d=[];
@@ -2344,14 +2346,16 @@
   // cosmetic. Peak detection, the recommendation, and the explorer all
   // analyze Combined (d.xyz/d.psd) regardless of which lines are drawn here.
   function renderInput(){
-    if(!loadedCapture){cInput.data.datasets=[];inputAxisIndex={};cInput.options.scales.x.max=205;cInput.update();return;}
+    if(!loadedCapture){cInput.data.datasets=[];inputAxisIndex={};cInput.options.scales.x.max=MAX_SHAPER_FREQ;cInput.update();return;}
     var isLog=inputScale==='log';
     var d=loadedCapture;
-    // Default axis tops out at 205 Hz, but a high-bandwidth capture (Beacon and
-    // similar accelerometers sample well past 1 kHz) can carry a real peak
-    // above that -- widen to the capture's own extent so it isn't clipped off
-    // the measured-spectrum chart.
-    cInput.options.scales.x.max=Math.max(205,d.freq.length?d.freq[d.freq.length-1]:205);
+    // Match the analysis ceiling (captureMaxFreq), not the capture's raw
+    // Nyquist extent -- a high-bandwidth capture (Beacon and similar sample
+    // well past 1 kHz) is mostly empty tail past any real resonance, and
+    // stretching the axis out to it squeezes all the actual data into a
+    // sliver on the left. If a real peak sits beyond the current ceiling,
+    // raise the "max frequency to analyze" input instead of the axis fighting it.
+    cInput.options.scales.x.max=captureMaxFreq(d.freq);
     function series(arr){var pts=[];for(var i=0;i<d.freq.length;i++){if(!isLog||arr[i]>0)pts.push({x:d.freq[i],y:arr[i]});}return pts;}
     var yMax=0,yMin=Infinity;
     [d.x,d.y,d.z,d.xyz].forEach(function(arr){
