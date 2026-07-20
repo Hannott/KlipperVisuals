@@ -18,7 +18,9 @@ window.KV_LOCALES.de.shaper_tuning = {
     loadExY: "Beispiel: Y-Achsen-Messung",
     upload: "Messung hochladen…",
     clear: "Leeren",
-    tryExample: "Noch keine Daten? Probiere ein Beispiel:"
+    tryExample: "Noch keine Daten? Probiere ein Beispiel:",
+    maxFreqLabel: "Max. zu analysierende Frequenz (Hz):",
+    maxFreqInfo: "Peak-Erkennung, das gemessene Spektrum und die Empfehlungssuche enden hier. Der Standardwert (400 Hz) deckt eine normale ADXL345-Messung mit Reserve ab; erhöhe ihn, wenn ein Beschleunigungssensor mit höherer Bandbreite (z. B. Beacon) eine echte Resonanz weiter oben gemessen hat."
   },
   tier: {
     klipper: "Klipper",

@@ -18,7 +18,9 @@ window.KV_LOCALES.en.shaper_tuning = {
     loadExY: "Example: Y-axis capture",
     upload: "Upload capture…",
     clear: "Clear",
-    tryExample: "No data yet? Try an example:"
+    tryExample: "No data yet? Try an example:",
+    maxFreqLabel: "Max frequency to analyze (Hz):",
+    maxFreqInfo: "Peak detection, the measured-spectrum chart, and the recommendation search all stop here. The default (400 Hz) covers a normal ADXL345-class capture with room to spare; raise it if a high-bandwidth accelerometer (e.g. Beacon) measured a real resonance further out."
   },
   tier: {
     klipper: "Klipper",

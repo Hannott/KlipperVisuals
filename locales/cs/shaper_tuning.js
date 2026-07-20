@@ -18,7 +18,9 @@ window.KV_LOCALES.cs.shaper_tuning = {
     loadExY: "Příklad: Y-osový záznam",
     upload: "Nahrát záznam…",
     clear: "Vymazat",
-    tryExample: "Zatím žádná data? Vyzkoušejte příklad:"
+    tryExample: "Zatím žádná data? Vyzkoušejte příklad:",
+    maxFreqLabel: "Max. frekvence k analýze (Hz):",
+    maxFreqInfo: "Detekce vrcholů, graf naměřeného spektra i doporučovací hledání se zde zastaví. Výchozí hodnota (400 Hz) pokrývá běžný záznam ve stylu ADXL345 s rezervou; zvyšte ji, pokud akcelerometr s vyšší šířkou pásma (např. Beacon) naměřil skutečnou rezonanci ještě dál."
   },
   tier: {
     klipper: "Klipper",

@@ -18,7 +18,9 @@ window.KV_LOCALES.no.shaper_tuning = {
     loadExY: "Eksempel: Y-akse-måling",
     upload: "Last opp måling…",
     clear: "Tøm",
-    tryExample: "Ingen data ennå? Prøv et eksempel:"
+    tryExample: "Ingen data ennå? Prøv et eksempel:",
+    maxFreqLabel: "Maks. frekvens å analysere (Hz):",
+    maxFreqInfo: "Toppdeteksjon, det målte spekteret og anbefalingssøket stopper her. Standardverdien (400 Hz) dekker en vanlig ADXL345-måling med god margin; øk den hvis et akselerometer med høyere båndbredde (f.eks. Beacon) har målt en reell resonans lenger ute."
   },
   tier: {
     klipper: "Klipper",
