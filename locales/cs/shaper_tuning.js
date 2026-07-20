@@ -154,6 +154,7 @@ window.KV_LOCALES.cs.shaper_tuning = {
       fittedSmoother: "přizpůsobená vyhlazovač",
       exactConvolution: "přesná konvoluce",
       residualLabel: "{{label}} zbytková vibrace",
+      suggestedResidualLabel: "doporučeno ({{label}}) zbytková vibrace",
       resonanceMarker: "rezonance {{freq}} Hz",
       peakMarker: "vrchol {{n}} ({{freq}} Hz)",
       peakMarkerExcluded: "vrchol {{n}} ({{freq}} Hz) — vyloučeno",

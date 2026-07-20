@@ -154,6 +154,7 @@ window.KV_LOCALES.no.shaper_tuning = {
       fittedSmoother: "tilpasset smoother",
       exactConvolution: "eksakt konvolusjon",
       residualLabel: "{{label}} residual",
+      suggestedResidualLabel: "anbefalt ({{label}}) residual",
       resonanceMarker: "resonans {{freq}} Hz",
       peakMarker: "topp {{n}} ({{freq}} Hz)",
       peakMarkerExcluded: "topp {{n}} ({{freq}} Hz) — ekskludert",

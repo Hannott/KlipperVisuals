@@ -2256,6 +2256,22 @@
     var pts=300,d=[];
     for(var i=0;i<=pts;i++){var f=sweepMin+(sweepMax-sweepMin)*i/pts;d.push({x:f,y:worstResidualDisplay(kind,sh,f)});}
     var ds1=[Object.assign(ln(BLUE),{label:t('shaper_tuning.chart.dataset.residualLabel',{label:label}),data:d})];
+    // Second line: the auto-recommended shaper's own residual curve, so it's
+    // easy to compare against whatever's being explored manually above.
+    // stateFromBest/stateValid are the same helpers the config generator uses
+    // to turn lastReco.best into a plain {type,freq,damping,peaks} state.
+    if(lastReco&&lastReco.best){
+      var recoState=stateFromBest(lastReco.best);
+      if(stateValid(recoState)){
+        var recoMM=isMultimodeType(recoState.type),recoSM=isSmootherType(recoState.type);
+        var recoKind=recoMM?'multimode':(recoSM?'smoother':'shaper');
+        var recoSh=recoMM?buildMultiMode(recoState.peaks):(recoSM?makeSmoother(recoState.type,recoState.freq):BASEFN[recoState.type](recoState.freq,recoState.damping));
+        var recoLabel=recoMM?shaperLabel(recoState.peaks):recoState.type;
+        var d2=[];
+        for(var i2=0;i2<=pts;i2++){var f2=sweepMin+(sweepMax-sweepMin)*i2/pts;d2.push({x:f2,y:worstResidualDisplay(recoKind,recoSh,f2)});}
+        ds1.push(Object.assign(ln(TEAL,[6,4]),{label:t('shaper_tuning.chart.dataset.suggestedResidualLabel',{label:recoLabel}),data:d2}));
+      }
+    }
     res.forEach(function(p,idx){
       ds1.push(Object.assign(ln(PALETTE[(idx+1)%PALETTE.length],[4,4],1),{label:t('shaper_tuning.chart.dataset.resonanceMarker',{freq:p.freq.toFixed(0)}),data:[{x:p.freq,y:0},{x:p.freq,y:1.5}]}));
     });

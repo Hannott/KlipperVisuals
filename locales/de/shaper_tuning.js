@@ -154,6 +154,7 @@ window.KV_LOCALES.de.shaper_tuning = {
       fittedSmoother: "angepasster Smoother",
       exactConvolution: "exakte Faltung",
       residualLabel: "{{label}} Restschwingung",
+      suggestedResidualLabel: "empfohlen ({{label}}) Restschwingung",
       resonanceMarker: "Resonanz {{freq}} Hz",
       peakMarker: "Peak {{n}} ({{freq}} Hz)",
       peakMarkerExcluded: "Peak {{n}} ({{freq}} Hz) — ausgeschlossen",

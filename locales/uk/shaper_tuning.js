@@ -154,6 +154,7 @@ window.KV_LOCALES.uk.shaper_tuning = {
       fittedSmoother: "підібраний плавніший",
       exactConvolution: "точна згортка",
       residualLabel: "{{label}} залишкова",
+      suggestedResidualLabel: "рекомендовано ({{label}}) залишкова",
       resonanceMarker: "резонанс {{freq}} Гц",
       peakMarker: "піку {{n}} ({{freq}} Гц)",
       peakMarkerExcluded: "піку {{n}} ({{freq}} Гц) — виключено",
