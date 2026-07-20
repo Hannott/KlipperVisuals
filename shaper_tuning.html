@@ -726,8 +726,9 @@
     if(zeta<0.005||zeta>0.5)return null;
     return zeta;
   }
-  function detectAndEstimate(freqArr,psdArr,maxPeaks){
-    var found=detectPeaks(freqArr,psdArr,5.0,200.0,0.12,8.0,maxPeaks||4);
+  function detectAndEstimate(freqArr,psdArr,maxPeaks,maxFreqIn){
+    var maxFreq=maxFreqIn||200.0;
+    var found=detectPeaks(freqArr,psdArr,5.0,maxFreq,0.12,8.0,maxPeaks||4);
     var withDamp=found.map(function(f,i){
       var lower=found.filter(function(pf,j){return j!==i&&pf<f;});
       var upper=found.filter(function(pf,j){return j!==i&&pf>f;});
@@ -804,7 +805,7 @@
     autoExcluded=[];
     if(!loadedCapture||tierAllowsMultimode())return;
     var freqArr=loadedCapture.freq,psdArr=loadedCapture.psd;
-    var detected=detectAndEstimate(freqArr,psdArr,4)
+    var detected=detectAndEstimate(freqArr,psdArr,4,captureMaxFreq(freqArr))
       .filter(function(p){return !isManualExcluded(p.freq);});
     if(detected.length<2)return; // 0-1 active peaks: nothing to set aside
     var tallest=null,bestV=-1;
@@ -846,13 +847,27 @@
   var AUTOTUNE_SHAPER_NAMES=['mzv','ei','2hump_ei'];
   var TEST_DAMPING_RATIOS=[0.075,0.1,0.15];
   var DEFAULT_DAMPING_RATIO=0.1;
-  // 300 matches the fork (vanilla Klipper is 150). Mostly a no-op in practice:
-  // fitSingleMode caps the sweep at min(MAX_SHAPER_FREQ, maxFreq), and maxFreq
-  // is 200 for a normal capture -> min(300,200)=200. It only bites if a
-  // capture actually measured above 200 Hz. Don't expect changing it to move
-  // a recommendation on a standard 0-200 Hz capture.
+  // 300 matches the fork (vanilla Klipper is 150). fitSingleMode caps the
+  // sweep at min(MAX_SHAPER_FREQ, maxFreq), and maxFreq is captureMaxFreq()
+  // below -- 200 for a normal capture (a no-op here), but up to this ceiling
+  // for a capture that actually measured further out (e.g. Beacon). Don't
+  // expect changing it to move a recommendation on a standard 0-200 Hz capture.
   var MAX_SHAPER_FREQ=300.0;
   var MIN_FREQ=5.0;
+  // The 200 Hz default above only matches a normal ADXL345-class capture.
+  // Beacon and similar accelerometers sample well past 1 kHz and can carry a
+  // genuine, comparably-sized resonance peak above 200 Hz (seen in practice:
+  // a real capture with peaks at both ~190 Hz and ~246 Hz) -- if peak
+  // detection and the recommendation search stay hard-capped at 200, that
+  // second peak is invisible to the auto-tuner even though it's sitting right
+  // there in the data. Derive the ceiling from what the capture actually
+  // measured instead, still bounded by MAX_SHAPER_FREQ so a high-bandwidth
+  // capture's mostly-empty tail doesn't blow up the fitSingleMode sweep
+  // (stepped every 0.2 Hz) for no benefit.
+  function captureMaxFreq(freqArr){
+    if(!freqArr||!freqArr.length)return 200.0;
+    return Math.min(MAX_SHAPER_FREQ,Math.max(200.0,freqArr[freqArr.length-1]));
+  }
   // estimate_shaper time-resolution for the multimode fit. Python uses
   // n_t=1000 on a 0.02-step unit grid; the unit-grid build is the dominant
   // cost (rebuilt per base-combo x ratio-combo), so it runs at a reduced
@@ -1662,7 +1677,7 @@
     cfgAxisChoice=null;
     axisHidden={x:false,y:false,z:false}; // a fresh capture starts with every axis feeding Combined
     excludedPeaks=[]; // a fresh capture starts with every detected peak in play
-    var detected=detectAndEstimate(freq,xyz,4);
+    var detected=detectAndEstimate(freq,xyz,4,captureMaxFreq(freq));
     applyDetected(detected);
     recomputeAutoExclude(); // single-shaper tiers: set aside all but the tallest peak
     // sensible pre-recommendation default for the single-mode freq field
@@ -1736,7 +1751,7 @@
       newXyz[i]=s;
     }
     d.xyz=newXyz; d.psd=newXyz;
-    var detected=detectAndEstimate(d.freq,d.xyz,4);
+    var detected=detectAndEstimate(d.freq,d.xyz,4,captureMaxFreq(d.freq));
     applyDetected(detected);
     recomputeAutoExclude(); // the peak set changed; re-seed the tier default
     renderInput();
@@ -2192,7 +2207,7 @@
 
     var smoothing=(kind==='smoother')?getSmootherSmoothing(sh,accel,scv):shaperSmoothing(sh,accel,scv);
     var maxAccel=(kind==='smoother')?findMaxAccel(sh,scv,getSmootherSmoothing):findMaxAccel(sh,scv,shaperSmoothing);
-    var res=loadedCapture?detectAndEstimate(loadedCapture.freq,maskExcludedPeaks(loadedCapture.freq,loadedCapture.psd),4):[];
+    var res=loadedCapture?detectAndEstimate(loadedCapture.freq,maskExcludedPeaks(loadedCapture.freq,loadedCapture.psd),4,captureMaxFreq(loadedCapture.freq)):[];
 
     // ---- residual vs frequency ----
     // Sweep bounds come from the loaded test file's own freq bins when one is
@@ -2299,9 +2314,14 @@
   // cosmetic. Peak detection, the recommendation, and the explorer all
   // analyze Combined (d.xyz/d.psd) regardless of which lines are drawn here.
   function renderInput(){
-    if(!loadedCapture){cInput.data.datasets=[];inputAxisIndex={};cInput.update();return;}
+    if(!loadedCapture){cInput.data.datasets=[];inputAxisIndex={};cInput.options.scales.x.max=205;cInput.update();return;}
     var isLog=inputScale==='log';
     var d=loadedCapture;
+    // Default axis tops out at 205 Hz, but a high-bandwidth capture (Beacon and
+    // similar accelerometers sample well past 1 kHz) can carry a real peak
+    // above that -- widen to the capture's own extent so it isn't clipped off
+    // the measured-spectrum chart.
+    cInput.options.scales.x.max=Math.max(205,d.freq.length?d.freq[d.freq.length-1]:205);
     function series(arr){var pts=[];for(var i=0;i<d.freq.length;i++){if(!isLog||arr[i]>0)pts.push({x:d.freq[i],y:arr[i]});}return pts;}
     var yMax=0,yMin=Infinity;
     [d.x,d.y,d.z,d.xyz].forEach(function(arr){
@@ -2324,7 +2344,7 @@
     // Detect on the FULL spectrum so every real peak shows a marker the user
     // can toggle -- excluded ones are drawn faint/dotted and labelled, and the
     // dataset index -> frequency map lets the legend click below toggle them.
-    var res=detectAndEstimate(d.freq,d.xyz,4);
+    var res=detectAndEstimate(d.freq,d.xyz,4,captureMaxFreq(d.freq));
     peakMarkerFreq={};
     res.forEach(function(p,idx){
       var ex=isPeakExcluded(p.freq);
@@ -2464,9 +2484,9 @@
     setBusy('inputChartBox',true);setBusy('recoBox',true);
     setTimeout(function(){
       if(myGen!==recomputeGen)return; // superseded by a newer recompute; drop this stale result (a newer call owns the busy state now)
-      var scv=5.0,maxFreq=200.0;
+      var scv=5.0,maxFreq=captureMaxFreq(bFreq);
       var result=findBestShaperReal(bFreq,bPsd,scv,maxFreq);
-      var allPeaks=detectAndEstimate(bFreq,bPsd,4);
+      var allPeaks=detectAndEstimate(bFreq,bPsd,4,maxFreq);
       if(myGen!==recomputeGen)return; // superseded while computing; don't paint over newer results
       recoCache[key]={result:result,allPeaks:allPeaks};
       lastReco={best:result.best,label:bLabel,result:result,allPeaks:allPeaks};
